@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { Session, User } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
-import { setAnalyticsConsent } from "@/lib/analytics";
+import { clearAnalyticsConsent, setAnalyticsConsent } from "@/lib/analytics";
 
 interface AuthContextValue {
   user: User | null;
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setLoading(false);
-      if (!nextSession) setAnalyticsConsent(false);
+      if (!nextSession) clearAnalyticsConsent();
     });
 
     supabase.auth.getSession().then(({ data }) => {
@@ -38,8 +38,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  const userId = session?.user?.id;
+
+  // Re-sync the persisted consent decision with the authoritative database
+  // value once per signed-in session, so a change made on another device wins.
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    supabase
+      .from("privacy_settings")
+      .select("analytics_consent")
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data) setAnalyticsConsent(data.analytics_consent);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
   const signOut = useCallback(async () => {
-    setAnalyticsConsent(false);
+    clearAnalyticsConsent();
     await supabase.auth.signOut();
   }, []);
 

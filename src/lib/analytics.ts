@@ -1,11 +1,15 @@
 /**
- * SyncTogether analytics abstraction (Phase 1).
+ * SyncTogether analytics abstraction.
  *
- * Only product-operation events are tracked, and ONLY after the user has
- * given analytics consent (privacy_settings.analytics_consent).
+ * Only product-operation events are tracked, and ONLY after the user has given
+ * analytics consent. The authoritative record is privacy_settings.analytics_consent;
+ * the decision is mirrored into localStorage so it survives a page reload and no
+ * event can fire before the stored decision has been read back.
  * Never pass message content, media, tokens or personal data as properties.
  */
 import { supabase } from "@/integrations/supabase/client";
+
+export const CONSENT_STORAGE_KEY = "synctogether.analytics_consent.v1";
 
 export type AnalyticsEventName =
   | "app_opened"
@@ -22,19 +26,75 @@ export type AnalyticsEventName =
 
 export type AnalyticsProperties = Record<string, string | number | boolean | null>;
 
-let consentGranted = false;
-
-export function setAnalyticsConsent(granted: boolean) {
-  consentGranted = granted;
+/**
+ * Minimal storage contract so the consent logic is testable without a browser.
+ */
+export interface ConsentStore {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
 }
 
-export function hasAnalyticsConsent() {
+let store: ConsentStore | null = null;
+let consentGranted: boolean | null = null;
+
+function resolveStore(): ConsentStore | null {
+  if (store) return store;
+  if (typeof window === "undefined") return null;
+  try {
+    store = window.localStorage;
+  } catch {
+    store = null;
+  }
+  return store;
+}
+
+/** Test seam: inject a storage implementation. */
+export function __setConsentStore(next: ConsentStore | null) {
+  store = next;
+  consentGranted = null;
+}
+
+/** Persists the decision so it survives reloads. Defaults to denied. */
+export function setAnalyticsConsent(granted: boolean) {
+  consentGranted = granted;
+  const target = resolveStore();
+  if (!target) return;
+  try {
+    if (granted) target.setItem(CONSENT_STORAGE_KEY, "granted");
+    else target.setItem(CONSENT_STORAGE_KEY, "denied");
+  } catch {
+    // Storage unavailable (private mode): fall back to the in-memory value.
+  }
+}
+
+/** Clears the decision entirely, e.g. on sign-out. Consent then defaults to denied. */
+export function clearAnalyticsConsent() {
+  consentGranted = null;
+  const target = resolveStore();
+  try {
+    target?.removeItem(CONSENT_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+/** Safe default: no consent unless a stored "granted" decision exists. */
+export function hasAnalyticsConsent(): boolean {
+  if (consentGranted !== null) return consentGranted;
+  const target = resolveStore();
+  if (!target) return false;
+  try {
+    consentGranted = target.getItem(CONSENT_STORAGE_KEY) === "granted";
+  } catch {
+    consentGranted = false;
+  }
   return consentGranted;
 }
 
 /** Fire-and-forget. Analytics must never break a user flow. */
 export async function track(name: AnalyticsEventName, properties: AnalyticsProperties = {}) {
-  if (!consentGranted) return;
+  if (!hasAnalyticsConsent()) return;
   try {
     const { data } = await supabase.auth.getUser();
     if (!data.user) return;

@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          reason: string | null
+          requested_at: string
+          status: Database["public"]["Enums"]["deletion_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          reason?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["deletion_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          reason?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["deletion_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string
@@ -94,6 +130,42 @@ export type Database = {
           last_seen_at?: string
           platform?: string | null
           revoked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      entitlements: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan: Database["public"]["Enums"]["subscription_tier"]
+          source: Database["public"]["Enums"]["entitlement_source"]
+          starts_at: string
+          status: Database["public"]["Enums"]["entitlement_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_tier"]
+          source?: Database["public"]["Enums"]["entitlement_source"]
+          starts_at?: string
+          status?: Database["public"]["Enums"]["entitlement_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_tier"]
+          source?: Database["public"]["Enums"]["entitlement_source"]
+          starts_at?: string
+          status?: Database["public"]["Enums"]["entitlement_status"]
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -263,6 +335,33 @@ export type Database = {
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          action: string
+          count: number
+          created_at: string
+          id: string
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          action: string
+          count?: number
+          created_at?: string
+          id?: string
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          action?: string
+          count?: number
+          created_at?: string
+          id?: string
+          user_id?: string
+          window_start?: string
         }
         Relationships: []
       }
@@ -657,10 +756,54 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admit_member: {
+        Args: {
+          _room: Database["public"]["Tables"]["rooms"]["Row"]
+          _uid: string
+          _via: string
+        }
+        Returns: Json
+      }
+      assign_app_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: Json
+      }
       can_moderate_room: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
+      consume_rate_limit: {
+        Args: { _action: string; _limit: number; _window_seconds: number }
+        Returns: boolean
+      }
+      create_moderation_action: {
+        Args: {
+          _action: Database["public"]["Enums"]["moderation_action_type"]
+          _reason: string
+          _report_id: string
+          _room_id: string
+          _target_user_id: string
+        }
+        Returns: Json
+      }
+      create_room_invite: {
+        Args: {
+          _expires_in_hours: number
+          _max_uses: number
+          _room_id: string
+          _token_hash: string
+        }
+        Returns: Json
+      }
+      current_plan: {
+        Args: never
+        Returns: Database["public"]["Enums"]["subscription_tier"]
+      }
+      end_room: { Args: { _room_id: string }; Returns: Json }
+      export_user_data: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -678,11 +821,56 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      join_room_by_code: { Args: { _code: string }; Returns: Json }
+      leave_room: { Args: { _room_id: string }; Returns: Json }
+      pick_room_successor: {
+        Args: { _excluding: string; _room_id: string }
+        Returns: string
+      }
+      purge_user_data: { Args: { _user_id: string }; Returns: Json }
+      redeem_room_invite: { Args: { _token_hash: string }; Returns: Json }
+      request_account_deletion: { Args: { _reason: string }; Returns: Json }
+      revoke_room_invite: { Args: { _invite_id: string }; Returns: Json }
+      room_is_joinable: {
+        Args: { _room: Database["public"]["Tables"]["rooms"]["Row"] }
+        Returns: string
+      }
+      room_member_directory: {
+        Args: { _room_id: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          joined_at: string
+          role: Database["public"]["Enums"]["room_member_role"]
+          status: Database["public"]["Enums"]["room_member_status"]
+          user_id: string
+          username: string
+        }[]
+      }
+      set_report_status: {
+        Args: {
+          _report_id: string
+          _status: Database["public"]["Enums"]["report_status"]
+        }
+        Returns: Json
+      }
       shares_room_with: { Args: { _a: string; _b: string }; Returns: boolean }
+      transfer_room_host: {
+        Args: { _room_id: string; _to_user: string }
+        Returns: Json
+      }
     }
     Enums: {
       account_status: "active" | "suspended" | "deactivated" | "deleted"
       app_role: "user" | "moderator" | "admin"
+      deletion_status:
+        | "requested"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "cancelled"
+      entitlement_source: "system" | "grant" | "promo" | "billing"
+      entitlement_status: "active" | "expired" | "revoked" | "pending"
       moderation_action_type:
         | "warn"
         | "mute"
@@ -853,6 +1041,15 @@ export const Constants = {
     Enums: {
       account_status: ["active", "suspended", "deactivated", "deleted"],
       app_role: ["user", "moderator", "admin"],
+      deletion_status: [
+        "requested",
+        "processing",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
+      entitlement_source: ["system", "grant", "promo", "billing"],
+      entitlement_status: ["active", "expired", "revoked", "pending"],
       moderation_action_type: [
         "warn",
         "mute",

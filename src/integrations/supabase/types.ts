@@ -14,16 +14,716 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analytics_events: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          properties: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          properties?: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          properties?: Json
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+        }
+        Relationships: []
+      }
+      device_sessions: {
+        Row: {
+          created_at: string
+          device_label: string | null
+          id: string
+          last_seen_at: string
+          platform: string | null
+          revoked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_label?: string | null
+          id?: string
+          last_seen_at?: string
+          platform?: string | null
+          revoked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_label?: string | null
+          id?: string
+          last_seen_at?: string
+          platform?: string | null
+          revoked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      moderation_actions: {
+        Row: {
+          action: Database["public"]["Enums"]["moderation_action_type"]
+          actor_id: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          reason: string | null
+          report_id: string | null
+          room_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["moderation_action_type"]
+          actor_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          report_id?: string | null
+          room_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["moderation_action_type"]
+          actor_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          report_id?: string | null
+          room_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_actions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "user_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_actions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          data: Json
+          id: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      privacy_settings: {
+        Row: {
+          activity_visibility: Database["public"]["Enums"]["visibility_level"]
+          ads_consent: boolean
+          analytics_consent: boolean
+          created_at: string
+          personalization_consent: boolean
+          profile_visibility: Database["public"]["Enums"]["visibility_level"]
+          room_data_retention_days: number
+          room_visibility: Database["public"]["Enums"]["visibility_level"]
+          searchable_by_username: boolean
+          updated_at: string
+          user_id: string
+          who_can_invite: Database["public"]["Enums"]["visibility_level"]
+          who_can_message: Database["public"]["Enums"]["visibility_level"]
+        }
+        Insert: {
+          activity_visibility?: Database["public"]["Enums"]["visibility_level"]
+          ads_consent?: boolean
+          analytics_consent?: boolean
+          created_at?: string
+          personalization_consent?: boolean
+          profile_visibility?: Database["public"]["Enums"]["visibility_level"]
+          room_data_retention_days?: number
+          room_visibility?: Database["public"]["Enums"]["visibility_level"]
+          searchable_by_username?: boolean
+          updated_at?: string
+          user_id: string
+          who_can_invite?: Database["public"]["Enums"]["visibility_level"]
+          who_can_message?: Database["public"]["Enums"]["visibility_level"]
+        }
+        Update: {
+          activity_visibility?: Database["public"]["Enums"]["visibility_level"]
+          ads_consent?: boolean
+          analytics_consent?: boolean
+          created_at?: string
+          personalization_consent?: boolean
+          profile_visibility?: Database["public"]["Enums"]["visibility_level"]
+          room_data_retention_days?: number
+          room_visibility?: Database["public"]["Enums"]["visibility_level"]
+          searchable_by_username?: boolean
+          updated_at?: string
+          user_id?: string
+          who_can_invite?: Database["public"]["Enums"]["visibility_level"]
+          who_can_message?: Database["public"]["Enums"]["visibility_level"]
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          status: Database["public"]["Enums"]["account_status"]
+          subscription_tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          status?: Database["public"]["Enums"]["account_status"]
+          subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["account_status"]
+          subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      room_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: string
+          payload: Json
+          room_id: string
+          session_id: string | null
+          type: Database["public"]["Enums"]["room_event_type"]
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json
+          room_id: string
+          session_id?: string | null
+          type: Database["public"]["Enums"]["room_event_type"]
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json
+          room_id?: string
+          session_id?: string | null
+          type?: Database["public"]["Enums"]["room_event_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_events_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "room_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_invites: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          max_uses: number
+          revoked_at: string | null
+          room_id: string
+          token_hash: string
+          use_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at: string
+          id?: string
+          max_uses?: number
+          revoked_at?: string | null
+          room_id: string
+          token_hash: string
+          use_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          max_uses?: number
+          revoked_at?: string | null
+          room_id?: string
+          token_hash?: string
+          use_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_invites_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_members: {
+        Row: {
+          can_control_playback: boolean
+          can_invite: boolean
+          can_moderate: boolean
+          created_at: string
+          id: string
+          is_muted: boolean
+          joined_at: string
+          left_at: string | null
+          role: Database["public"]["Enums"]["room_member_role"]
+          room_id: string
+          status: Database["public"]["Enums"]["room_member_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_control_playback?: boolean
+          can_invite?: boolean
+          can_moderate?: boolean
+          created_at?: string
+          id?: string
+          is_muted?: boolean
+          joined_at?: string
+          left_at?: string | null
+          role?: Database["public"]["Enums"]["room_member_role"]
+          room_id: string
+          status?: Database["public"]["Enums"]["room_member_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_control_playback?: boolean
+          can_invite?: boolean
+          can_moderate?: boolean
+          created_at?: string
+          id?: string
+          is_muted?: boolean
+          joined_at?: string
+          left_at?: string | null
+          role?: Database["public"]["Enums"]["room_member_role"]
+          room_id?: string
+          status?: Database["public"]["Enums"]["room_member_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_members_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          expires_at: string | null
+          id: string
+          participant_peak: number
+          room_id: string
+          started_at: string
+          started_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string | null
+          id?: string
+          participant_peak?: number
+          room_id: string
+          started_at?: string
+          started_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string | null
+          id?: string
+          participant_peak?: number
+          room_id?: string
+          started_at?: string
+          started_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_sessions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          description: string | null
+          ended_at: string | null
+          expires_at: string | null
+          host_id: string | null
+          id: string
+          invite_only: boolean
+          is_ephemeral: boolean
+          join_code: string | null
+          max_members: number
+          name: string
+          owner_id: string
+          privacy: Database["public"]["Enums"]["room_privacy"]
+          scheduled_start_at: string | null
+          status: Database["public"]["Enums"]["room_status"]
+          type: Database["public"]["Enums"]["room_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          ended_at?: string | null
+          expires_at?: string | null
+          host_id?: string | null
+          id?: string
+          invite_only?: boolean
+          is_ephemeral?: boolean
+          join_code?: string | null
+          max_members?: number
+          name: string
+          owner_id: string
+          privacy?: Database["public"]["Enums"]["room_privacy"]
+          scheduled_start_at?: string | null
+          status?: Database["public"]["Enums"]["room_status"]
+          type?: Database["public"]["Enums"]["room_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          ended_at?: string | null
+          expires_at?: string | null
+          host_id?: string | null
+          id?: string
+          invite_only?: boolean
+          is_ephemeral?: boolean
+          join_code?: string | null
+          max_members?: number
+          name?: string
+          owner_id?: string
+          privacy?: Database["public"]["Enums"]["room_privacy"]
+          scheduled_start_at?: string | null
+          status?: Database["public"]["Enums"]["room_status"]
+          type?: Database["public"]["Enums"]["room_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      user_reports: {
+        Row: {
+          category: string
+          created_at: string
+          details: string | null
+          id: string
+          reporter_id: string
+          status: Database["public"]["Enums"]["report_status"]
+          target_ref: string | null
+          target_room_id: string | null
+          target_type: Database["public"]["Enums"]["report_target"]
+          target_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          reporter_id: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_ref?: string | null
+          target_room_id?: string | null
+          target_type: Database["public"]["Enums"]["report_target"]
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          reporter_id?: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_ref?: string | null
+          target_room_id?: string | null
+          target_type?: Database["public"]["Enums"]["report_target"]
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_reports_target_room_id_fkey"
+            columns: ["target_room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          locale: string
+          notify_email: boolean
+          notify_push: boolean
+          notify_room_activity: boolean
+          notify_room_invites: boolean
+          reduced_motion: boolean
+          theme: string
+          timezone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          locale?: string
+          notify_email?: boolean
+          notify_push?: boolean
+          notify_room_activity?: boolean
+          notify_room_invites?: boolean
+          reduced_motion?: boolean
+          theme?: string
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          locale?: string
+          notify_email?: boolean
+          notify_push?: boolean
+          notify_room_activity?: boolean
+          notify_room_invites?: boolean
+          reduced_motion?: boolean
+          theme?: string
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_moderate_room: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
+      is_room_host: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_room_member: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
+      shares_room_with: { Args: { _a: string; _b: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      account_status: "active" | "suspended" | "deactivated" | "deleted"
+      app_role: "user" | "moderator" | "admin"
+      moderation_action_type:
+        | "warn"
+        | "mute"
+        | "kick"
+        | "ban"
+        | "suspend"
+        | "content_removed"
+        | "dismissed"
+      report_status: "open" | "reviewing" | "actioned" | "dismissed"
+      report_target: "user" | "room" | "message" | "other"
+      room_event_type:
+        | "ROOM_CREATED"
+        | "ROOM_UPDATED"
+        | "USER_JOINED"
+        | "USER_LEFT"
+        | "HOST_CHANGED"
+        | "PLAY"
+        | "PAUSE"
+        | "SEEK"
+        | "CONTENT_CHANGED"
+        | "CHAT_MESSAGE"
+        | "REACTION"
+        | "SCREEN_SHARE_STARTED"
+        | "SCREEN_SHARE_STOPPED"
+        | "ROOM_ENDED"
+      room_member_role: "host" | "co_host" | "moderator" | "member" | "guest"
+      room_member_status: "invited" | "joined" | "left" | "kicked" | "banned"
+      room_privacy: "private" | "invite_only" | "unlisted" | "public"
+      room_status: "draft" | "active" | "paused" | "ended" | "archived"
+      room_type:
+        | "couple"
+        | "friends"
+        | "family"
+        | "study"
+        | "research"
+        | "music"
+        | "watch"
+        | "game"
+        | "private"
+      subscription_tier: "free" | "pro" | "pro_plus"
+      visibility_level: "public" | "members" | "contacts" | "private"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +850,53 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      account_status: ["active", "suspended", "deactivated", "deleted"],
+      app_role: ["user", "moderator", "admin"],
+      moderation_action_type: [
+        "warn",
+        "mute",
+        "kick",
+        "ban",
+        "suspend",
+        "content_removed",
+        "dismissed",
+      ],
+      report_status: ["open", "reviewing", "actioned", "dismissed"],
+      report_target: ["user", "room", "message", "other"],
+      room_event_type: [
+        "ROOM_CREATED",
+        "ROOM_UPDATED",
+        "USER_JOINED",
+        "USER_LEFT",
+        "HOST_CHANGED",
+        "PLAY",
+        "PAUSE",
+        "SEEK",
+        "CONTENT_CHANGED",
+        "CHAT_MESSAGE",
+        "REACTION",
+        "SCREEN_SHARE_STARTED",
+        "SCREEN_SHARE_STOPPED",
+        "ROOM_ENDED",
+      ],
+      room_member_role: ["host", "co_host", "moderator", "member", "guest"],
+      room_member_status: ["invited", "joined", "left", "kicked", "banned"],
+      room_privacy: ["private", "invite_only", "unlisted", "public"],
+      room_status: ["draft", "active", "paused", "ended", "archived"],
+      room_type: [
+        "couple",
+        "friends",
+        "family",
+        "study",
+        "research",
+        "music",
+        "watch",
+        "game",
+        "private",
+      ],
+      subscription_tier: ["free", "pro", "pro_plus"],
+      visibility_level: ["public", "members", "contacts", "private"],
+    },
   },
 } as const

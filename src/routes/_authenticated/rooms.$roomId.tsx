@@ -89,7 +89,7 @@ function RoomPage() {
     void queryClient.invalidateQueries({ queryKey: queryKeys.rooms.detail(roomId) });
   }, [queryClient, roomId]);
 
-  const { connected, presence } = useRoomRealtime(roomId, user?.id, onRoomChanged);
+  const { connected, presence, authorized } = useRoomRealtime(roomId, user?.id, onRoomChanged);
 
   const leaveMutation = useMutation({
     mutationFn: async () => {
@@ -192,7 +192,7 @@ function RoomPage() {
                 className={connected ? "size-3 text-primary" : "size-3 text-muted-foreground"}
                 aria-hidden="true"
               />
-              {connected ? "Live" : "Reconnecting"}
+              {!authorized ? "Live updates unavailable" : connected ? "Live" : "Reconnecting"}
             </span>
           </p>
         </div>

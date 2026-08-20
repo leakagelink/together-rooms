@@ -25,7 +25,7 @@ export function AccountDataPanel() {
 
   const exportMutation = useMutation({
     mutationFn: async () => {
-      const result = await runExport({ data: {} });
+      const result = await runExport();
       if (!result.ok) throw new Error(rpcMessage(result.reason));
       return result.export;
     },

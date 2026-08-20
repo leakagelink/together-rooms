@@ -1,19 +1,26 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { Copy, LogOut } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useCallback } from "react";
+import { Copy, LogOut, PowerOff, Radio } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
-import { BlockUserButton } from "@/components/block-user-button";
 import { ReportDialog } from "@/components/report-dialog";
+import { RoomInvitePanel } from "@/components/room/room-invite-panel";
+import { RoomMembersPanel } from "@/components/room/room-members-panel";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useRoomRealtime } from "@/hooks/useRoomRealtime";
 import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/analytics";
 import { errorMessage } from "@/lib/errors";
+import { queryKeys } from "@/lib/query-keys";
+import { roomJoinability } from "@/lib/room-rules";
+import { endRoom, leaveRoom, listRoomMembers, transferRoomHost } from "@/lib/rooms.functions";
+import { rpcMessage } from "@/lib/rpc-types";
 
 export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
   head: () => ({
@@ -22,6 +29,8 @@ export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
       { name: "description", content: "A private SyncTogether room." },
       { property: "og:title", content: "Room — SyncTogether" },
       { property: "og:description", content: "A private SyncTogether room." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -33,7 +42,10 @@ export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
   ),
   notFoundComponent: () => (
     <AppShell>
-      <EmptyState title="Room not found" description="It may have ended or you no longer have access." />
+      <EmptyState
+        title="Room not found"
+        description="It may have ended or you no longer have access."
+      />
     </AppShell>
   ),
 });
@@ -41,15 +53,22 @@ export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
 function RoomPage() {
   const { roomId } = Route.useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [leaving, setLeaving] = useState(false);
+
+  const fetchMembers = useServerFn(listRoomMembers);
+  const leave = useServerFn(leaveRoom);
+  const end = useServerFn(endRoom);
+  const transfer = useServerFn(transferRoomHost);
 
   const roomQuery = useQuery({
-    queryKey: ["room", roomId],
+    queryKey: queryKeys.rooms.detail(roomId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rooms")
-        .select("id, name, description, type, status, privacy, is_ephemeral, join_code, owner_id, expires_at")
+        .select(
+          "id, name, description, type, status, privacy, is_ephemeral, join_code, owner_id, host_id, max_members, expires_at",
+        )
         .eq("id", roomId)
         .maybeSingle();
       if (error) throw error;
@@ -58,43 +77,67 @@ function RoomPage() {
   });
 
   const membersQuery = useQuery({
-    queryKey: ["room", roomId, "members"],
+    queryKey: queryKeys.rooms.members(roomId),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("room_members")
-        .select("id, user_id, role, status")
-        .eq("room_id", roomId)
-        .order("joined_at", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
+      const result = await fetchMembers({ data: { room_id: roomId } });
+      if (!result.ok) throw new Error(rpcMessage(result.reason));
+      return result.members;
     },
   });
 
-  async function leaveRoom() {
-    if (!user) return;
-    setLeaving(true);
-    try {
-      const { error } = await supabase
-        .from("room_members")
-        .update({ status: "left", left_at: new Date().toISOString() })
-        .eq("room_id", roomId)
-        .eq("user_id", user.id);
-      if (error) throw error;
-      await supabase.from("room_events").insert({
-        room_id: roomId,
-        actor_id: user.id,
-        type: "USER_LEFT",
-        payload: {},
-      });
+  const onRoomChanged = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.rooms.detail(roomId) });
+  }, [queryClient, roomId]);
+
+  const { connected, presence } = useRoomRealtime(roomId, user?.id, onRoomChanged);
+
+  const leaveMutation = useMutation({
+    mutationFn: async () => {
+      const result = await leave({ data: { room_id: roomId } });
+      if (!result.ok) throw new Error(rpcMessage(result.reason));
+      return result;
+    },
+    onSuccess: async (result) => {
       void track("room_left");
-      toast.success("You left the room.");
-      await queryClient.invalidateQueries({ queryKey: ["rooms", "mine"] });
-    } catch (err) {
-      toast.error(errorMessage(err));
-    } finally {
-      setLeaving(false);
-    }
-  }
+      queryClient.removeQueries({ queryKey: queryKeys.rooms.detail(roomId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.mine() });
+      toast.success(
+        result.outcome === "host_transferred"
+          ? "You left. Hosting was handed to another member."
+          : result.outcome === "room_ended"
+            ? "You left. The room ended because nobody else was in it."
+            : "You left the room.",
+      );
+      navigate({ to: "/rooms" });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const endMutation = useMutation({
+    mutationFn: async () => {
+      const result = await end({ data: { room_id: roomId } });
+      if (!result.ok) throw new Error(rpcMessage(result.reason));
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.detail(roomId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.mine() });
+      toast.success("Room ended.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const transferMutation = useMutation({
+    mutationFn: async (toUserId: string) => {
+      const result = await transfer({ data: { room_id: roomId, to_user_id: toUserId } });
+      if (!result.ok) throw new Error(rpcMessage(result.reason));
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.detail(roomId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.members(roomId) });
+      toast.success("Host transferred.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   if (roomQuery.isPending) {
     return (
@@ -107,7 +150,10 @@ function RoomPage() {
   if (roomQuery.isError) {
     return (
       <AppShell>
-        <ErrorState message={errorMessage(roomQuery.error)} onRetry={() => void roomQuery.refetch()} />
+        <ErrorState
+          message={errorMessage(roomQuery.error)}
+          onRetry={() => void roomQuery.refetch()}
+        />
       </AppShell>
     );
   }
@@ -129,7 +175,8 @@ function RoomPage() {
     );
   }
 
-  const isOwner = room.owner_id === user?.id;
+  const isHost = room.owner_id === user?.id || room.host_id === user?.id;
+  const lifecycle = roomJoinability(room);
 
   return (
     <AppShell>
@@ -140,21 +187,47 @@ function RoomPage() {
             <Badge variant="secondary">{room.type}</Badge>
             <span>{room.privacy}</span>
             {room.is_ephemeral ? <span>· ephemeral</span> : null}
+            <span className="inline-flex items-center gap-1">
+              <Radio
+                className={connected ? "size-3 text-primary" : "size-3 text-muted-foreground"}
+                aria-hidden="true"
+              />
+              {connected ? "Live" : "Reconnecting"}
+            </span>
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <ReportDialog targetType="room" targetRoomId={room.id} />
-          <Button variant="outline" onClick={leaveRoom} disabled={leaving}>
+          {isHost && lifecycle === "ok" ? (
+            <Button variant="outline" onClick={() => endMutation.mutate()} disabled={endMutation.isPending}>
+              <PowerOff className="size-4" aria-hidden="true" /> End room
+            </Button>
+          ) : null}
+          <Button
+            variant="outline"
+            onClick={() => leaveMutation.mutate()}
+            disabled={leaveMutation.isPending}
+          >
             <LogOut className="size-4" aria-hidden="true" /> Leave
           </Button>
         </div>
       </div>
 
+      {lifecycle !== "ok" ? (
+        <p role="status" className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-sm">
+          {lifecycle === "room_ended"
+            ? "This room has ended. Nobody new can join it."
+            : lifecycle === "room_expired"
+              ? "This room has expired. Nobody new can join it."
+              : "This room isn't open yet."}
+        </p>
+      ) : null}
+
       {room.description ? (
         <p className="mt-4 max-w-2xl text-sm text-muted-foreground">{room.description}</p>
       ) : null}
 
-      {isOwner && room.join_code ? (
+      {isHost && room.join_code ? (
         <section className="surface-panel mt-6 flex flex-wrap items-center justify-between gap-3 p-5">
           <div>
             <h2 className="text-sm font-semibold">Join code</h2>
@@ -167,7 +240,6 @@ function RoomPage() {
             variant="outline"
             onClick={async () => {
               await navigator.clipboard.writeText(room.join_code ?? "");
-              void track("invite_created", { room_type: room.type });
               toast.success("Join code copied.");
             }}
           >
@@ -176,10 +248,15 @@ function RoomPage() {
         </section>
       ) : null}
 
+      {isHost ? <RoomInvitePanel roomId={room.id} /> : null}
+
       <section className="mt-8" aria-labelledby="members-heading">
         <h2 id="members-heading" className="text-lg font-semibold">
           Members
         </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Presence is advisory. Membership in the database is authoritative.
+        </p>
         <div className="mt-3">
           {membersQuery.isPending ? (
             <LoadingState label="Loading members" rows={2} />
@@ -188,36 +265,16 @@ function RoomPage() {
               message={errorMessage(membersQuery.error)}
               onRetry={() => void membersQuery.refetch()}
             />
-          ) : membersQuery.data.length === 0 ? (
-            <EmptyState title="No members yet" description="Share the join code to bring people in." />
           ) : (
-            <ul className="space-y-2">
-              {membersQuery.data.map((member) => (
-                <li
-                  key={member.id}
-                  className="surface-panel flex flex-wrap items-center justify-between gap-3 p-4"
-                >
-                  <div>
-                    <p className="text-sm font-medium">
-                      {member.user_id === user?.id ? "You" : `Member ${member.user_id.slice(0, 8)}`}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {member.role} · {member.status}
-                    </p>
-                  </div>
-                  {member.user_id !== user?.id ? (
-                    <div className="flex gap-2">
-                      <ReportDialog
-                        targetType="user"
-                        targetUserId={member.user_id}
-                        targetRoomId={room.id}
-                      />
-                      <BlockUserButton userId={member.user_id} />
-                    </div>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            <RoomMembersPanel
+              members={membersQuery.data}
+              presence={presence}
+              currentUserId={user?.id}
+              roomId={room.id}
+              canTransferHost={isHost}
+              onTransferHost={(userId) => transferMutation.mutate(userId)}
+              transferPending={transferMutation.isPending}
+            />
           )}
         </div>
       </section>
@@ -225,9 +282,9 @@ function RoomPage() {
       <section className="surface-panel mt-8 p-5">
         <h2 className="text-sm font-semibold">Coming in a later phase</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Synchronized playback, shared listening, voice and video, chat and the AI room assistant are
-          not implemented yet. The room engine, roles, permissions and event log that these features
-          need are in place.
+          Synchronized playback, shared listening, voice and video, chat and the AI room assistant
+          are not implemented yet. The room engine, roles, permissions, realtime channel and event
+          log that these features need are in place.
         </p>
       </section>
     </AppShell>

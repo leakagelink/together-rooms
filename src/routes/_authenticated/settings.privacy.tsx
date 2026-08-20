@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
+import { AccountDataPanel } from "@/components/account-data-panel";
 import { ErrorState, LoadingState } from "@/components/state-views";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -227,14 +228,7 @@ function PrivacySettingsPage() {
               </div>
             </section>
 
-            <section className="surface-panel space-y-3 p-6">
-              <h2 className="text-sm font-semibold">Your data</h2>
-              <p className="text-sm text-muted-foreground">
-                Account deletion and data export are part of the compliance roadmap and are not
-                self-service yet. Until they ship, contact support to have your account and data
-                removed.
-              </p>
-            </section>
+            <AccountDataPanel />
 
             <Button onClick={save} disabled={saving}>
               {saving ? "Saving…" : "Save privacy settings"}

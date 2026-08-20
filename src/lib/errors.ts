@@ -33,8 +33,8 @@ const FRIENDLY: Record<AppErrorCode, string> = {
 
 export function toAppError(error: unknown): AppError {
   const raw = typeof error === "object" && error !== null ? (error as Record<string, unknown>) : {};
-  const message = typeof raw.message === "string" ? raw.message.toLowerCase() : "";
-  const code = typeof raw.code === "string" ? raw.code : "";
+  const message = typeof raw["message"] === "string" ? (raw["message"] as string).toLowerCase() : "";
+  const code = typeof raw["code"] === "string" ? (raw["code"] as string) : "";
 
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     return { code: "offline", message: FRIENDLY.offline };

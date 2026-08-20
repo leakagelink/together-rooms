@@ -10,6 +10,8 @@ export interface RoomRealtimeState {
   presence: Record<string, PresenceStatus>;
   /** Most recent room events, newest first (capped). */
   events: RoomEvent[];
+  /** False when the database refused to authorize this room channel. */
+  authorized: boolean;
 }
 
 const MAX_EVENTS = 30;
@@ -31,6 +33,7 @@ export function useRoomRealtime(
   onRoomChanged?: () => void,
 ): RoomRealtimeState {
   const [connected, setConnected] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
   const [presenceRaw, setPresenceRaw] = useState<Record<string, PresenceStatus>>({});
   const [events, setEvents] = useState<RoomEvent[]>([]);
   const seenIds = useRef<Set<string>>(new Set());
@@ -44,9 +47,27 @@ export function useRoomRealtime(
     let channel: RealtimeChannel | null = null;
     let cancelled = false;
 
-    channel = supabase.channel(`room:${roomId}`, {
-      config: { presence: { key: userId } },
-    });
+    // Database-backed authorization gate: the server decides whether this user
+    // may observe the room at all. postgres_changes payloads are additionally
+    // filtered by RLS on room_events / room_members.
+    void (async () => {
+      const { data: allowed, error } = await supabase.rpc("authorize_room_channel", {
+        _room_id: roomId,
+      });
+      if (cancelled) return;
+      if (error || allowed !== true) {
+        setAuthorized(false);
+        return;
+      }
+      setAuthorized(true);
+      subscribe();
+    })();
+
+    function subscribe() {
+      if (cancelled) return;
+      channel = supabase.channel(`room:${roomId}`, {
+        config: { presence: { key: userId } },
+      });
 
     channel
       .on("presence", { event: "sync" }, () => {
@@ -90,6 +111,7 @@ export function useRoomRealtime(
     return () => {
       cancelled = true;
       setConnected(false);
+      setAuthorized(false);
       setPresenceRaw({});
       if (channel) void supabase.removeChannel(channel);
       channel = null;
@@ -98,5 +120,5 @@ export function useRoomRealtime(
 
   const presence = useMemo(() => presenceRaw, [presenceRaw]);
 
-  return { connected, presence, events };
+  return { connected, presence, events, authorized };
 }

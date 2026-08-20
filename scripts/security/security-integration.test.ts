@@ -98,9 +98,13 @@ suite("phase 2.1 database security", () => {
   });
 
   it("T8: direct membership insertion fails while the join RPC succeeds", async () => {
-    const { error } = await outsider.client
-      .from("room_members")
-      .insert({ room_id: roomId, user_id: outsider.id, role: "host", status: "joined", can_moderate: true });
+    const { error } = await outsider.client.from("room_members").insert({
+      room_id: roomId,
+      user_id: outsider.id,
+      role: "host",
+      status: "joined",
+      can_moderate: true,
+    });
     expect(error).not.toBeNull();
   });
 

@@ -7,9 +7,23 @@ function randomBytes(length: number) {
   return bytes;
 }
 
-/** 8-character unguessable room join code (~40 bits of entropy). */
+/**
+ * 8-character unguessable room join code (~40 bits of entropy).
+ *
+ * Uses rejection sampling: 256 is not a multiple of the 31-character alphabet,
+ * so `b % 31` would bias the first 8 symbols. Bytes >= 248 are discarded.
+ */
 export function generateJoinCode(length = 8) {
-  return Array.from(randomBytes(length), (b) => ALPHABET[b % ALPHABET.length]).join("");
+  const limit = 256 - (256 % ALPHABET.length);
+  const out: string[] = [];
+  while (out.length < length) {
+    for (const b of randomBytes(length)) {
+      if (b >= limit) continue;
+      out.push(ALPHABET[b % ALPHABET.length]!);
+      if (out.length === length) break;
+    }
+  }
+  return out.join("");
 }
 
 /** Opaque invite token, shown once to the creator. Only its hash is stored. */

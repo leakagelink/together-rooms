@@ -70,7 +70,8 @@ export function AccountDataPanel() {
 
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">
-          Download a machine-readable copy of your profile, settings, rooms, memberships and reports.
+          Download a machine-readable copy of your profile, settings, rooms, memberships and
+          reports.
         </p>
         <Button
           variant="outline"

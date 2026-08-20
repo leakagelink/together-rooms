@@ -33,7 +33,8 @@ const FRIENDLY: Record<AppErrorCode, string> = {
 
 export function toAppError(error: unknown): AppError {
   const raw = typeof error === "object" && error !== null ? (error as Record<string, unknown>) : {};
-  const message = typeof raw["message"] === "string" ? (raw["message"] as string).toLowerCase() : "";
+  const message =
+    typeof raw["message"] === "string" ? (raw["message"] as string).toLowerCase() : "";
   const code = typeof raw["code"] === "string" ? (raw["code"] as string) : "";
 
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
@@ -51,7 +52,11 @@ export function toAppError(error: unknown): AppError {
   if (code === "23505" || message.includes("duplicate key")) {
     return { code: "conflict", message: FRIENDLY.conflict };
   }
-  if (code === "42501" || message.includes("row-level security") || message.includes("permission denied")) {
+  if (
+    code === "42501" ||
+    message.includes("row-level security") ||
+    message.includes("permission denied")
+  ) {
     return { code: "forbidden", message: FRIENDLY.forbidden };
   }
   if (code === "PGRST116") {

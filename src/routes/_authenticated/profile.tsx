@@ -90,7 +90,8 @@ function ProfilePage() {
     <AppShell>
       <h1 className="text-2xl font-semibold">Your profile</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Only what you enter here is shared, and only with the audience you allow in privacy settings.
+        Only what you enter here is shared, and only with the audience you allow in privacy
+        settings.
       </p>
 
       <div className="mt-8 max-w-xl">

@@ -34,8 +34,8 @@ function GuidelinesPage() {
       </ul>
       <h2>Reporting</h2>
       <p>
-        Every user and room surface includes a report control. Reports go to our moderation queue with
-        the reporter's identity kept out of the reported person's view.
+        Every user and room surface includes a report control. Reports go to our moderation queue
+        with the reporter's identity kept out of the reported person's view.
       </p>
       <h2>Blocking</h2>
       <p>Blocking is instant and does not require a report. Blocks are mutual for visibility.</p>

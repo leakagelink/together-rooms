@@ -199,7 +199,11 @@ function RoomPage() {
         <div className="flex flex-wrap gap-2">
           <ReportDialog targetType="room" targetRoomId={room.id} />
           {isHost && lifecycle === "ok" ? (
-            <Button variant="outline" onClick={() => endMutation.mutate()} disabled={endMutation.isPending}>
+            <Button
+              variant="outline"
+              onClick={() => endMutation.mutate()}
+              disabled={endMutation.isPending}
+            >
               <PowerOff className="size-4" aria-hidden="true" /> End room
             </Button>
           ) : null}

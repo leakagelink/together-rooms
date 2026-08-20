@@ -77,7 +77,12 @@ describe("host succession", () => {
 
   it("prefers co-host, then moderator, then earliest member", () => {
     expect(pickSuccessor(members, "host")).toBe("cohost");
-    expect(pickSuccessor(members.filter((m) => m.user_id !== "cohost"), "host")).toBe("mod");
+    expect(
+      pickSuccessor(
+        members.filter((m) => m.user_id !== "cohost"),
+        "host",
+      ),
+    ).toBe("mod");
     expect(
       pickSuccessor(
         members.filter((m) => !["cohost", "mod"].includes(m.user_id)),
@@ -87,9 +92,7 @@ describe("host succession", () => {
   });
 
   it("ignores members who already left and the leaver themselves", () => {
-    const left = members.map((m) =>
-      m.user_id === "cohost" ? { ...m, status: "left" } : m,
-    );
+    const left = members.map((m) => (m.user_id === "cohost" ? { ...m, status: "left" } : m));
     expect(pickSuccessor(left, "host")).toBe("mod");
     expect(pickSuccessor([members[0]!], "host")).toBeNull();
   });

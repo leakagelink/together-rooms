@@ -84,9 +84,7 @@ function InvitePage() {
         <EmptyState
           title="Sign in to accept this invite"
           description="Invites can only be accepted by a signed-in account."
-          action={
-            <Button onClick={() => navigate({ to: "/auth/login" })}>Sign in</Button>
-          }
+          action={<Button onClick={() => navigate({ to: "/auth/login" })}>Sign in</Button>}
         />
       </AppShell>
     );

@@ -34,7 +34,9 @@ export function RoomMembersPanel({
   transferPending,
 }: Props) {
   if (members.length === 0) {
-    return <EmptyState title="No members yet" description="Share the join code to bring people in." />;
+    return (
+      <EmptyState title="No members yet" description="Share the join code to bring people in." />
+    );
   }
 
   return (
@@ -64,7 +66,10 @@ export function RoomMembersPanel({
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              {canTransferHost && !isSelf && member.status === "joined" && member.role !== "host" ? (
+              {canTransferHost &&
+              !isSelf &&
+              member.status === "joined" &&
+              member.role !== "host" ? (
                 <Button
                   variant="outline"
                   size="sm"

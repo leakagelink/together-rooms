@@ -32,7 +32,8 @@ export interface RoomLifecycleState {
 export function roomJoinability(room: RoomLifecycleState, now: Date = new Date()): RoomJoinability {
   if (room.status === "ended" || room.status === "archived") return "room_ended";
   if (room.status === "draft") return "room_not_open";
-  if (room.expires_at && new Date(room.expires_at).getTime() <= now.getTime()) return "room_expired";
+  if (room.expires_at && new Date(room.expires_at).getTime() <= now.getTime())
+    return "room_expired";
   return "ok";
 }
 
@@ -75,10 +76,7 @@ export interface SuccessorCandidate {
  * ordered by role priority (co_host > moderator > member > guest), then by
  * earliest joined_at, then user_id as the final tie-break.
  */
-export function pickSuccessor(
-  members: SuccessorCandidate[],
-  leavingUserId: string,
-): string | null {
+export function pickSuccessor(members: SuccessorCandidate[], leavingUserId: string): string | null {
   const eligible = members
     .filter((m) => m.status === "joined" && m.user_id !== leavingUserId)
     .sort((a, b) => {

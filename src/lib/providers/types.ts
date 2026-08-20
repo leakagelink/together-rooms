@@ -10,14 +10,7 @@
  */
 
 export type ProviderId =
-  | "youtube"
-  | "search"
-  | "ai"
-  | "voice"
-  | "music"
-  | "analytics"
-  | "payments"
-  | "ads";
+  "youtube" | "search" | "ai" | "voice" | "music" | "analytics" | "payments" | "ads";
 
 export interface ProviderCapabilities {
   /** True only when the provider is contractually allowed for this use. */

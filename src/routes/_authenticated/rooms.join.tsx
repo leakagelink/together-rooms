@@ -1,4 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -6,9 +8,11 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/analytics";
 import { errorMessage } from "@/lib/errors";
+import { queryKeys } from "@/lib/query-keys";
+import { joinRoomByCode } from "@/lib/rooms.functions";
+import { rpcMessage } from "@/lib/rpc-types";
 import { joinRoomSchema } from "@/lib/validation";
 
 export const Route = createFileRoute("/_authenticated/rooms/join")({
@@ -26,6 +30,8 @@ export const Route = createFileRoute("/_authenticated/rooms/join")({
 
 function JoinRoomPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const join = useServerFn(joinRoomByCode);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -40,31 +46,15 @@ function JoinRoomPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) throw new Error("forbidden");
-
-      // Phase 1 limitation: RLS only exposes rooms you already belong to, so a
-      // code alone cannot add you to someone else's room from the client. A
-      // server-side redeem path lands in Phase 2.
-      const { data: room, error: lookupError } = await supabase
-        .from("rooms")
-        .select("id, status")
-        .eq("join_code", parsed.data.join_code)
-        .maybeSingle();
-      if (lookupError) throw lookupError;
-      if (!room) {
-        setError(
-          "That code isn't available to you yet. Ask the host to add you — code redemption for new members ships in the next release.",
-        );
+      const result = await join({ data: { join_code: parsed.data.join_code } });
+      if (!result.ok) {
+        setError(rpcMessage(result.reason));
         return;
       }
-      if (room.status === "ended" || room.status === "archived") {
-        setError("That room has ended.");
-        return;
-      }
-      void track("room_joined");
-      toast.success("Opening room.");
-      navigate({ to: "/rooms/$roomId", params: { roomId: room.id } });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.mine() });
+      if (!result.already_member) void track("room_joined");
+      toast.success(result.already_member ? "Opening room." : "You joined the room.");
+      navigate({ to: "/rooms/$roomId", params: { roomId: result.room_id } });
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -77,6 +67,9 @@ function JoinRoomPage() {
       <h1 className="text-2xl font-semibold">Join a room</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Enter the code the host shared with you.
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Repeated failed attempts are rate limited.
       </p>
       <form onSubmit={onSubmit} className="surface-panel mt-8 max-w-md space-y-5 p-6" noValidate>
         <div className="space-y-2">

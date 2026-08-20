@@ -43,6 +43,7 @@ export function useRoomRealtime(
   useEffect(() => {
     if (!roomId || !userId) return;
 
+    const uid = userId;
     seenIds.current = new Set();
     let channel: RealtimeChannel | null = null;
     let cancelled = false;
@@ -66,7 +67,7 @@ export function useRoomRealtime(
     function subscribe() {
       if (cancelled) return;
       channel = supabase.channel(`room:${roomId}`, {
-        config: { presence: { key: userId } },
+        config: { presence: { key: uid } },
       });
 
       channel
@@ -106,7 +107,7 @@ export function useRoomRealtime(
           setConnected(isConnected);
           if (isConnected) {
             void channel?.track({
-              user_id: userId,
+            user_id: uid,
               status: "online",
               joined_at: new Date().toISOString(),
             });

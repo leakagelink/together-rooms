@@ -3,12 +3,12 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeRpc } from "@/lib/server/rpc.server";
-import type { RpcResult } from "@/lib/rpc-types";
+import type { Json, RpcResult } from "@/lib/rpc-types";
 
 /** Structured, machine-readable export of the caller's own data. */
 export const exportUserData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<RpcResult<{ export: unknown }>> => {
+  .handler(async ({ context }): Promise<RpcResult<{ export: Json }>> => {
     // 3 exports per rolling 24h — data export is expensive and enumerable.
     const { data: allowed, error: rlError } = await context.supabase.rpc("consume_rate_limit", {
       _action: "export_user_data",
@@ -26,7 +26,7 @@ export const exportUserData = createServerFn({ method: "POST" })
       console.error("[export_user_data]", error.message);
       return { ok: false, reason: "server_error" };
     }
-    return { ok: true, export: data };
+    return { ok: true, export: (data ?? null) as Json };
   });
 
 /**
@@ -54,7 +54,7 @@ export const deleteAccount = createServerFn({ method: "POST" })
 
       const { data: requested, error: reqError } = await context.supabase.rpc(
         "request_account_deletion",
-        { _reason: data.reason ?? null },
+        { _reason: data.reason ?? "" },
       );
       const normalized = normalizeRpc<{ request_id: string }>(
         "request_account_deletion",

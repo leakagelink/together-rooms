@@ -10,7 +10,8 @@ export function newTraceId(): string {
  * Normalizes an RPC response. Postgres-level errors are logged with a trace id
  * and collapsed into a generic reason so no database internals reach the browser.
  */
-export function normalizeRpc<T extends Record<string, unknown>>(
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export function normalizeRpc<T extends object = {}>(
   operation: string,
   data: unknown,
   error: { message: string } | null,

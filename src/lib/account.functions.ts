@@ -9,7 +9,12 @@ import type { RpcResult } from "@/lib/rpc-types";
 export const exportUserData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<RpcResult<{ export: unknown }>> => {
-    const { data: allowed, error: rlError } = await context.supabase.rpc("consume_export_quota");
+    // 3 exports per rolling 24h — data export is expensive and enumerable.
+    const { data: allowed, error: rlError } = await context.supabase.rpc("consume_rate_limit", {
+      _action: "export_user_data",
+      _limit: 3,
+      _window_seconds: 86_400,
+    });
     if (rlError) {
       console.error("[export_user_data:quota]", rlError.message);
       return { ok: false, reason: "server_error" };

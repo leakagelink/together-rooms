@@ -107,6 +107,7 @@ export function useRoomRealtime(
           });
         }
       });
+    }
 
     return () => {
       cancelled = true;

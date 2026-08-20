@@ -43,6 +43,7 @@ export function useRoomRealtime(
   useEffect(() => {
     if (!roomId || !userId) return;
 
+    const uid = userId;
     seenIds.current = new Set();
     let channel: RealtimeChannel | null = null;
     let cancelled = false;
@@ -66,47 +67,53 @@ export function useRoomRealtime(
     function subscribe() {
       if (cancelled) return;
       channel = supabase.channel(`room:${roomId}`, {
-        config: { presence: { key: userId } },
+        config: { presence: { key: uid } },
       });
 
-    channel
-      .on("presence", { event: "sync" }, () => {
-        if (!channel) return;
-        const state = channel.presenceState<{ status?: PresenceStatus }>();
-        const next: Record<string, PresenceStatus> = {};
-        for (const [key, metas] of Object.entries(state)) {
-          next[key] = metas[0]?.status === "away" ? "away" : "online";
-        }
-        setPresenceRaw(next);
-      })
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "room_events", filter: `room_id=eq.${roomId}` },
-        (payload) => {
-          const event = parseRoomEvent(payload.new);
-          if (!event || seenIds.current.has(event.id)) return;
-          seenIds.current.add(event.id);
-          setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
-          changedRef.current?.();
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` },
-        () => changedRef.current?.(),
-      )
-      .subscribe((status) => {
-        if (cancelled) return;
-        const isConnected = status === "SUBSCRIBED";
-        setConnected(isConnected);
-        if (isConnected) {
-          void channel?.track({
-            user_id: userId,
-            status: "online",
-            joined_at: new Date().toISOString(),
-          });
-        }
-      });
+      channel
+        .on("presence", { event: "sync" }, () => {
+          if (!channel) return;
+          const state = channel.presenceState<{ status?: PresenceStatus }>();
+          const next: Record<string, PresenceStatus> = {};
+          for (const [key, metas] of Object.entries(state)) {
+            next[key] = metas[0]?.status === "away" ? "away" : "online";
+          }
+          setPresenceRaw(next);
+        })
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "room_events",
+            filter: `room_id=eq.${roomId}`,
+          },
+          (payload) => {
+            const event = parseRoomEvent(payload.new);
+            if (!event || seenIds.current.has(event.id)) return;
+            seenIds.current.add(event.id);
+            setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
+            changedRef.current?.();
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` },
+          () => changedRef.current?.(),
+        )
+        .subscribe((status) => {
+          if (cancelled) return;
+          const isConnected = status === "SUBSCRIBED";
+          setConnected(isConnected);
+          if (isConnected) {
+            void channel?.track({
+              user_id: uid,
+              status: "online",
+              joined_at: new Date().toISOString(),
+            });
+          }
+        });
+    }
 
     return () => {
       cancelled = true;

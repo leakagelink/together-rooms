@@ -50,7 +50,8 @@ export interface SearchProvider extends BaseProvider {
   search(query: string, limit?: number): Promise<ContentItem[]>;
 }
 
-export interface MusicProvider extends ContentProvider {}
+/** Music is a content provider today; kept as its own alias for future divergence. */
+export type MusicProvider = ContentProvider;
 
 export interface AIProvider extends BaseProvider {
   complete(prompt: string, options?: { signal?: AbortSignal }): Promise<string>;

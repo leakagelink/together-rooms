@@ -107,7 +107,7 @@ export function useRoomRealtime(
           setConnected(isConnected);
           if (isConnected) {
             void channel?.track({
-            user_id: uid,
+              user_id: uid,
               status: "online",
               joined_at: new Date().toISOString(),
             });

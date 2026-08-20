@@ -771,6 +771,7 @@ export type Database = {
         }
         Returns: Json
       }
+      authorize_room_channel: { Args: { _room_id: string }; Returns: boolean }
       can_moderate_room: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean

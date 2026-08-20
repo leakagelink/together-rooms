@@ -10,14 +10,7 @@
  */
 
 export type ProviderId =
-  | "youtube"
-  | "search"
-  | "ai"
-  | "voice"
-  | "music"
-  | "analytics"
-  | "payments"
-  | "ads";
+  "youtube" | "search" | "ai" | "voice" | "music" | "analytics" | "payments" | "ads";
 
 export interface ProviderCapabilities {
   /** True only when the provider is contractually allowed for this use. */
@@ -57,7 +50,8 @@ export interface SearchProvider extends BaseProvider {
   search(query: string, limit?: number): Promise<ContentItem[]>;
 }
 
-export interface MusicProvider extends ContentProvider {}
+/** Music is a content provider today; kept as its own alias for future divergence. */
+export type MusicProvider = ContentProvider;
 
 export interface AIProvider extends BaseProvider {
   complete(prompt: string, options?: { signal?: AbortSignal }): Promise<string>;

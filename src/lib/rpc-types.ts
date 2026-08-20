@@ -24,7 +24,12 @@ export type RpcReason =
   | "not_found"
   | "server_error";
 
-export type RpcResult<T = Record<string, unknown>> = ({ ok: true } & T) | { ok: false; reason: RpcReason };
+/** JSON values that survive the server-function serialization boundary. */
+export type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type RpcResult<T extends object = {}> =
+  ({ ok: true } & T) | { ok: false; reason: RpcReason };
 
 const MESSAGES: Record<RpcReason, string> = {
   unauthorized: "Sign in to continue.",

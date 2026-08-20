@@ -34,8 +34,8 @@ function TermsPage() {
       </p>
       <h2>2. Accounts</h2>
       <p>
-        You are responsible for your account credentials and for activity in rooms you host. You must
-        be old enough to hold an account under the law where you live.
+        You are responsible for your account credentials and for activity in rooms you host. You
+        must be old enough to hold an account under the law where you live.
       </p>
       <h2>3. Acceptable use</h2>
       <p>
@@ -50,13 +50,13 @@ function TermsPage() {
       </p>
       <h2>5. Moderation and enforcement</h2>
       <p>
-        We may remove content, restrict features, or suspend accounts that violate these terms or our
-        Community Guidelines.
+        We may remove content, restrict features, or suspend accounts that violate these terms or
+        our Community Guidelines.
       </p>
       <h2>6. Subscriptions</h2>
       <p>
-        Paid plans are not available yet. When they launch, pricing, billing period, auto-renewal and
-        cancellation terms will be disclosed before purchase.
+        Paid plans are not available yet. When they launch, pricing, billing period, auto-renewal
+        and cancellation terms will be disclosed before purchase.
       </p>
       <h2>7. Changes</h2>
       <p>We will notify users of material changes to these terms before they take effect.</p>

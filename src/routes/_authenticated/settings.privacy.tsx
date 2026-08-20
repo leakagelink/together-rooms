@@ -4,11 +4,18 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
+import { AccountDataPanel } from "@/components/account-data-panel";
 import { ErrorState, LoadingState } from "@/components/state-views";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +26,10 @@ export const Route = createFileRoute("/_authenticated/settings/privacy")({
   head: () => ({
     meta: [
       { title: "Privacy settings — SyncTogether" },
-      { name: "description", content: "Control visibility, invites, messaging, consent and retention." },
+      {
+        name: "description",
+        content: "Control visibility, invites, messaging, consent and retention.",
+      },
       { property: "og:title", content: "Privacy settings — SyncTogether" },
       { property: "og:description", content: "Control visibility, consent and data retention." },
       { name: "robots", content: "noindex" },
@@ -107,8 +117,8 @@ function PrivacySettingsPage() {
     <AppShell>
       <h1 className="text-2xl font-semibold">Privacy settings</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        We collect only what these features need. Nothing here is shared with advertisers — no ads SDK
-        is integrated.
+        We collect only what these features need. Nothing here is shared with advertisers — no ads
+        SDK is integrated.
       </p>
 
       <div className="mt-8 max-w-xl space-y-6">
@@ -184,7 +194,9 @@ function PrivacySettingsPage() {
               <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
                 <div>
                   <Label htmlFor="personalization">Personalization</Label>
-                  <p className="mt-1 text-xs text-muted-foreground">Not used yet; stored for later.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Not used yet; stored for later.
+                  </p>
                 </div>
                 <Switch
                   id="personalization"
@@ -227,14 +239,7 @@ function PrivacySettingsPage() {
               </div>
             </section>
 
-            <section className="surface-panel space-y-3 p-6">
-              <h2 className="text-sm font-semibold">Your data</h2>
-              <p className="text-sm text-muted-foreground">
-                Account deletion and data export are part of the compliance roadmap and are not
-                self-service yet. Until they ship, contact support to have your account and data
-                removed.
-              </p>
-            </section>
+            <AccountDataPanel />
 
             <Button onClick={save} disabled={saving}>
               {saving ? "Saving…" : "Save privacy settings"}

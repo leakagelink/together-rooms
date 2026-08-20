@@ -93,7 +93,10 @@ function SignupPage() {
   }
 
   return (
-    <AuthCard title="Create your account" description="Your rooms are private and invite-only by default.">
+    <AuthCard
+      title="Create your account"
+      description="Your rooms are private and invite-only by default."
+    >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <div className="space-y-2">
           <Label htmlFor="displayName">Display name</Label>

@@ -65,9 +65,7 @@ function JoinRoomPage() {
   return (
     <AppShell>
       <h1 className="text-2xl font-semibold">Join a room</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Enter the code the host shared with you.
-      </p>
+      <p className="mt-1 text-sm text-muted-foreground">Enter the code the host shared with you.</p>
       <p className="mt-1 text-xs text-muted-foreground">
         Repeated failed attempts are rate limited.
       </p>

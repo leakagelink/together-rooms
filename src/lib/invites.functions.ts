@@ -92,7 +92,14 @@ export const listRoomInvites = createServerFn({ method: "POST" })
 export const redeemRoomInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ token: z.string().trim().regex(/^[a-f0-9]{48}$/) }).parse(input),
+    z
+      .object({
+        token: z
+          .string()
+          .trim()
+          .regex(/^[a-f0-9]{48}$/),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const tokenHash = await hashInviteToken(data.token);

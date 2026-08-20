@@ -31,7 +31,10 @@ export const forgotPasswordSchema = z.object({ email: emailSchema });
 
 export const resetPasswordSchema = z
   .object({ password: passwordSchema, confirm: z.string() })
-  .refine((v) => v.password === v.confirm, { path: ["confirm"], message: "Passwords do not match." });
+  .refine((v) => v.password === v.confirm, {
+    path: ["confirm"],
+    message: "Passwords do not match.",
+  });
 
 export const profileSchema = z.object({
   username: usernameSchema.optional().or(z.literal("")),

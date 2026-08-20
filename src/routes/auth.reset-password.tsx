@@ -46,7 +46,9 @@ function ResetPasswordPage() {
     }
     setSubmitting(true);
     setError(null);
-    const { error: updateError } = await supabase.auth.updateUser({ password: parsed.data.password });
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: parsed.data.password,
+    });
     setSubmitting(false);
     if (updateError) {
       setError(errorMessage(updateError));

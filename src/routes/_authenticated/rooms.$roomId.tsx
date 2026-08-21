@@ -210,6 +210,19 @@ function RoomPage() {
   const isHost = room.owner_id === user?.id || room.host_id === user?.id;
   const lifecycle = roomJoinability(room);
 
+  // Client-side gating is UX only; every rule below is re-enforced in SQL.
+  const canModerate =
+    isHost || myMembership?.role === "co_host" || myMembership?.role === "moderator";
+  const isMuted = myMembership?.is_muted === true;
+  const canChat = lifecycle === "ok" && !isMuted && myMembership?.status === "joined";
+  const chatDisabledReason = isMuted
+    ? "You're muted in this room. A host or moderator can unmute you."
+    : lifecycle !== "ok"
+      ? "This room is closed, so chat is read-only."
+      : myMembership
+        ? null
+        : "Join this room to post messages.";
+
   return (
     <AppShell>
       <div className="flex flex-wrap items-start justify-between gap-3">

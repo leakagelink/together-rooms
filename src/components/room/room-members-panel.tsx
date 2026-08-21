@@ -1,4 +1,4 @@
-import { UserCog } from "lucide-react";
+import { MicOff, Mic, UserCog } from "lucide-react";
 
 import { BlockUserButton } from "@/components/block-user-button";
 import { ReportDialog } from "@/components/report-dialog";
@@ -16,6 +16,11 @@ interface Props {
   canTransferHost: boolean;
   onTransferHost: (userId: string) => void;
   transferPending: boolean;
+  /** Chat-mute state, keyed by user id. Enforced server-side, shown here. */
+  mutedIds?: Set<string>;
+  canModerate?: boolean;
+  onToggleMute?: (userId: string, muted: boolean) => void;
+  mutePending?: boolean;
 }
 
 const PRESENCE_LABEL: Record<PresenceStatus, string> = {
@@ -32,6 +37,10 @@ export function RoomMembersPanel({
   canTransferHost,
   onTransferHost,
   transferPending,
+  mutedIds,
+  canModerate = false,
+  onToggleMute,
+  mutePending = false,
 }: Props) {
   if (members.length === 0) {
     return (
@@ -44,6 +53,7 @@ export function RoomMembersPanel({
       {members.map((member) => {
         const isSelf = member.user_id === currentUserId;
         const status: PresenceStatus = presence[member.user_id] ?? "offline";
+        const muted = mutedIds?.has(member.user_id) ?? false;
         return (
           <li
             key={member.user_id}
@@ -60,12 +70,31 @@ export function RoomMembersPanel({
                 <Badge variant={status === "online" ? "default" : "secondary"}>
                   {PRESENCE_LABEL[status]}
                 </Badge>
+                {muted ? <Badge variant="outline">Muted</Badge> : null}
               </p>
               <p className="text-xs text-muted-foreground">
                 {member.role} · {member.status}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              {canModerate && !isSelf && onToggleMute && member.role !== "host" ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={mutePending}
+                  onClick={() => onToggleMute(member.user_id, !muted)}
+                >
+                  {muted ? (
+                    <>
+                      <Mic className="size-4" aria-hidden="true" /> Unmute
+                    </>
+                  ) : (
+                    <>
+                      <MicOff className="size-4" aria-hidden="true" /> Mute
+                    </>
+                  )}
+                </Button>
+              ) : null}
               {canTransferHost &&
               !isSelf &&
               member.status === "joined" &&

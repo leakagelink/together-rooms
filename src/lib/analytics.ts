@@ -22,7 +22,9 @@ export type AnalyticsEventName =
   | "invite_accepted"
   | "feature_used"
   | "report_submitted"
-  | "user_blocked";
+  | "user_blocked"
+  | "chat_message_sent"
+  | "chat_reaction_added";
 
 export type AnalyticsProperties = Record<string, string | number | boolean | null>;
 

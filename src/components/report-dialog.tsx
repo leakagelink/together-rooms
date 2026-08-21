@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Flag } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,7 +24,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/analytics";
+import { reportRoomMessage } from "@/lib/chat.functions";
 import { errorMessage } from "@/lib/errors";
+import { rpcMessage } from "@/lib/rpc-types";
 import { reportSchema } from "@/lib/validation";
 
 const CATEGORIES = [

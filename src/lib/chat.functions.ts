@@ -28,7 +28,7 @@ export const sendRoomMessage = createServerFn({ method: "POST" })
     const { data: result, error } = await context.supabase.rpc("send_room_message", {
       _room_id: data.room_id,
       _content: data.content,
-      _parent_message_id: data.parent_message_id ?? null,
+      ...(data.parent_message_id ? { _parent_message_id: data.parent_message_id } : {}),
     });
     return normalizeRpc<{ message_id: string }>("send_room_message", result, error);
   });
@@ -93,7 +93,7 @@ export const reportRoomMessage = createServerFn({ method: "POST" })
     const { data: result, error } = await context.supabase.rpc("report_message", {
       _message_id: data.message_id,
       _category: data.category,
-      _details: data.details ?? null,
+      ...(data.details ? { _details: data.details } : {}),
     });
     return normalizeRpc<{ outcome: "reported" | "already_reported" }>(
       "report_message",

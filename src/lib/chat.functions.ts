@@ -93,7 +93,7 @@ export const reportRoomMessage = createServerFn({ method: "POST" })
     const { data: result, error } = await context.supabase.rpc("report_message", {
       _message_id: data.message_id,
       _category: data.category,
-      _details: data.details ?? null,
+      _details: data.details ?? undefined,
     });
     return normalizeRpc<{ outcome: "reported" | "already_reported" }>(
       "report_message",

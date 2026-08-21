@@ -170,6 +170,54 @@ export type Database = {
         }
         Relationships: []
       }
+      message_moderation_archive: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          original_content: string
+          removal_kind: string
+          removed_by: string | null
+          room_id: string
+          sender_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          original_content: string
+          removal_kind: string
+          removed_by?: string | null
+          room_id: string
+          sender_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          original_content?: string
+          removal_kind?: string
+          removed_by?: string | null
+          room_id?: string
+          sender_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_moderation_archive_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "room_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_moderation_archive_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -562,7 +610,6 @@ export type Database = {
           id: string
           moderated_at: string | null
           moderated_by: string | null
-          original_content: string | null
           parent_message_id: string | null
           room_id: string
           sender_id: string | null
@@ -579,7 +626,6 @@ export type Database = {
           id?: string
           moderated_at?: string | null
           moderated_by?: string | null
-          original_content?: string | null
           parent_message_id?: string | null
           room_id: string
           sender_id?: string | null
@@ -596,7 +642,6 @@ export type Database = {
           id?: string
           moderated_at?: string | null
           moderated_by?: string | null
-          original_content?: string | null
           parent_message_id?: string | null
           room_id?: string
           sender_id?: string | null
@@ -1002,6 +1047,10 @@ export type Database = {
         Returns: Json
       }
       shares_room_with: { Args: { _a: string; _b: string }; Returns: boolean }
+      staff_get_removed_message: {
+        Args: { _message_id: string }
+        Returns: Json
+      }
       toggle_message_reaction: {
         Args: { _message_id: string; _reaction: string }
         Returns: Json

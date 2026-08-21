@@ -53,6 +53,7 @@ export function RoomMembersPanel({
       {members.map((member) => {
         const isSelf = member.user_id === currentUserId;
         const status: PresenceStatus = presence[member.user_id] ?? "offline";
+        const muted = mutedIds?.has(member.user_id) ?? false;
         return (
           <li
             key={member.user_id}

@@ -6,6 +6,10 @@ export const queryKeys = {
     members: (roomId: string) => ["rooms", "detail", roomId, "members"] as const,
     invites: (roomId: string) => ["rooms", "detail", roomId, "invites"] as const,
   },
+  chat: {
+    messages: (roomId: string) => ["rooms", "detail", roomId, "messages"] as const,
+    reactions: (roomId: string) => ["rooms", "detail", roomId, "reactions"] as const,
+  },
   account: {
     profile: (userId: string | undefined) => ["account", "profile", userId] as const,
     settings: (userId: string | undefined) => ["user_settings", userId] as const,

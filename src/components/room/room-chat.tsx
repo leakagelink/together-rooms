@@ -137,10 +137,7 @@ export function RoomChat({
           Chat
         </h2>
         <p className="flex items-center gap-1 text-xs text-muted-foreground" role="status">
-          <Radio
-            className={chat.connected ? "size-3 text-primary" : "size-3"}
-            aria-hidden="true"
-          />
+          <Radio className={chat.connected ? "size-3 text-primary" : "size-3"} aria-hidden="true" />
           {!chat.authorized
             ? "Live updates unavailable"
             : chat.connected
@@ -164,9 +161,7 @@ export function RoomChat({
                   key={message.id}
                   message={message}
                   parent={
-                    message.parent_message_id
-                      ? byId.get(message.parent_message_id)
-                      : undefined
+                    message.parent_message_id ? byId.get(message.parent_message_id) : undefined
                   }
                   reactions={chat.reactions[message.id] ?? []}
                   currentUserId={userId}

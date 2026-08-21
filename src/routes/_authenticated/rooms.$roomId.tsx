@@ -344,8 +344,8 @@ function RoomPage() {
       <section className="surface-panel mt-8 p-5">
         <h2 className="text-sm font-semibold">Coming in a later phase</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Synchronized playback, shared listening, voice and video and the AI room assistant are
-          not implemented yet. The room engine, roles, permissions, realtime event log and chat
+          Synchronized playback, shared listening, voice and video and the AI room assistant are not
+          implemented yet. The room engine, roles, permissions, realtime event log and chat
           foundation that these features need are in place.
         </p>
       </section>

@@ -172,8 +172,7 @@ export function ChatMessageRow({
                 <>
                   {REACTION_KEYS.map((key) => (
                     <DropdownMenuItem key={key} onSelect={() => onReact(message.id, key)}>
-                      <span aria-hidden="true">{REACTION_EMOJI[key]}</span>{" "}
-                      {REACTION_LABEL[key]}
+                      <span aria-hidden="true">{REACTION_EMOJI[key]}</span> {REACTION_LABEL[key]}
                     </DropdownMenuItem>
                   ))}
                   <DropdownMenuItem onSelect={() => onReply(message)}>

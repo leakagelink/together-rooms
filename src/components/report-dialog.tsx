@@ -24,7 +24,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/analytics";
+import { reportRoomMessage } from "@/lib/chat.functions";
 import { errorMessage } from "@/lib/errors";
+import { rpcMessage } from "@/lib/rpc-types";
 import { reportSchema } from "@/lib/validation";
 
 const CATEGORIES = [

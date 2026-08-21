@@ -70,12 +70,31 @@ export function RoomMembersPanel({
                 <Badge variant={status === "online" ? "default" : "secondary"}>
                   {PRESENCE_LABEL[status]}
                 </Badge>
+                {muted ? <Badge variant="outline">Muted</Badge> : null}
               </p>
               <p className="text-xs text-muted-foreground">
                 {member.role} · {member.status}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              {canModerate && !isSelf && onToggleMute && member.role !== "host" ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={mutePending}
+                  onClick={() => onToggleMute(member.user_id, !muted)}
+                >
+                  {muted ? (
+                    <>
+                      <Mic className="size-4" aria-hidden="true" /> Unmute
+                    </>
+                  ) : (
+                    <>
+                      <MicOff className="size-4" aria-hidden="true" /> Mute
+                    </>
+                  )}
+                </Button>
+              ) : null}
               {canTransferHost &&
               !isSelf &&
               member.status === "joined" &&

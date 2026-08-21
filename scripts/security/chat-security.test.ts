@@ -23,6 +23,7 @@ const password = "Test-Password-123!";
 interface TestUser {
   id: string;
   client: SupabaseClient;
+  token: string;
 }
 
 suite("phase 3.1 chat security (database / RLS)", () => {
@@ -48,7 +49,7 @@ suite("phase 3.1 chat security (database / RLS)", () => {
     const client = createClient(url!, anonKey!, { auth: { persistSession: false } });
     const signIn = await client.auth.signInWithPassword({ email, password });
     if (signIn.error) throw signIn.error;
-    const entry = { id: data.user!.id, client };
+    const entry = { id: data.user!.id, client, token: signIn.data.session!.access_token };
     created.push(entry);
     return entry;
   }
@@ -433,7 +434,12 @@ suite("phase 3.1 chat security (database / RLS)", () => {
     const memberRows: string[] = [];
     const outsiderRows: string[] = [];
 
+    const statuses: Record<string, string[]> = {};
+
     async function listen(user: TestUser, sink: string[]) {
+      // Node has no browser session plumbing: hand the socket the user's JWT
+      // explicitly so realtime applies that user's RLS, not anon's.
+      user.client.realtime.setAuth(user.token);
       const channel = user.client
         .channel(`t21-${user.id}`)
         .on(
@@ -446,7 +452,10 @@ suite("phase 3.1 chat security (database / RLS)", () => {
         );
       await new Promise<void>((resolve) => {
         channel.subscribe((status) => {
-          if (status === "SUBSCRIBED" || status === "CHANNEL_ERROR") resolve();
+          (statuses[user.id] ??= []).push(status);
+          if (status === "SUBSCRIBED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            resolve();
+          }
         });
       });
       return channel;
@@ -462,6 +471,7 @@ suite("phase 3.1 chat security (database / RLS)", () => {
     await member.client.removeChannel(a);
     await outsider.client.removeChannel(b);
 
+    expect(statuses[member.id]).toContain("SUBSCRIBED");
     expect(memberRows).toContain(sent.message_id);
     expect(outsiderRows).toEqual([]);
   }, 40_000);

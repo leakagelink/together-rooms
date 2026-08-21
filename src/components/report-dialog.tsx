@@ -54,12 +54,14 @@ export function ReportDialog({
   targetType,
   targetUserId,
   targetRoomId,
+  targetMessageId,
   targetRef,
   trigger,
 }: {
   targetType: "user" | "room" | "message" | "other";
   targetUserId?: string;
   targetRoomId?: string;
+  targetMessageId?: string;
   targetRef?: string;
   trigger?: React.ReactNode;
 }) {
@@ -68,6 +70,7 @@ export function ReportDialog({
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submitMessageReport = useServerFn(reportRoomMessage);
 
   async function submit() {
     const parsed = reportSchema.safeParse({ category, details });
@@ -78,18 +81,31 @@ export function ReportDialog({
     setSubmitting(true);
     setError(null);
     try {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) throw new Error("forbidden");
-      const { error: insertError } = await supabase.from("user_reports").insert({
-        reporter_id: auth.user.id,
-        target_type: targetType,
-        target_user_id: targetUserId ?? null,
-        target_room_id: targetRoomId ?? null,
-        target_ref: targetRef ?? null,
-        category: parsed.data.category,
-        details: parsed.data.details || null,
-      });
-      if (insertError) throw insertError;
+      if (targetMessageId) {
+        // Message reports go through the RPC so membership, self-report and
+        // duplicate/spam rules are enforced server-side.
+        const result = await submitMessageReport({
+          data: {
+            message_id: targetMessageId,
+            category: parsed.data.category,
+            ...(parsed.data.details ? { details: parsed.data.details } : {}),
+          },
+        });
+        if (!result.ok) throw new Error(rpcMessage(result.reason));
+      } else {
+        const { data: auth } = await supabase.auth.getUser();
+        if (!auth.user) throw new Error("forbidden");
+        const { error: insertError } = await supabase.from("user_reports").insert({
+          reporter_id: auth.user.id,
+          target_type: targetType,
+          target_user_id: targetUserId ?? null,
+          target_room_id: targetRoomId ?? null,
+          target_ref: targetRef ?? null,
+          category: parsed.data.category,
+          details: parsed.data.details || null,
+        });
+        if (insertError) throw insertError;
+      }
       void track("report_submitted", { target_type: targetType });
       toast.success("Report received. Our moderation team will review it.");
       setOpen(false);

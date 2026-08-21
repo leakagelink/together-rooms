@@ -21,6 +21,8 @@ import { queryKeys } from "@/lib/query-keys";
 import { roomJoinability } from "@/lib/room-rules";
 import { endRoom, leaveRoom, listRoomMembers, transferRoomHost } from "@/lib/rooms.functions";
 import { rpcMessage } from "@/lib/rpc-types";
+import { RoomChat } from "@/components/room/room-chat";
+import { setMemberMute } from "@/lib/chat.functions";
 
 export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
   head: () => ({

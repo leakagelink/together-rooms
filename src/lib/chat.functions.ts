@@ -75,7 +75,7 @@ export const toggleMessageReaction = createServerFn({ method: "POST" })
       _message_id: data.message_id,
       _reaction: data.reaction,
     });
-    return normalizeRpc<{ outcome: "set" | "removed" }>("toggle_message_reaction", result, error);
+    return normalizeRpc<{ outcome: "set" | "replaced" | "removed" }>("toggle_message_reaction", result, error);
   });
 
 export const reportRoomMessage = createServerFn({ method: "POST" })

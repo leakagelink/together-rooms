@@ -31,7 +31,7 @@ export function BlockUserButton({ userId, label }: { userId: string; label?: str
         .insert({ blocker_id: auth.user.id, blocked_id: userId });
       if (error && error.code !== "23505") throw error;
       void track("user_blocked");
-      toast.success("Blocked. They can no longer see your profile or reach you.");
+      toast.success("Blocked. They can't reach you outside rooms you already share.");
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -50,8 +50,10 @@ export function BlockUserButton({ userId, label }: { userId: string; label?: str
         <AlertDialogHeader>
           <AlertDialogTitle>Block this person?</AlertDialogTitle>
           <AlertDialogDescription>
-            They won't be able to see your profile, invite you, or message you. You can undo this in
-            privacy settings.
+            They won't be able to invite you, join a room with you, or reach you privately, and you
+            won't be matched into new rooms together. Blocking does not remove either of you from a
+            room you are already both in — leave that room if you want the conversation to stop. You
+            can undo this in privacy settings.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

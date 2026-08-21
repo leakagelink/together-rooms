@@ -22,6 +22,10 @@ export type RpcReason =
   | "room_not_open"
   | "not_allowed"
   | "not_found"
+  | "muted"
+  | "duplicate_message"
+  | "message_not_editable"
+  | "edit_window_expired"
   | "server_error";
 
 /** JSON values that survive the server-function serialization boundary. */

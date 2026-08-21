@@ -1,4 +1,4 @@
-import { UserCog } from "lucide-react";
+import { MicOff, Mic, UserCog } from "lucide-react";
 
 import { BlockUserButton } from "@/components/block-user-button";
 import { ReportDialog } from "@/components/report-dialog";
@@ -16,6 +16,11 @@ interface Props {
   canTransferHost: boolean;
   onTransferHost: (userId: string) => void;
   transferPending: boolean;
+  /** Chat-mute state, keyed by user id. Enforced server-side, shown here. */
+  mutedIds?: Set<string>;
+  canModerate?: boolean;
+  onToggleMute?: (userId: string, muted: boolean) => void;
+  mutePending?: boolean;
 }
 
 const PRESENCE_LABEL: Record<PresenceStatus, string> = {
@@ -32,6 +37,10 @@ export function RoomMembersPanel({
   canTransferHost,
   onTransferHost,
   transferPending,
+  mutedIds,
+  canModerate = false,
+  onToggleMute,
+  mutePending = false,
 }: Props) {
   if (members.length === 0) {
     return (

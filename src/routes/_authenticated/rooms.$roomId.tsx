@@ -85,11 +85,40 @@ function RoomPage() {
     },
   });
 
+  // Mute state lives on room_members; members can read their room's rows via RLS.
+  const muteQuery = useQuery({
+    queryKey: [...queryKeys.rooms.members(roomId), "mutes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("room_members")
+        .select("user_id, role, is_muted, status")
+        .eq("room_id", roomId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const onRoomChanged = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.rooms.detail(roomId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.rooms.members(roomId) });
   }, [queryClient, roomId]);
 
   const { connected, presence, authorized } = useRoomRealtime(roomId, user?.id, onRoomChanged);
+
+  const mutedIds = new Set((muteQuery.data ?? []).filter((m) => m.is_muted).map((m) => m.user_id));
+  const myMembership = (muteQuery.data ?? []).find((m) => m.user_id === user?.id);
+
+  const muteMutation = useMutation({
+    mutationFn: async ({ userId, muted }: { userId: string; muted: boolean }) => {
+      const result = await mute({ data: { room_id: roomId, user_id: userId, muted } });
+      if (!result.ok) throw new Error(rpcMessage(result.reason));
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.members(roomId) });
+      toast.success("Mute updated.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   const leaveMutation = useMutation({
     mutationFn: async () => {

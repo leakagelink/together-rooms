@@ -50,6 +50,10 @@ const MESSAGES: Record<RpcReason, string> = {
   room_not_open: "That room isn't open yet.",
   not_allowed: "You can't join that room.",
   not_found: "We couldn't find that.",
+  muted: "You're muted in this room.",
+  duplicate_message: "You just sent that message.",
+  message_not_editable: "That message can no longer be edited.",
+  edit_window_expired: "The 15-minute edit window has passed.",
   server_error: "Something went wrong. Try again.",
 };
 

@@ -62,6 +62,7 @@ function RoomPage() {
   const leave = useServerFn(leaveRoom);
   const end = useServerFn(endRoom);
   const transfer = useServerFn(transferRoomHost);
+  const mute = useServerFn(setMemberMute);
 
   const roomQuery = useQuery({
     queryKey: queryKeys.rooms.detail(roomId),

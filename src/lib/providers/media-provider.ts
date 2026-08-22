@@ -21,6 +21,8 @@ export type ProviderErrorKind =
   | "network"
   | "policy_blocked"
   | "made_for_kids"
+  | "origin_not_allowed"
+  | "provider_verification_failed"
   | "not_embeddable"
   | "privacy_blocked"
   | "unknown";
@@ -66,7 +68,11 @@ const messages: Record<ProviderErrorKind, string> = {
   player_init_failed: "Unable to load the YouTube player.",
   network: "Connection problem while loading the video.",
   policy_blocked: "This video can't be played in this room.",
-  made_for_kids: "This video is marked Made for Kids and can't be played here.",
+  made_for_kids:
+    "This video is marked Made for Kids. Playback works normally, but usage analytics are turned off.",
+  origin_not_allowed: "YouTube isn't allowing playback from this site right now.",
+  provider_verification_failed:
+    "We couldn't verify this video with YouTube. Please try again in a moment.",
   not_embeddable: "The owner doesn't allow this video to be played outside YouTube.",
   privacy_blocked: "This video is private.",
   unknown: "This video can't be played here.",

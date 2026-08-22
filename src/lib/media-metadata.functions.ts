@@ -155,7 +155,7 @@ export async function resolveMediaPolicy(supabase: DbClient, mediaId: string): P
     return { ok: cached.status === "ok", policy: cached };
   }
   const policy = await resolvePolicyFromApi(mediaId);
-  await persistPolicy(supabase, policy);
+  await persistPolicy(policy);
   return { ok: policy.status === "ok", policy };
 }
 

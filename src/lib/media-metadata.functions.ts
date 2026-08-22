@@ -16,7 +16,7 @@ import {
  * The YouTube Data API key is read server-side only; it never reaches the
  * browser. The Data API is used for policy-critical fields (Made for Kids,
  * embeddability, privacy status, existence). The public oEmbed endpoint is used
- * as a fallback when the Data API is unavailable or quota-exceeded. Results are
+ * as a fallback for the title when the Data API is unavailable. Results are
  * cached in `media_metadata_cache` with a 24-hour TTL to respect API quota and
  * data-minimization principles.
  */
@@ -36,6 +36,8 @@ export interface PolicyOutcome {
 export type MetadataOutcome =
   | { status: "ok"; title: string; thumbnail_url: string | null; source: "provider"; policy: MediaPolicy }
   | { status: "made_for_kids" | "not_embeddable" | "privacy_blocked" | "unavailable" | "network" | "unknown"; source: "fallback"; policy?: MediaPolicy };
+
+type SupabaseAdmin = Awaited<ReturnType<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"]>;
 
 async function fetchDataApiPolicy(mediaId: string): Promise<MediaPolicy | null> {
   const key = dataApiKey();
@@ -88,6 +90,66 @@ async function fetchOembedTitle(mediaId: string): Promise<string | null> {
   }
 }
 
+async function lookupPolicyFromCache(supabase: SupabaseAdmin, mediaId: string, now: number): Promise<MediaPolicy | null> {
+  const { data: cacheRows } = await supabase
+    .from("media_metadata_cache")
+    .select("*")
+    .eq("provider", "youtube")
+    .eq("media_id", mediaId)
+    .limit(1);
+
+  const cached = cacheRows?.[0] ? policyFromJsonb(cacheRows[0]) : null;
+  if (cached && isPolicyFresh(cached, now)) return cached;
+  return null;
+}
+
+async function resolvePolicyFromApi(mediaId: string): Promise<MediaPolicy> {
+  let policy = await fetchDataApiPolicy(mediaId);
+  if (!policy) {
+    // If the Data API is missing/unavailable, fall back to a permissive
+    // placeholder that relies on the IFrame player to refuse bad content.
+    policy = {
+      provider: "youtube",
+      media_id: mediaId,
+      status: "ok",
+      made_for_kids: false,
+      embeddable: true,
+      privacy_status: "unknown",
+      title: null,
+      thumbnail_url: null,
+      ttl_seconds: 60 * 60, // short TTL when we couldn't verify
+      checked_at: new Date().toISOString(),
+    };
+  }
+  return policy;
+}
+
+async function persistPolicy(supabase: SupabaseAdmin, policy: MediaPolicy): Promise<void> {
+  await supabase.rpc("upsert_media_metadata_cache", {
+    _provider: "youtube",
+    _media_id: policy.media_id,
+    _title: policy.title,
+    _thumbnail_url: policy.thumbnail_url,
+    _made_for_kids: policy.made_for_kids,
+    _embeddable: policy.embeddable,
+    _privacy_status: policy.privacy_status,
+    _status: policy.status,
+    _source: "data_api",
+    _ttl_hours: Math.floor(policy.ttl_seconds / 3600),
+  });
+}
+
+export async function resolveMediaPolicy(supabase: SupabaseAdmin, mediaId: string): Promise<PolicyOutcome> {
+  const now = Date.now();
+  const cached = await lookupPolicyFromCache(supabase, mediaId, now);
+  if (cached) {
+    return { ok: cached.status === "ok", policy: cached };
+  }
+  const policy = await resolvePolicyFromApi(mediaId);
+  await persistPolicy(supabase, policy);
+  return { ok: policy.status === "ok", policy };
+}
+
 /**
  * Resolves the policy for a YouTube video, preferring the cache and falling
  * back to the Data API. Cache misses are persisted for 24 hours.
@@ -96,56 +158,7 @@ export const getYouTubeMediaPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => mediaIdSchema.parse(input))
   .handler(async ({ data, context }): Promise<PolicyOutcome> => {
-    const { media_id } = data;
-    const now = Date.now();
-
-    // 1. Cache lookup.
-    const { data: cacheRows } = await context.supabase
-      .from("media_metadata_cache")
-      .select("*")
-      .eq("provider", "youtube")
-      .eq("media_id", media_id)
-      .limit(1);
-
-    const cached = cacheRows?.[0] ? policyFromJsonb(cacheRows[0]) : null;
-    if (cached && isPolicyFresh(cached, now)) {
-      return { ok: cached.status === "ok", policy: cached };
-    }
-
-    // 2. Data API fallback.
-    let policy = await fetchDataApiPolicy(media_id);
-    if (!policy) {
-      // If the Data API is missing/unavailable, fall back to a permissive
-      // placeholder that relies on the IFrame player to refuse bad content.
-      policy = {
-        provider: "youtube",
-        media_id,
-        status: "ok",
-        made_for_kids: false,
-        embeddable: true,
-        privacy_status: "unknown",
-        title: null,
-        thumbnail_url: null,
-        ttl_seconds: 60 * 60, // short TTL when we couldn't verify
-        checked_at: new Date().toISOString(),
-      };
-    }
-
-    // 3. Persist the cache entry via the upsert RPC.
-    await context.supabase.rpc("upsert_media_metadata_cache", {
-      _provider: "youtube",
-      _media_id: media_id,
-      _title: policy.title,
-      _thumbnail_url: policy.thumbnail_url,
-      _made_for_kids: policy.made_for_kids,
-      _embeddable: policy.embeddable,
-      _privacy_status: policy.privacy_status,
-      _status: policy.status,
-      _source: "data_api",
-      _ttl_hours: Math.floor(policy.ttl_seconds / 3600),
-    });
-
-    return { ok: policy.status === "ok", policy };
+    return resolveMediaPolicy(context.supabase, data.media_id);
   });
 
 /**
@@ -158,7 +171,7 @@ export const resolveYouTubeMetadata = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => mediaIdSchema.parse(input))
   .handler(async ({ data, context }): Promise<MetadataOutcome> => {
-    const { policy } = await getYouTubeMediaPolicy({ data });
+    const { policy } = await resolveMediaPolicy(context.supabase, data.media_id);
 
     if (policy.status !== "ok") {
       return {

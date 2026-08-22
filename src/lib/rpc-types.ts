@@ -26,6 +26,7 @@ export type RpcReason =
   | "duplicate_message"
   | "message_not_editable"
   | "edit_window_expired"
+  | "version_conflict"
   | "server_error";
 
 /** JSON values that survive the server-function serialization boundary. */
@@ -54,6 +55,7 @@ const MESSAGES: Record<RpcReason, string> = {
   duplicate_message: "You just sent that message.",
   message_not_editable: "That message can no longer be edited.",
   edit_window_expired: "The 15-minute edit window has passed.",
+  version_conflict: "Playback changed a moment ago. Resynced to the latest state.",
   server_error: "Something went wrong. Try again.",
 };
 

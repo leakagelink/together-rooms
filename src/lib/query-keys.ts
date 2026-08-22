@@ -10,6 +10,9 @@ export const queryKeys = {
     messages: (roomId: string) => ["rooms", "detail", roomId, "messages"] as const,
     reactions: (roomId: string) => ["rooms", "detail", roomId, "reactions"] as const,
   },
+  playback: {
+    state: (roomId: string) => ["rooms", "detail", roomId, "playback"] as const,
+  },
   account: {
     profile: (userId: string | undefined) => ["account", "profile", userId] as const,
     settings: (userId: string | undefined) => ["user_settings", userId] as const,

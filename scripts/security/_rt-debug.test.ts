@@ -1,0 +1,30 @@
+import { createClient } from "@supabase/supabase-js";
+import { describe, expect, it } from "vitest";
+const url=process.env["SUPABASE_URL"]!, sk=process.env["SUPABASE_SERVICE_ROLE_KEY"]!, ak=process.env["SUPABASE_PUBLISHABLE_KEY"]??process.env["SUPABASE_ANON_KEY"]!;
+const wait=(m:number)=>new Promise(r=>setTimeout(r,m));
+describe("rt", () => { it("debug", async () => {
+  const admin=createClient(url,sk,{auth:{persistSession:false}});
+  const email=`rt-${Date.now()}@example.com`;
+  const {data:u}=await admin.auth.admin.createUser({email,password:"Test-Password-123!",email_confirm:true});
+  const c=createClient(url,ak,{auth:{persistSession:false}});
+  const si=await c.auth.signInWithPassword({email,password:"Test-Password-123!"});
+  const uid=u!.user!.id;
+  const {data:room,error}=await c.from("rooms").insert({owner_id:uid,host_id:uid,name:"rt",type:"watch",status:"active",privacy:"private",max_members:5,join_code:"RTX"+Math.random().toString(36).slice(2,6).toUpperCase()}).select("id").single();
+  console.log("room err",error);
+  const rid=room!.id as string;
+  await c.realtime.setAuth(si.data.session!.access_token);
+  const got:any[]=[]; const st:string[]=[];
+  const ch=c.channel("dbg").on("postgres_changes",{event:"*",schema:"public",table:"room_playback_state",filter:`room_id=eq.${rid}`},p=>got.push(p.eventType))
+   .on("postgres_changes",{event:"*",schema:"public",table:"room_messages",filter:`room_id=eq.${rid}`},p=>got.push("msg:"+p.eventType));
+  await new Promise<void>(res=>ch.subscribe((s,e)=>{st.push(s+(e?" "+e.message:"")); if(s!=="SUBSCRIBED"||true) res();}));
+  await wait(2000);
+  const r1=await c.rpc("set_room_media",{_room_id:rid,_provider:"youtube",_media_id:"dQw4w9WgXcQ"});
+  console.log("set",r1.data,r1.error);
+  await wait(3000);
+  const r2=await c.rpc("play_room_media",{_room_id:rid});
+  console.log("play",JSON.stringify(r2.data)?.slice(0,120),r2.error);
+  await wait(3000);
+  console.log("statuses",st,"events",got);
+  await admin.from("rooms").delete().eq("id",rid); await admin.auth.admin.deleteUser(uid);
+  expect(true).toBe(true);
+},120000);});

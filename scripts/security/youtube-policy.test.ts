@@ -18,13 +18,13 @@ const enabled = Boolean(url && serviceKey && anonKey);
 const suite = enabled ? describe : describe.skip;
 
 const password = "Test-Password-123!";
-const PUBLIC_VIDEO = "dQw4w9WgXcQ";
-const MFK_VIDEO = "MFKTESTVID0";
-const PRIVATE_VIDEO = "PRIVTESTVID";
-const NON_EMBED_VIDEO = "NOEMBEDTEST";
-const UNAVAILABLE_VIDEO = "UNAVAILTEST";
-const FALLBACK_VIDEO = "FALLBACKTTL";
-const EVIL_THUMB_VIDEO = "EVILTHUMB01";
+const PUBLIC_VIDEO = "YTPUBLIC001";
+const MFK_VIDEO = "YTMFKTEST01";
+const PRIVATE_VIDEO = "YTPRIVTEST1";
+const NON_EMBED_VIDEO = "YTNOEMBED01";
+const UNAVAILABLE_VIDEO = "YTUNAVAIL01";
+const FALLBACK_VIDEO = "YTFALLBACK1";
+const EVIL_THUMB_VIDEO = "YTEVILTHUMB";
 
 interface TestUser {
   id: string;

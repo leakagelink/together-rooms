@@ -39,11 +39,7 @@ export const setRoomMedia = createServerFn({ method: "POST" })
     // marked Made for Kids, non-embeddable, or private.
     const { ok, policy } = await resolveMediaPolicy(context.supabase, data.media_id);
     if (!ok) {
-      return {
-        ok: false as const,
-        reason: policy.status,
-        message: `This video cannot be played: ${policy.status}.`,
-      };
+      return { ok: false as const, reason: policy.status };
     }
 
     const { data: result, error } = await context.supabase.rpc("set_room_media", {

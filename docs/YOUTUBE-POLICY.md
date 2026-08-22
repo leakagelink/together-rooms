@@ -105,3 +105,53 @@ Local device problems — provider failure, blocked autoplay, drift, backgroundi
 are corrected locally only. The only writers to `room_playback_state` are the
 SECURITY DEFINER RPCs, gated by membership, control permission, room status,
 rate limits and `expected_version`.
+
+## Phase 4.2 — YouTube policy completeness (verified behaviour)
+
+### Made for Kids (MFK) and data-minimization
+Before any video becomes the room's media, `set_room_media` calls the server-side
+YouTube Data API policy check. The Data API key (`YOUTUBE_DATA_API_KEY`) is a
+server secret and is never sent to the browser. Results are cached in
+`media_metadata_cache` for 24 hours to limit quota use.
+
+- `made_for_kids = true` → rejected (`reason: 'made_for_kids'`).
+- `embeddable = false` → rejected (`reason: 'not_embeddable'`).
+- `privacy_status` is `private` or `status` is `unavailable` → rejected.
+- `status = ok` and `embeddable = true` and `made_for_kids = false` → accepted.
+
+The cache is read-only to authenticated users. The only writes happen through the
+`upsert_media_metadata_cache` SECURITY DEFINER function, which validates the
+provider (`youtube`) and the 11-character media ID format.
+
+### Metadata integrity
+Client-supplied `title` and `thumbnail_url` are ignored by `set_room_media`. The
+stored `title` and `thumbnail_url` come from the policy resolution path, and
+thumbnails are only accepted from YouTube's own image host (`i.ytimg.com`). A
+`policy_check_result` snapshot is stored on `room_playback_state` so the UI can
+display the resolved status and provenance.
+
+### Referrer-Policy and embedded-player integrity
+The application sets `<meta name="referrer" content="no-referrer">` so the browser
+does not send the room URL or user path to YouTube. This is a deliberate privacy
+choice and may cause YouTube player error `153` (client identity/referrer) for
+certain videos. The player error classifier treats `153` as an unavailable/referrer
+failure and shows an explicit message instead of retrying or falling back.
+
+The player is rendered with `controls: 1` and `modestbranding: 1` so the standard
+YouTube controls, branding and attribution remain visible. The tap-to-sync overlay
+uses `pointer-events-none` everywhere except the action button so the underlying
+player controls remain reachable. No overlay hides the title, attribution, or ads.
+
+### Background playback prevention
+When the document becomes hidden (`visibilitychange`), the local player is paused
+without writing to the room state. Returning to the tab re-derives the current
+position from the authoritative row and resumes from the correct offset. The room
+keeps playing for everyone else; the hidden tab is simply muted.
+
+### WebView / Android integrity
+The application uses the official YouTube IFrame API (`www.youtube.com/iframe_api`)
+and renders the player on the privacy-enhanced host (`youtube-nocookie.com`). No
+WebView-specific URL schemes, video extraction, or native players are used. The
+same policy checks, RLS guards, and rate limits apply regardless of whether the
+client is a desktop browser or an Android WebView.
+

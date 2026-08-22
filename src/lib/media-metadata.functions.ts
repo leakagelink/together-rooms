@@ -1,14 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  evaluateYouTubePolicy,
-  isPolicyFresh,
-  policyFromJsonb,
-  policyToJsonb,
-  type MediaPolicy,
-} from "@/lib/media-policy";
+import { evaluateYouTubePolicy, isPolicyFresh, policyFromJsonb, policyToJsonb, type MediaPolicy } from "@/lib/media-policy";
+import type { Database } from "@/integrations/supabase/types";
 
 /**
  * Phase 4.2 — server-side YouTube metadata + policy resolution.

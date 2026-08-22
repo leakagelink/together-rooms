@@ -925,6 +925,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_list_roles: { Args: never; Returns: Json }
+      admin_search_users: { Args: { _q: string }; Returns: Json }
       admit_member: {
         Args: {
           _room: Database["public"]["Tables"]["rooms"]["Row"]
@@ -941,6 +943,7 @@ export type Database = {
         Returns: Json
       }
       authorize_room_channel: { Args: { _room_id: string }; Returns: boolean }
+      bootstrap_first_admin: { Args: { _email: string }; Returns: Json }
       can_moderate_room: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
@@ -998,6 +1001,7 @@ export type Database = {
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       join_room_by_code: { Args: { _code: string }; Returns: Json }
       leave_room: { Args: { _room_id: string }; Returns: Json }
+      my_staff_context: { Args: never; Returns: Json }
       pick_room_successor: {
         Args: { _excluding: string; _room_id: string }
         Returns: string
@@ -1010,6 +1014,13 @@ export type Database = {
         Returns: Json
       }
       request_account_deletion: { Args: { _reason: string }; Returns: Json }
+      revoke_app_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: Json
+      }
       revoke_room_invite: { Args: { _invite_id: string }; Returns: Json }
       room_is_joinable: {
         Args: { _room: Database["public"]["Tables"]["rooms"]["Row"] }
@@ -1041,6 +1052,7 @@ export type Database = {
       }
       set_report_status: {
         Args: {
+          _note?: string
           _report_id: string
           _status: Database["public"]["Enums"]["report_status"]
         }
@@ -1049,6 +1061,20 @@ export type Database = {
       shares_room_with: { Args: { _a: string; _b: string }; Returns: boolean }
       staff_get_removed_message: {
         Args: { _message_id: string }
+        Returns: Json
+      }
+      staff_moderation_overview: { Args: never; Returns: Json }
+      staff_report_detail: { Args: { _report_id: string }; Returns: Json }
+      staff_report_queue: {
+        Args: {
+          _category?: string
+          _from?: string
+          _limit?: number
+          _offset?: number
+          _status?: Database["public"]["Enums"]["report_status"]
+          _target_type?: Database["public"]["Enums"]["report_target"]
+          _to?: string
+        }
         Returns: Json
       }
       toggle_message_reaction: {

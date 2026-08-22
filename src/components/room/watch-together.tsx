@@ -359,6 +359,16 @@ export function WatchTogether({
                 return;
               }
 
+              // End of track: report once per authoritative version. The
+              // database resolves simultaneous reports via expected_version.
+              if (event.data === YTState.ENDED) {
+                if (endedRef.current && endedForVersion.current !== current.version) {
+                  endedForVersion.current = current.version;
+                  endedRef.current(current.version);
+                }
+                return;
+              }
+
               if (event.data === YTState.PLAYING && current.playback_status !== "playing") {
                 mutate({ kind: "play" });
               } else if (event.data === YTState.PAUSED && current.playback_status === "playing") {

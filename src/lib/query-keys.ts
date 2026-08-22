@@ -17,4 +17,13 @@ export const queryKeys = {
     entitlement: (userId: string | undefined) => ["account", "entitlement", userId] as const,
     deletion: (userId: string | undefined) => ["account", "deletion", userId] as const,
   },
+  staff: {
+    context: (userId: string | undefined) => ["staff", "context", userId] as const,
+    overview: () => ["staff", "overview"] as const,
+    reports: (filters: unknown) => ["staff", "reports", filters] as const,
+    report: (reportId: string) => ["staff", "report", reportId] as const,
+    roles: () => ["staff", "roles"] as const,
+    // Removed-message plaintext is never given a query key: it is fetched
+    // imperatively and held in component state so it cannot land in the cache.
+  },
 } as const;

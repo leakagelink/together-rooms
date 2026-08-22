@@ -134,7 +134,9 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
   const stateRef = useRef<PlaybackState | null>(null);
   stateRef.current = state;
 
-  const { metadata } = useProviderMetadata(state?.provider_media_id ?? null);
+  const { metadata, policy, isPending: metadataPending } = useProviderMetadata(
+    state?.provider_media_id ?? null,
+  );
 
   const setMedia = useServerFn(setRoomMedia);
   const play = useServerFn(playRoomMedia);

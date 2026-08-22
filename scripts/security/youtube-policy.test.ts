@@ -307,9 +307,9 @@ suite("phase 4.2 YouTube policy completeness", () => {
   }, 60_000);
 
   it("YT-POLICY-T13: stale cached policy is rejected within the same set_media call", async () => {
-    // Seed a policy and then age it past the TTL. The next set_media should
-    // not accept the stale row; the RPC will either refresh or reject it. We
-    // verify that the stale row is not allowed to authorize a video.
+    // Seed an expired policy that would otherwise allow the video. Because the
+    // cache row is stale, the server must re-resolve the policy from the Data
+    // API, which will reject the fake video id.
     await admin.rpc("upsert_media_metadata_cache", {
       _provider: "youtube",
       _media_id: "STALE-01",
@@ -331,6 +331,10 @@ suite("phase 4.2 YouTube policy completeness", () => {
       .limit(1);
     expect(rows?.length).toBe(1);
     expect(new Date(rows![0].expires_at as string).getTime()).toBeLessThan(Date.now());
+
+    const res = await setMedia(host, "STALE-01");
+    expect(res.ok).toBe(false);
+    expect(res.reason).toBe("unavailable");
   }, 60_000);
 
   it("YT-POLICY-T14: fallback policy uses a short TTL when the Data API is unavailable", async () => {

@@ -27,6 +27,10 @@ export type RpcReason =
   | "message_not_editable"
   | "edit_window_expired"
   | "version_conflict"
+  | "made_for_kids"
+  | "not_embeddable"
+  | "privacy_blocked"
+  | "unavailable"
   | "server_error";
 
 /** JSON values that survive the server-function serialization boundary. */

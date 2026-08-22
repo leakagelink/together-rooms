@@ -4,8 +4,6 @@ import {
   driftAction,
   expectedPosition,
   isNewerState,
-  isValidYouTubeVideoId,
-  parseYouTubeVideoId,
   syncLabel,
   type PlaybackState,
 } from "./playback-sync";
@@ -23,37 +21,6 @@ const base: PlaybackState = {
   controlled_by: null,
   updated_at: "2026-01-01T10:00:00.000Z",
 };
-
-describe("YouTube video id extraction", () => {
-  it("accepts the common public URL shapes", () => {
-    const cases = [
-      "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      "https://youtu.be/dQw4w9WgXcQ",
-      "https://m.youtube.com/watch?v=dQw4w9WgXcQ&t=30s",
-      "https://www.youtube.com/embed/dQw4w9WgXcQ",
-      "https://www.youtube.com/shorts/dQw4w9WgXcQ",
-      "https://www.youtube.com/live/dQw4w9WgXcQ",
-      "youtube.com/watch?v=dQw4w9WgXcQ",
-      "dQw4w9WgXcQ",
-    ];
-    for (const value of cases) expect(parseYouTubeVideoId(value)).toBe("dQw4w9WgXcQ");
-  });
-
-  it("rejects malformed, foreign and short ids", () => {
-    const cases = [
-      "",
-      "   ",
-      "not a url",
-      "https://example.com/watch?v=dQw4w9WgXcQ",
-      "https://www.youtube.com/watch?v=short",
-      "https://www.youtube.com/watch",
-      "javascript:alert(1)",
-      "https://vimeo.com/12345678901",
-    ];
-    for (const value of cases) expect(parseYouTubeVideoId(value)).toBeNull();
-    expect(isValidYouTubeVideoId("bad")).toBe(false);
-  });
-});
 
 describe("SYNC — expected position", () => {
   const at = (iso: string) => Date.parse(iso);

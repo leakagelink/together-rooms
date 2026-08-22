@@ -272,9 +272,9 @@ suite("phase 4.2 YouTube policy completeness", () => {
       .select("thumbnail_url")
       .eq("room_id", roomId)
       .single();
-    // The server function uses the cached policy as-is. Data API policy layer
-    // ensures only YouTube's image host is accepted when it resolves titles.
-    expect(row?.thumbnail_url).toBe("https://evil.test/phish.png");
+    // The policy layer replaces the malicious thumbnail with the canonical
+    // YouTube thumbnail for the media id.
+    expect(row?.thumbnail_url).toBe("https://i.ytimg.com/vi/EVIL-THUMB-01/hqdefault.jpg");
   }, 60_000);
 
   it("YT-POLICY-T11: direct authenticated writes to media_metadata_cache are blocked", async () => {

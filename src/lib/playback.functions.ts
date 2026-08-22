@@ -49,6 +49,7 @@ export const setRoomMedia = createServerFn({ method: "POST" })
       ...(policy.title ? { _title: policy.title } : {}),
       ...(policy.thumbnail_url ? { _thumbnail_url: policy.thumbnail_url } : {}),
       ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
+      _policy_check_result: policyToJsonb(policy) as never,
     });
     return normalizeRpc<StateResult>("set_room_media", result, error);
   });

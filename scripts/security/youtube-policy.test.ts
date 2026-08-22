@@ -113,12 +113,22 @@ suite("phase 4.2 YouTube policy completeness", () => {
 
   afterAll(async () => {
     await admin.from("media_metadata_cache").delete().ilike("media_id", "%TEST%");
+    await admin.from("media_metadata_cache").delete().in("media_id", [
+      PUBLIC_VIDEO, MFK_VIDEO, PRIVATE_VIDEO, NON_EMBED_VIDEO,
+      UNAVAILABLE_VIDEO, FALLBACK_VIDEO, EVIL_THUMB_VIDEO,
+    ]);
     await admin.from("rooms").delete().eq("id", roomId);
     for (const user of created) {
       await user.client.auth.signOut();
       await admin.auth.admin.deleteUser(user.id);
     }
   }, 120_000);
+
+  afterEach(async () => {
+    if (host) {
+      await admin.from("rate_limits").delete().eq("user_id", host.id);
+    }
+  });
 
   it("YT-POLICY-T1: Data API key is configured and used server-side", async () => {
     expect(process.env["YOUTUBE_DATA_API_KEY"]).toBeTruthy();

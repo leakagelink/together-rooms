@@ -332,6 +332,13 @@ function RoomPage() {
         </div>
       </section>
 
+      <WatchTogether
+        roomId={room.id}
+        userId={user?.id}
+        canControl={isHost || myMembership?.can_control_playback === true}
+        roomActive={lifecycle === "ok"}
+      />
+
       <RoomChat
         roomId={room.id}
         userId={user?.id}

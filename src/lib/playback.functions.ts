@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { policyToJsonb } from "@/lib/media-policy";
+import { resolveMediaPolicy } from "@/lib/media-metadata.functions";
 import { normalizeRpc } from "@/lib/server/rpc.server";
 import type { Json } from "@/lib/rpc-types";
 
@@ -28,20 +30,27 @@ export const setRoomMedia = createServerFn({ method: "POST" })
         room_id: uuid,
         provider: z.literal("youtube"),
         media_id: z.string().regex(/^[A-Za-z0-9_-]{11}$/),
-        title: z.string().trim().max(200).optional(),
-        thumbnail_url: z.string().url().max(500).optional(),
         expected_version: version,
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // Enforce the YouTube content policy before changing the room's media.
+    // The policy is resolved server-side and cached; this also blocks videos
+    // marked Made for Kids, non-embeddable, or private.
+    const { ok, policy } = await resolveMediaPolicy(context.supabase, data.media_id);
+    if (!ok) {
+      return { ok: false as const, reason: policy.status };
+    }
+
     const { data: result, error } = await context.supabase.rpc("set_room_media", {
       _room_id: data.room_id,
       _provider: data.provider,
       _media_id: data.media_id,
-      ...(data.title ? { _title: data.title } : {}),
-      ...(data.thumbnail_url ? { _thumbnail_url: data.thumbnail_url } : {}),
+      ...(policy.title ? { _title: policy.title } : {}),
+      ...(policy.thumbnail_url ? { _thumbnail_url: policy.thumbnail_url } : {}),
       ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
+      _policy_check_result: policyToJsonb(policy) as never,
     });
     return normalizeRpc<StateResult>("set_room_media", result, error);
   });

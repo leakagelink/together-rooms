@@ -170,6 +170,51 @@ export type Database = {
         }
         Relationships: []
       }
+      media_metadata_cache: {
+        Row: {
+          embeddable: boolean
+          expires_at: string
+          id: string
+          made_for_kids: boolean
+          media_id: string
+          privacy_status: string | null
+          provider: string
+          recorded_at: string
+          source: string
+          status: string
+          thumbnail_url: string | null
+          title: string | null
+        }
+        Insert: {
+          embeddable?: boolean
+          expires_at?: string
+          id?: string
+          made_for_kids?: boolean
+          media_id: string
+          privacy_status?: string | null
+          provider: string
+          recorded_at?: string
+          source?: string
+          status?: string
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Update: {
+          embeddable?: boolean
+          expires_at?: string
+          id?: string
+          made_for_kids?: boolean
+          media_id?: string
+          privacy_status?: string | null
+          provider?: string
+          recorded_at?: string
+          source?: string
+          status?: string
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
       message_moderation_archive: {
         Row: {
           created_at: string
@@ -672,6 +717,7 @@ export type Database = {
           created_at: string
           playback_started_at: string | null
           playback_status: Database["public"]["Enums"]["playback_status"]
+          policy_check_result: Json | null
           position_seconds: number
           provider: Database["public"]["Enums"]["playback_provider"] | null
           provider_media_id: string | null
@@ -686,6 +732,7 @@ export type Database = {
           created_at?: string
           playback_started_at?: string | null
           playback_status?: Database["public"]["Enums"]["playback_status"]
+          policy_check_result?: Json | null
           position_seconds?: number
           provider?: Database["public"]["Enums"]["playback_provider"] | null
           provider_media_id?: string | null
@@ -700,6 +747,7 @@ export type Database = {
           created_at?: string
           playback_started_at?: string | null
           playback_status?: Database["public"]["Enums"]["playback_status"]
+          policy_check_result?: Json | null
           position_seconds?: number
           provider?: Database["public"]["Enums"]["playback_provider"] | null
           provider_media_id?: string | null
@@ -1160,6 +1208,7 @@ export type Database = {
         Args: {
           _expected_version?: number
           _media_id: string
+          _policy_check_result?: Json
           _provider: string
           _room_id: string
           _thumbnail_url?: string
@@ -1193,6 +1242,21 @@ export type Database = {
       transfer_room_host: {
         Args: { _room_id: string; _to_user: string }
         Returns: Json
+      }
+      upsert_media_metadata_cache: {
+        Args: {
+          _embeddable?: boolean
+          _made_for_kids?: boolean
+          _media_id: string
+          _privacy_status?: string
+          _provider: string
+          _source?: string
+          _status?: string
+          _thumbnail_url?: string
+          _title?: string
+          _ttl_hours?: number
+        }
+        Returns: string
       }
     }
     Enums: {

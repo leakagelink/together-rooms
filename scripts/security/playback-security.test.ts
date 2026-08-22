@@ -10,7 +10,7 @@
  * Skipped automatically when backend credentials are absent.
  */
 import { createClient, type RealtimeChannel, type SupabaseClient } from "@supabase/supabase-js";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 const url = process.env["SUPABASE_URL"];
 const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
@@ -19,8 +19,8 @@ const enabled = Boolean(url && serviceKey && anonKey);
 const suite = enabled ? describe : describe.skip;
 
 const password = "Test-Password-123!";
-const VIDEO = "dQw4w9WgXcQ";
-const OTHER_VIDEO = "9bZkp7q19f0";
+const VIDEO = "PLAYBACKID1";
+const OTHER_VIDEO = "PLAYBACKID2";
 
 interface TestUser {
   id: string;
@@ -115,6 +115,27 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
       _expected_version: version ?? null,
     });
 
+  async function seedPolicy(
+    mediaId: string,
+    status: string,
+    extras: Record<string, unknown> = {},
+  ) {
+    const { error } = await admin.rpc("upsert_media_metadata_cache", {
+      _provider: "youtube",
+      _media_id: mediaId,
+      _title: "Test title",
+      _thumbnail_url: `https://i.ytimg.com/vi/${mediaId}/hqdefault.jpg`,
+      _made_for_kids: status === "made_for_kids",
+      _embeddable: status !== "not_embeddable",
+      _privacy_status: status === "privacy_blocked" ? "private" : "public",
+      _status: status,
+      _source: "test",
+      _ttl_hours: 1,
+      ...extras,
+    });
+    if (error) throw error;
+  }
+
   beforeAll(async () => {
     host = await makeUser("host");
     controller = await makeUser("ctrl");
@@ -136,12 +157,22 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
       .eq("room_id", roomId)
       .eq("user_id", controller.id);
     expect(error).toBeNull();
+
+    // Seed policy cache for the public videos used in these tests. The RPC now
+    // enforces the cache, so every video must have a fresh, server-populated
+    // policy row.
+    await seedPolicy(VIDEO, "ok");
+    await seedPolicy(OTHER_VIDEO, "ok");
   }, 120_000);
 
   afterAll(async () => {
     for (const id of rooms) await admin.from("rooms").delete().eq("id", id);
     for (const u of created) await admin.auth.admin.deleteUser(u.id);
   }, 120_000);
+
+  afterEach(async () => {
+    if (host) await admin.from("rate_limits").delete().eq("user_id", host.id);
+  });
 
   it("PLAY-T6: an authorized host can select media", async () => {
     const res = await setMedia(host, roomId);

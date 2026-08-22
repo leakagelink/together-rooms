@@ -27,6 +27,10 @@ export type RpcReason =
   | "message_not_editable"
   | "edit_window_expired"
   | "version_conflict"
+  | "made_for_kids"
+  | "not_embeddable"
+  | "privacy_blocked"
+  | "unavailable"
   | "server_error";
 
 /** JSON values that survive the server-function serialization boundary. */
@@ -56,6 +60,10 @@ const MESSAGES: Record<RpcReason, string> = {
   message_not_editable: "That message can no longer be edited.",
   edit_window_expired: "The 15-minute edit window has passed.",
   version_conflict: "Playback changed a moment ago. Resynced to the latest state.",
+  made_for_kids: "This video is marked Made for Kids and can't be played here.",
+  not_embeddable: "The owner doesn't allow this video to be played outside YouTube.",
+  privacy_blocked: "This video is private.",
+  unavailable: "This video is unavailable on YouTube.",
   server_error: "Something went wrong. Try again.",
 };
 

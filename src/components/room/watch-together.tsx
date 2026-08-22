@@ -134,7 +134,9 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
   const stateRef = useRef<PlaybackState | null>(null);
   stateRef.current = state;
 
-  const { metadata } = useProviderMetadata(state?.provider_media_id ?? null);
+  const { metadata, policy, isPending: metadataPending } = useProviderMetadata(
+    state?.provider_media_id ?? null,
+  );
 
   const setMedia = useServerFn(setRoomMedia);
   const play = useServerFn(playRoomMedia);
@@ -286,7 +288,13 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
           host: youtubeProvider.embedHost,
           width: "100%",
           height: "100%",
-          playerVars: { rel: 0, playsinline: 1, modestbranding: 1, origin: window.location.origin },
+          playerVars: {
+            rel: 0,
+            playsinline: 1,
+            modestbranding: 1,
+            controls: 1,
+            origin: window.location.origin,
+          },
           events: {
             onReady: () => {
               if (!cancelled) setPlayerReady(true);
@@ -410,6 +418,20 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
     return () => clearInterval(id);
   }, [playback, playerReady, suppress]);
 
+  // ---- background playback prevention: pause the local player only,
+  //      never mutate the room's authoritative state. Returning to the tab
+  //      triggers a normal resync path.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onVisibility = () => {
+      if (document.hidden && playerRef.current) {
+        suppress(() => playerRef.current?.pauseVideo());
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [suppress]);
+
   /** Manual resync: refresh authoritative state + clock, then reconcile locally. */
   const onResync = useCallback(() => {
     playback.resync("manual_resync");
@@ -457,11 +479,13 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
     if (providerFailure) return providerFailure.message;
     if (!playback.authorized) return "You no longer have access to this room's playback.";
     if (!playerReady) return "Starting the player…";
-    if (playback.isPending) return "Loading playback state…";
+    if (playback.isPending || metadataPending) return "Loading playback state…";
     if (!state?.provider_media_id) return "No video selected yet.";
     if (!playback.connected) return "Connection lost — trying to reconnect…";
     return null;
   })();
+
+  const policyStatus = state?.provider_media_id ? policy?.status ?? null : null;
 
   return (
     <section className="surface-panel mt-8 p-5" aria-labelledby="watch-heading">
@@ -489,20 +513,32 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
         <div className="relative aspect-video w-full">
           <div ref={containerRef} className="absolute inset-0 size-full" />
           {overlay ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/85 p-4 text-center text-sm text-muted-foreground">
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/85 p-4 text-center text-sm text-muted-foreground">
               {overlay}
             </div>
           ) : null}
           {!overlay && awaitingGesture ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/85 p-4 text-center">
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/85 p-4 text-center">
               <p className="text-sm font-medium">Ready to sync</p>
               <p className="max-w-xs text-xs text-muted-foreground">
                 Your device needs a tap before it can start playing. The room keeps playing for
                 everyone else.
               </p>
-              <Button size="sm" onClick={onTapToSync}>
+              <Button className="pointer-events-auto" size="sm" onClick={onTapToSync}>
                 <Play className="size-4" aria-hidden="true" /> Tap to Sync &amp; Play
               </Button>
+            </div>
+          ) : null}
+          {policyStatus && policyStatus !== "ok" ? (
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/85 p-4 text-center">
+              <p className="text-sm font-medium">This video can&apos;t be played here</p>
+              <p className="max-w-xs text-xs text-muted-foreground">
+                {policyStatus === "made_for_kids"
+                  ? "The video is marked Made for Kids and cannot be shared in this room."
+                  : policyStatus === "not_embeddable"
+                    ? "The owner has disabled embedding for this video."
+                    : "The video is unavailable, private, or restricted."}
+              </p>
             </div>
           ) : null}
         </div>
@@ -514,6 +550,8 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
           <span className="text-muted-foreground">
             · {state.playback_status} · v{state.version}
             {metadata?.source === "fallback" ? " · title unavailable from YouTube" : ""}
+            {policy?.made_for_kids ? " · Made for Kids" : ""}
+            {policy?.privacy_status ? ` · ${policy.privacy_status}` : ""}
           </span>
         </p>
       ) : null}

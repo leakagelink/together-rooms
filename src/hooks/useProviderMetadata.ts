@@ -4,16 +4,24 @@ import { useServerFn } from "@tanstack/react-start";
 import { resolveYouTubeMetadata } from "@/lib/media-metadata.functions";
 import { fallbackMetadata, isValidYouTubeVideoId } from "@/lib/providers/youtube";
 import type { ProviderMetadata } from "@/lib/providers/media-provider";
+import type { MediaPolicy } from "@/lib/media-policy";
+
+export interface ProviderMetadataState {
+  metadata: ProviderMetadata;
+  isPending: boolean;
+  policy: MediaPolicy | null;
+}
 
 /**
  * Display metadata for the room's current video.
  *
- * Resolved on demand from the provider's official oEmbed endpoint via a server
- * function, held in the in-memory query cache for the session, and never
- * persisted. When resolution fails we return clearly-marked fallback copy
- * instead of presenting unverified text as provider metadata.
+ * Resolved on demand from the official YouTube Data API (and oEmbed fallback)
+ * via a server function, held in the in-memory query cache for the session, and
+ * never persisted. When resolution fails or is blocked by policy we return
+ * clearly-marked fallback copy instead of presenting unverified text as
+ * provider metadata.
  */
-export function useProviderMetadata(mediaId: string | null | undefined) {
+export function useProviderMetadata(mediaId: string | null | undefined): ProviderMetadataState {
   const resolve = useServerFn(resolveYouTubeMetadata);
   const enabled = Boolean(mediaId && isValidYouTubeVideoId(mediaId));
 
@@ -24,20 +32,32 @@ export function useProviderMetadata(mediaId: string | null | undefined) {
     staleTime: 30 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
     retry: 1,
-    queryFn: async (): Promise<ProviderMetadata> => {
+    queryFn: async () => {
       const result = await resolve({ data: { media_id: mediaId as string } });
-      if (result.status !== "ok") return fallbackMetadata(mediaId as string);
+      if (result.status === "ok") {
+        return {
+          metadata: {
+            title: result.title,
+            thumbnailUrl: result.thumbnail_url,
+            source: "provider",
+          } satisfies ProviderMetadata,
+          policy: result.policy,
+        };
+      }
       return {
-        title: result.title,
-        thumbnailUrl: result.thumbnail_url,
-        source: "provider",
+        metadata: fallbackMetadata(mediaId as string),
+        policy: result.policy ?? null,
       };
     },
   });
 
   const metadata = mediaId
-    ? (query.data ?? (query.isPending ? null : fallbackMetadata(mediaId)))
+    ? (query.data?.metadata ?? (query.isPending ? null : fallbackMetadata(mediaId)))
     : null;
 
-  return { metadata, isPending: enabled && query.isPending };
+  return {
+    metadata: metadata ?? fallbackMetadata(mediaId ?? ""),
+    isPending: enabled && query.isPending,
+    policy: query.data?.policy ?? null,
+  };
 }

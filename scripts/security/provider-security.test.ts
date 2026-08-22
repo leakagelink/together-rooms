@@ -18,8 +18,8 @@ const enabled = Boolean(url && serviceKey && anonKey);
 const suite = enabled ? describe : describe.skip;
 
 const password = "Test-Password-123!";
-const VIDEO = "dQw4w9WgXcQ";
-const OTHER_VIDEO = "9bZkp7q19f0";
+const VIDEO = "PROVIDERID1";
+const OTHER_VIDEO = "PROVIDERID2";
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 interface TestUser {
@@ -101,6 +101,27 @@ suite("phase 4.1 YouTube provider hardening", () => {
       ...args,
     });
 
+  async function seedPolicy(
+    mediaId: string,
+    status: string,
+    extras: Record<string, unknown> = {},
+  ) {
+    const { error } = await admin.rpc("upsert_media_metadata_cache", {
+      _provider: "youtube",
+      _media_id: mediaId,
+      _title: "Test title",
+      _thumbnail_url: `https://i.ytimg.com/vi/${mediaId}/hqdefault.jpg`,
+      _made_for_kids: status === "made_for_kids",
+      _embeddable: status !== "not_embeddable",
+      _privacy_status: status === "privacy_blocked" ? "private" : "public",
+      _status: status,
+      _source: "test",
+      _ttl_hours: 1,
+      ...extras,
+    });
+    if (error) throw error;
+  }
+
   beforeAll(async () => {
     host = await makeUser("host");
     member = await makeUser("member");
@@ -110,6 +131,10 @@ suite("phase 4.1 YouTube provider hardening", () => {
     roomId = await makeRoom(host, joinCode);
     const join = await member.client.rpc("join_room_by_code", { _code: joinCode });
     expect((join.data as { ok: boolean }).ok).toBe(true);
+
+    // Seed policy cache for the video used in these tests.
+    await seedPolicy(VIDEO, "ok");
+    await seedPolicy(OTHER_VIDEO, "ok");
   }, 120_000);
 
   // Rate limiting is asserted explicitly in PROVIDER-T6; every other test must
@@ -171,8 +196,9 @@ suite("phase 4.1 YouTube provider hardening", () => {
       .select("title, thumbnail_url, provider, provider_media_id")
       .eq("room_id", roomId)
       .single();
-    expect(data?.title).toBeNull();
-    expect(data?.thumbnail_url).toBeNull();
+    // The authoritative policy cache is used, not the caller's metadata.
+    expect(data?.title).toBe("Test title");
+    expect(data?.thumbnail_url).toBe(`https://i.ytimg.com/vi/${VIDEO}/hqdefault.jpg`);
     expect(data?.provider).toBe("youtube");
     expect(data?.provider_media_id).toBe(VIDEO);
   }, 60_000);
@@ -203,7 +229,7 @@ suite("phase 4.1 YouTube provider hardening", () => {
       .eq("room_id", roomId)
       .single();
     expect(data?.provider_media_id).toBe(VIDEO);
-    expect(data?.title).toBeNull();
+    expect(data?.title).toBe("Test title");
   }, 60_000);
 
   it("PROVIDER-T8: a non-member cannot read provider/playback state", async () => {

@@ -38,12 +38,25 @@ export function canonicalYouTubeThumbnailUrl(videoId: string): string | null {
   return `${YOUTUBE_API_THUMBNAIL_HOST}${videoId}/hqdefault.jpg`;
 }
 
-/** A valid thumbnail URL must be served from YouTube's own image host. */
+const YOUTUBE_THUMBNAIL_NAMES = [
+  "default",
+  "mqdefault",
+  "hqdefault",
+  "sddefault",
+  "maxresdefault",
+  "0",
+  "1",
+  "2",
+  "3",
+];
+
+/** A valid thumbnail URL must be a canonical YouTube image path. */
 export function isSafeThumbnailUrl(url: string): boolean {
-  return (
-    url.startsWith(YOUTUBE_API_THUMBNAIL_HOST) &&
-    /^[A-Za-z0-9_/.-]+$/.test(url.slice(YOUTUBE_API_THUMBNAIL_HOST.length))
-  );
+  const prefix = "https://i.ytimg.com/vi/";
+  if (!url.startsWith(prefix)) return false;
+  const path = url.slice(prefix.length);
+  const namePattern = YOUTUBE_THUMBNAIL_NAMES.join("|");
+  return new RegExp(`^[A-Za-z0-9_-]{11}/(${namePattern})\\.jpg$`).test(path);
 }
 
 /**

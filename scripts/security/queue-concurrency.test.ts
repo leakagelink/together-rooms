@@ -161,7 +161,10 @@ suite("phase 5 queue concurrency & playlists", () => {
   afterAll(async () => {
     for (const id of rooms) await admin.from("rooms").delete().eq("id", id);
     for (const u of created) await admin.auth.admin.deleteUser(u.id);
-    await admin.from("media_metadata_cache").delete().in("media_id", [...TRACKS, BAD_TRACK]);
+    await admin
+      .from("media_metadata_cache")
+      .delete()
+      .in("media_id", [...TRACKS, BAD_TRACK]);
   }, 120_000);
 
   afterEach(async () => {
@@ -318,9 +321,9 @@ suite("phase 5 queue concurrency & playlists", () => {
         _media_id: TRACKS[0]!,
       }),
     ).toMatchObject({ ok: false, reason: "forbidden" });
-    expect(await rpc(outsider, "delete_playlist", { _playlist_id: created.playlist_id! })).toMatchObject(
-      { ok: false, reason: "forbidden" },
-    );
+    expect(
+      await rpc(outsider, "delete_playlist", { _playlist_id: created.playlist_id! }),
+    ).toMatchObject({ ok: false, reason: "forbidden" });
   });
 
   it("PLAYLIST-T3: direct client writes to playlist tables are rejected", async () => {
@@ -329,9 +332,12 @@ suite("phase 5 queue concurrency & playlists", () => {
       .insert({ owner_id: host.id, name: "Direct" });
     expect(insert.error).not.toBeNull();
 
-    const items = await host.client
-      .from("playlist_items")
-      .insert({ playlist_id: crypto.randomUUID(), provider: "youtube", provider_media_id: "x", position: 1 });
+    const items = await host.client.from("playlist_items").insert({
+      playlist_id: crypto.randomUUID(),
+      provider: "youtube",
+      provider_media_id: "x",
+      position: 1,
+    });
     expect(items.error).not.toBeNull();
   });
 

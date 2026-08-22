@@ -31,9 +31,7 @@ export type QueueResult = {
 /** Adds a track. Policy is resolved server-side first, then re-verified in SQL. */
 export const addToQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ room_id: uuid, media_id: mediaId }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ room_id: uuid, media_id: mediaId }).parse(input))
   .handler(async ({ data, context }) => {
     const { ok, policy } = await resolveMediaPolicy(context.supabase, data.media_id);
     if (!ok) return { ok: false as const, reason: policy.status };
@@ -192,9 +190,7 @@ export const setQueueMode = createServerFn({ method: "POST" })
 export const setRepeatMode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z
-      .object({ room_id: uuid, mode: z.enum(["off", "repeat_one", "repeat_queue"]) })
-      .parse(input),
+    z.object({ room_id: uuid, mode: z.enum(["off", "repeat_one", "repeat_queue"]) }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("set_repeat_mode", {
@@ -219,9 +215,7 @@ export const setShuffleEnabled = createServerFn({ method: "POST" })
 
 export const startRoomFromPlaylist = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ room_id: uuid, playlist_id: uuid }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ room_id: uuid, playlist_id: uuid }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("start_room_from_playlist", {
       _room_id: data.room_id,

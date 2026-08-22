@@ -157,7 +157,10 @@ suite("phase 5 queue security (database / RLS / RPC)", () => {
   afterAll(async () => {
     for (const id of rooms) await admin.from("rooms").delete().eq("id", id);
     for (const u of created) await admin.auth.admin.deleteUser(u.id);
-    await admin.from("media_metadata_cache").delete().in("media_id", [...TRACKS, EXPIRED]);
+    await admin
+      .from("media_metadata_cache")
+      .delete()
+      .in("media_id", [...TRACKS, EXPIRED]);
   }, 120_000);
 
   afterEach(async () => {
@@ -255,10 +258,12 @@ suite("phase 5 queue security (database / RLS / RPC)", () => {
     expect(hostAdd).toMatchObject({ ok: true, status: "queued" });
 
     // A member cannot approve their own suggestion.
-    expect(await rpc(member, "approve_queue_item", { _item_id: suggestion.item_id! })).toMatchObject(
-      { ok: false, reason: "forbidden" },
+    expect(
+      await rpc(member, "approve_queue_item", { _item_id: suggestion.item_id! }),
+    ).toMatchObject({ ok: false, reason: "forbidden" });
+    expect((await rpc(host, "approve_queue_item", { _item_id: suggestion.item_id! })).ok).toBe(
+      true,
     );
-    expect((await rpc(host, "approve_queue_item", { _item_id: suggestion.item_id! })).ok).toBe(true);
 
     const after = (await snapshot()).items.find((i) => i.id === suggestion.item_id);
     expect(after?.status).toBe("queued");
@@ -318,18 +323,19 @@ suite("phase 5 queue security (database / RLS / RPC)", () => {
     const started = await rpc(host, "start_queue", { _room_id: roomId });
     expect(started.ok).toBe(true);
 
-    expect(
-      await rpc(member, "advance_queue", { _room_id: roomId, _cause: "next" }),
-    ).toMatchObject({ ok: false, reason: "forbidden" });
+    expect(await rpc(member, "advance_queue", { _room_id: roomId, _cause: "next" })).toMatchObject({
+      ok: false,
+      reason: "forbidden",
+    });
   });
 
   it("QUEUE-T15: queue operations are blocked once the room has ended", async () => {
     const code = `Q${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const tempRoom = await makeRoom(host, code);
-    await admin.from("rooms").update({ status: "ended", ended_at: new Date().toISOString() }).eq(
-      "id",
-      tempRoom,
-    );
+    await admin
+      .from("rooms")
+      .update({ status: "ended", ended_at: new Date().toISOString() })
+      .eq("id", tempRoom);
     expect(await add(host, TRACK_C, tempRoom)).toMatchObject({ ok: false, reason: "room_ended" });
   });
 });

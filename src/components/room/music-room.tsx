@@ -166,7 +166,9 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
         size="sm"
         variant="outline"
         disabled={busy}
-        onClick={() => run.mutate(() => start({ data: { room_id: roomId, expected_version: version } }))}
+        onClick={() =>
+          run.mutate(() => start({ data: { room_id: roomId, expected_version: version } }))
+        }
       >
         <ListMusic className="size-4" aria-hidden="true" /> Start queue
       </Button>
@@ -214,7 +216,8 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
           )
         }
       >
-        <Repeat className="size-4" aria-hidden="true" /> {repeatLabel(settings?.repeat_mode ?? "off")}
+        <Repeat className="size-4" aria-hidden="true" />{" "}
+        {repeatLabel(settings?.repeat_mode ?? "off")}
       </Button>
       <Button
         size="sm"
@@ -250,7 +253,11 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{item.title ?? item.provider_media_id}</p>
         <p className="text-xs text-muted-foreground">
-          {item.status === "playing" ? "Now playing" : item.status === "suggested" ? "Suggested" : "Up next"}
+          {item.status === "playing"
+            ? "Now playing"
+            : item.status === "suggested"
+              ? "Suggested"
+              : "Up next"}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-1">
@@ -439,7 +446,9 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
 
         <div className="mt-5 space-y-5">
           {sections.nowPlaying ? (
-            <ul className="space-y-2">{renderItem(sections.nowPlaying, 0, [sections.nowPlaying])}</ul>
+            <ul className="space-y-2">
+              {renderItem(sections.nowPlaying, 0, [sections.nowPlaying])}
+            </ul>
           ) : null}
 
           <div>

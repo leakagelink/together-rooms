@@ -53,7 +53,8 @@ async function fetchDataApiPolicy(mediaId: string): Promise<MediaPolicy | null> 
     });
     if (!response.ok) return null;
     const body: unknown = await response.json();
-    const items = Array.isArray((body as Record<string, unknown>)?.items) ? (body as Record<string, unknown[]>).items : [];
+    const record = body as Record<string, unknown>;
+    const items = Array.isArray(record["items"]) ? (record["items"] as unknown[]) : [];
     return evaluateYouTubePolicy(mediaId, items[0] ?? null).policy;
   } catch {
     return null;

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useRoomPlayback } from "@/hooks/useRoomPlayback";
+import { useProviderMetadata } from "@/hooks/useProviderMetadata";
 import { queryKeys } from "@/lib/query-keys";
 import { rpcMessage } from "@/lib/rpc-types";
 import {
@@ -16,10 +17,17 @@ import {
   DRIFT_CORRECT_SECONDS,
   driftAction,
   expectedPosition,
-  parseYouTubeVideoId,
   syncLabel,
   type PlaybackState,
 } from "@/lib/playback-sync";
+import {
+  AUTOPLAY_GRACE_MS,
+  planReconciliation,
+  playerEventMayMutate,
+  type LocalPlayerSnapshot,
+} from "@/lib/playback-device";
+import { providerError, type ProviderError } from "@/lib/providers/media-provider";
+import { youtubeProvider } from "@/lib/providers/youtube";
 import {
   clearRoomMedia,
   pauseRoomMedia,
@@ -29,17 +37,20 @@ import {
 } from "@/lib/playback.functions";
 
 /**
- * Feedback-loop prevention (documented in docs/YOUTUBE-POLICY.md):
+ * Feedback-loop and local-failure isolation (see docs/YOUTUBE-POLICY.md):
  *
- * 1. `applyingRemote` is raised before any programmatic seek/play/pause we
- *    perform to match authoritative state, and lowered on a short timer. Player
- *    events observed while it is raised are ignored, so a remote update can
- *    never bounce back as a new database mutation.
- * 2. Only a controller's *own* deliberate player events produce mutations, and
- *    only when they disagree with the authoritative status.
+ * 1. `applyingRemote` is raised before any programmatic seek/play/pause issued
+ *    to match authoritative state and lowered on a short timer. Player events
+ *    seen while it is raised never produce a mutation.
+ * 2. `playerEventMayMutate` additionally requires control permission, an active
+ *    room, no pending gesture requirement, and that the event belongs to the
+ *    video the room is currently on — so a late event from a replaced video is
+ *    discarded.
  * 3. Every mutation carries `expected_version`; the database rejects stale
  *    commands, so a duplicated event cannot double-apply.
- * 4. Drift correction seeks the local player only — it never writes.
+ * 4. Drift correction, resync, autoplay fallback and provider errors are all
+ *    local: none of them writes to the database, so one participant's device
+ *    limits never change what the room is doing.
  */
 
 interface YouTubePlayer {
@@ -55,7 +66,7 @@ interface YouTubePlayer {
 
 interface YTNamespace {
   Player: new (el: HTMLElement, options: Record<string, unknown>) => YouTubePlayer;
-  PlayerState: { PLAYING: number; PAUSED: number; ENDED: number };
+  PlayerState: { PLAYING: number; PAUSED: number; ENDED: number; BUFFERING: number };
 }
 
 declare global {
@@ -67,7 +78,11 @@ declare global {
 
 let apiPromise: Promise<YTNamespace> | null = null;
 
-/** Loads the official YouTube IFrame Player API exactly once per document. */
+/**
+ * Loads the official YouTube IFrame Player API exactly once per document.
+ * The API script itself must come from www.youtube.com; the *player* is then
+ * hosted on youtube-nocookie.com (privacy-enhanced mode) via the `host` option.
+ */
 function loadYouTubeApi(): Promise<YTNamespace> {
   if (typeof window === "undefined") return Promise.reject(new Error("no window"));
   if (window.YT?.Player) return Promise.resolve(window.YT);
@@ -76,12 +91,12 @@ function loadYouTubeApi(): Promise<YTNamespace> {
     window.onYouTubeIframeAPIReady = () => {
       previous?.();
       if (window.YT?.Player) resolve(window.YT);
-      else reject(new Error("YouTube API failed to initialize"));
+      else reject(new Error("api-init"));
     };
     const script = document.createElement("script");
     script.src = "https://www.youtube.com/iframe_api";
     script.async = true;
-    script.onerror = () => reject(new Error("YouTube API failed to load"));
+    script.onerror = () => reject(new Error("api-load"));
     document.head.appendChild(script);
   });
   return apiPromise;
@@ -106,21 +121,31 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
   const appliedVersion = useRef<number>(-1);
   const loadedVideo = useRef<string | null>(null);
   const lastCorrection = useRef(0);
+  const playAttemptAt = useRef(0);
+  const gestureRef = useRef(false);
 
   const [playerReady, setPlayerReady] = useState(false);
-  const [playerError, setPlayerError] = useState<string | null>(null);
+  const [providerFailure, setProviderFailure] = useState<ProviderError | null>(null);
   const [urlInput, setUrlInput] = useState("");
   const [drifting, setDrifting] = useState(false);
+  const [awaitingGesture, setAwaitingGesture] = useState(false);
 
   const state = playback.state;
   const stateRef = useRef<PlaybackState | null>(null);
   stateRef.current = state;
+
+  const { metadata } = useProviderMetadata(state?.provider_media_id ?? null);
 
   const setMedia = useServerFn(setRoomMedia);
   const play = useServerFn(playRoomMedia);
   const pause = useServerFn(pauseRoomMedia);
   const seek = useServerFn(seekRoomMedia);
   const clear = useServerFn(clearRoomMedia);
+
+  const setGesture = useCallback((value: boolean) => {
+    gestureRef.current = value;
+    setAwaitingGesture(value);
+  }, []);
 
   const suppress = useCallback((fn: () => void) => {
     applyingRemote.current = true;
@@ -143,7 +168,7 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
         return;
       }
       if (result.reason === "version_conflict") {
-        playback.resync();
+        playback.resync("manual_resync");
         toast.message("Someone else changed playback first. Resynced.");
         return;
       }
@@ -158,10 +183,7 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
         | { kind: "media"; mediaId: string }
         | { kind: "play" }
         | { kind: "pause" }
-        | {
-            kind: "seek";
-            position: number;
-          }
+        | { kind: "seek"; position: number }
         | { kind: "clear" },
     ) => {
       const expected_version = stateRef.current?.version ?? null;
@@ -193,7 +215,65 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
 
   const mutate = mutation.mutate;
 
-  // ---- player bootstrap (client-only, official IFrame API)
+  const snapshot = useCallback((): LocalPlayerSnapshot => {
+    const player = playerRef.current;
+    const YTState = window.YT?.PlayerState;
+    return {
+      loadedMediaId: loadedVideo.current,
+      currentTime: player?.getCurrentTime() ?? 0,
+      playing: Boolean(player && YTState && player.getPlayerState() === YTState.PLAYING),
+    };
+  }, []);
+
+  /**
+   * Applies a purely local reconciliation plan. Called on new authoritative
+   * state, on resync and after the user supplies the missing gesture. It never
+   * writes: `planReconciliation` can only produce local player steps.
+   */
+  const applyPlan = useCallback(
+    (target: PlaybackState | null) => {
+      const player = playerRef.current;
+      if (!player) return;
+      const plan = planReconciliation(target, snapshot(), playback.now());
+      if (plan.steps.length === 0) return;
+
+      suppress(() => {
+        for (const step of plan.steps) {
+          switch (step.kind) {
+            case "clear":
+              loadedVideo.current = null;
+              setProviderFailure(null);
+              player.pauseVideo();
+              break;
+            case "load":
+              loadedVideo.current = step.mediaId;
+              setProviderFailure(null);
+              if (step.autoplay) player.loadVideoById(step.mediaId, step.position);
+              else player.cueVideoById(step.mediaId, step.position);
+              break;
+            case "seek":
+              player.seekTo(step.position, true);
+              break;
+            case "play":
+              player.playVideo();
+              break;
+            case "pause":
+              player.pauseVideo();
+              break;
+          }
+        }
+      });
+
+      if (plan.requiresPlayback) playAttemptAt.current = Date.now();
+      else setGesture(false);
+    },
+    [playback, setGesture, snapshot, suppress],
+  );
+
+  const applyPlanRef = useRef(applyPlan);
+  applyPlanRef.current = applyPlan;
+
+  // ---- player bootstrap (client-only, official IFrame API, nocookie host)
   useEffect(() => {
     let cancelled = false;
     const el = containerRef.current;
@@ -203,23 +283,49 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
       .then((YT) => {
         if (cancelled || playerRef.current) return;
         playerRef.current = new YT.Player(el, {
-          host: "https://www.youtube-nocookie.com",
+          host: youtubeProvider.embedHost,
           width: "100%",
           height: "100%",
-          playerVars: { rel: 0, playsinline: 1, modestbranding: 1 },
+          playerVars: { rel: 0, playsinline: 1, modestbranding: 1, origin: window.location.origin },
           events: {
             onReady: () => {
               if (!cancelled) setPlayerReady(true);
             },
-            onError: () => {
-              if (!cancelled) setPlayerError("This video can't be played here.");
+            onError: (event: { data: unknown }) => {
+              if (cancelled) return;
+              const failure = youtubeProvider.classifyPlayerError(event.data);
+              // Sanitized diagnostic only — never the raw provider payload.
+              console.warn("[playback] provider error", failure.diagnostic);
+              setProviderFailure(failure);
             },
             onStateChange: (event: { data: number }) => {
-              if (applyingRemote.current) return;
               const current = stateRef.current;
-              if (!current || !canControl || !roomActive) return;
               const YTState = window.YT?.PlayerState;
-              if (!YTState) return;
+              if (!YTState || !current) return;
+
+              // Autoplay refusal shows up as "not playing" after we asked to
+              // play. Handled locally; never a mutation.
+              if (
+                event.data === YTState.PLAYING &&
+                gestureRef.current &&
+                current.playback_status === "playing"
+              ) {
+                setGesture(false);
+              }
+
+              if (
+                !playerEventMayMutate({
+                  canControl,
+                  roomActive,
+                  applyingRemote: applyingRemote.current,
+                  awaitingGesture: gestureRef.current,
+                  eventMediaId: loadedVideo.current,
+                  authoritativeMediaId: current.provider_media_id,
+                })
+              ) {
+                return;
+              }
+
               if (event.data === YTState.PLAYING && current.playback_status !== "playing") {
                 mutate({ kind: "play" });
               } else if (event.data === YTState.PAUSED && current.playback_status === "playing") {
@@ -231,8 +337,14 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
           },
         });
       })
-      .catch(() => {
-        if (!cancelled) setPlayerError("The YouTube player couldn't be loaded.");
+      .catch((error: Error) => {
+        if (cancelled) return;
+        setProviderFailure(
+          providerError(
+            "player_init_failed",
+            error.message === "api-load" ? "api:load" : "api:init",
+          ),
+        );
       });
 
     return () => {
@@ -247,32 +359,30 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
 
   // ---- apply authoritative state (version-ordered)
   useEffect(() => {
-    const player = playerRef.current;
-    if (!player || !playerReady || !state) return;
+    if (!playerReady || !state) return;
     if (state.version <= appliedVersion.current) return; // out-of-order / duplicate
     appliedVersion.current = state.version;
+    applyPlanRef.current(state);
+  }, [playerReady, state]);
 
-    const media = state.provider_media_id;
-    const target = expectedPosition(state, playback.now());
-
-    suppress(() => {
-      if (!media) {
-        loadedVideo.current = null;
-        player.pauseVideo();
-        return;
+  // ---- autoplay detection: one bounded check, never a retry loop
+  useEffect(() => {
+    if (!playerReady || state?.playback_status !== "playing") {
+      if (state && state.playback_status !== "playing") setGesture(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      const local = snapshot();
+      if (
+        playAttemptAt.current > 0 &&
+        Date.now() - playAttemptAt.current >= AUTOPLAY_GRACE_MS &&
+        !local.playing
+      ) {
+        setGesture(true);
       }
-      if (loadedVideo.current !== media) {
-        loadedVideo.current = media;
-        setPlayerError(null);
-        if (state.playback_status === "playing") player.loadVideoById(media, target);
-        else player.cueVideoById(media, target);
-        return;
-      }
-      player.seekTo(target, true);
-      if (state.playback_status === "playing") player.playVideo();
-      else player.pauseVideo();
-    });
-  }, [playback, playerReady, state, suppress]);
+    }, AUTOPLAY_GRACE_MS + 100);
+    return () => clearTimeout(timer);
+  }, [playerReady, setGesture, snapshot, state]);
 
   // ---- bounded drift correction: local seeks only, never a database write
   useEffect(() => {
@@ -280,7 +390,7 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
     const id = setInterval(() => {
       const player = playerRef.current;
       const current = stateRef.current;
-      if (!player || !current || current.playback_status !== "playing") {
+      if (!player || !current || current.playback_status !== "playing" || gestureRef.current) {
         setDrifting(false);
         return;
       }
@@ -300,6 +410,23 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
     return () => clearInterval(id);
   }, [playback, playerReady, suppress]);
 
+  /** Manual resync: refresh authoritative state + clock, then reconcile locally. */
+  const onResync = useCallback(() => {
+    playback.resync("manual_resync");
+    appliedVersion.current = -1;
+    setProviderFailure(null);
+    applyPlanRef.current(stateRef.current);
+  }, [playback]);
+
+  /** The user-gesture path. Recalculates position before playing. */
+  const onTapToSync = useCallback(() => {
+    setGesture(false);
+    appliedVersion.current = -1;
+    playAttemptAt.current = Date.now();
+    applyPlanRef.current(stateRef.current);
+    playerRef.current?.playVideo();
+  }, [setGesture]);
+
   const status = syncLabel({
     authorized: playback.authorized,
     connected: playback.connected,
@@ -315,9 +442,9 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
 
   const onSubmitUrl = (event: React.FormEvent) => {
     event.preventDefault();
-    const id = parseYouTubeVideoId(urlInput);
+    const id = youtubeProvider.parseReference(urlInput);
     if (!id) {
-      toast.error("That doesn't look like a YouTube video link.");
+      toast.error(providerError("invalid_id", "parse").message);
       return;
     }
     setUrlInput("");
@@ -325,6 +452,16 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
   };
 
   const busy = mutation.isPending;
+
+  const overlay = (() => {
+    if (providerFailure) return providerFailure.message;
+    if (!playback.authorized) return "You no longer have access to this room's playback.";
+    if (!playerReady) return "Starting the player…";
+    if (playback.isPending) return "Loading playback state…";
+    if (!state?.provider_media_id) return "No video selected yet.";
+    if (!playback.connected) return "Connection lost — trying to reconnect…";
+    return null;
+  })();
 
   return (
     <section className="surface-panel mt-8 p-5" aria-labelledby="watch-heading">
@@ -342,7 +479,7 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
           <Badge variant="secondary" role="status">
             {status}
           </Badge>
-          <Button variant="outline" size="sm" onClick={() => playback.resync()}>
+          <Button variant="outline" size="sm" onClick={onResync}>
             <RefreshCw className="size-4" aria-hidden="true" /> Resync
           </Button>
         </div>
@@ -351,15 +488,21 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
       <div className="mt-4 overflow-hidden rounded-lg border border-border bg-muted/40">
         <div className="relative aspect-video w-full">
           <div ref={containerRef} className="absolute inset-0 size-full" />
-          {!playerReady || !state?.provider_media_id ? (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-muted-foreground">
-              {playerError
-                ? playerError
-                : !playerReady
-                  ? "Starting the player…"
-                  : playback.isPending
-                    ? "Loading playback state…"
-                    : "No video selected yet."}
+          {overlay ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/85 p-4 text-center text-sm text-muted-foreground">
+              {overlay}
+            </div>
+          ) : null}
+          {!overlay && awaitingGesture ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/85 p-4 text-center">
+              <p className="text-sm font-medium">Ready to sync</p>
+              <p className="max-w-xs text-xs text-muted-foreground">
+                Your device needs a tap before it can start playing. The room keeps playing for
+                everyone else.
+              </p>
+              <Button size="sm" onClick={onTapToSync}>
+                <Play className="size-4" aria-hidden="true" /> Tap to Sync &amp; Play
+              </Button>
             </div>
           ) : null}
         </div>
@@ -367,9 +510,10 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
 
       {state?.provider_media_id ? (
         <p className="mt-3 text-sm">
-          <span className="font-medium">{state.title ?? "YouTube video"}</span>{" "}
+          <span className="font-medium">{metadata?.title ?? "Loading video details…"}</span>{" "}
           <span className="text-muted-foreground">
             · {state.playback_status} · v{state.version}
+            {metadata?.source === "fallback" ? " · title unavailable from YouTube" : ""}
           </span>
         </p>
       ) : null}

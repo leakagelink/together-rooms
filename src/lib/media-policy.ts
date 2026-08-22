@@ -81,7 +81,20 @@ export function evaluateYouTubePolicy(
 
   const resource = item as Record<string, unknown>;
 
-  const status = (resource["status"] as Record<string, unknown> | undefined) ?? {};
+  const status = (resource["status"] as Record<string, unknown> | undefined);
+  if (!status || typeof status !== "object") {
+    return {
+      ok: false,
+      policy: {
+        ...base,
+        status: "unavailable",
+        made_for_kids: false,
+        embeddable: false,
+        privacy_status: "unknown",
+      },
+    };
+  }
+
   const snippet = (resource["snippet"] as Record<string, unknown> | undefined) ?? {};
   const thumbnails = (snippet["thumbnails"] as Record<string, Record<string, string>> | undefined) ?? {};
 

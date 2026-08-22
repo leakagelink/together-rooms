@@ -123,9 +123,9 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
   }, [queryClient, queue, roomId]);
 
   const run = useMutation({
-    mutationFn: async (fn: () => Promise<{ ok: boolean; reason?: RpcReason }>) => {
+    mutationFn: async (fn: () => Promise<{ ok: boolean; reason?: string }>) => {
       const result = await fn();
-      if (!result.ok) throw new Error(rpcMessage(result.reason ?? "server_error"));
+      if (!result.ok) throw new Error(rpcMessage((result.reason ?? "server_error") as RpcReason));
       return result;
     },
     onSuccess: afterMutation,
@@ -289,7 +289,7 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
                     data: {
                       item_id: item.id,
                       target_index: moveTargetIndex(index, -1, list.length),
-                      expected_queue_version: queueVersion,
+                      expected_queue_version: queueVersion ?? 0,
                     },
                   }),
                 )
@@ -308,7 +308,7 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
                     data: {
                       item_id: item.id,
                       target_index: moveTargetIndex(index, 1, list.length),
-                      expected_queue_version: queueVersion,
+                      expected_queue_version: queueVersion ?? 0,
                     },
                   }),
                 )
@@ -341,7 +341,7 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
         canControl={canManage}
         roomActive={roomActive}
         heading="Listen together"
-        onTrackEnded={roomActive ? onTrackEnded : undefined}
+        {...(roomActive ? { onTrackEnded } : {})}
         transport={transport}
       />
 

@@ -36,7 +36,7 @@ export const createPlaylist = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("create_playlist", {
       _name: data.name,
-      _description: data.description ?? null,
+      ...(data.description ? { _description: data.description } : {}),
     });
     return normalizeRpc<PlaylistResult>("create_playlist", result, error);
   });
@@ -57,10 +57,10 @@ export const updatePlaylist = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("update_playlist", {
       _playlist_id: data.playlist_id,
-      _name: data.name ?? null,
-      _description: data.description ?? null,
-      _visibility: data.visibility ?? null,
-      _room_id: data.room_id ?? null,
+      ...(data.name ? { _name: data.name } : {}),
+      ...(data.description ? { _description: data.description } : {}),
+      ...(data.visibility ? { _visibility: data.visibility } : {}),
+      ...(data.room_id ? { _room_id: data.room_id } : {}),
     });
     return normalizeRpc<PlaylistResult>("update_playlist", result, error);
   });

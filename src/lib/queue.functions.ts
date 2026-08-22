@@ -53,7 +53,7 @@ export const moveQueueItem = createServerFn({ method: "POST" })
       .object({
         item_id: uuid,
         target_index: z.number().int().min(0).max(500),
-        expected_queue_version: optionalVersion,
+        expected_queue_version: z.number().int().min(0),
       })
       .parse(input),
   )
@@ -61,9 +61,7 @@ export const moveQueueItem = createServerFn({ method: "POST" })
     const { data: result, error } = await context.supabase.rpc("move_queue_item", {
       _item_id: data.item_id,
       _target_index: data.target_index,
-      ...(data.expected_queue_version == null
-        ? {}
-        : { _expected_queue_version: data.expected_queue_version }),
+      _expected_queue_version: data.expected_queue_version,
     });
     return normalizeRpc<QueueResult>("move_queue_item", result, error);
   });

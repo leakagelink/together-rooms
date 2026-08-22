@@ -103,9 +103,9 @@ function PlaylistsPage() {
   };
 
   const run = useMutation({
-    mutationFn: async (fn: () => Promise<{ ok: boolean; reason?: RpcReason }>) => {
+    mutationFn: async (fn: () => Promise<{ ok: boolean; reason?: string }>) => {
       const result = await fn();
-      if (!result.ok) throw new Error(rpcMessage(result.reason ?? "server_error"));
+      if (!result.ok) throw new Error(rpcMessage((result.reason ?? "server_error") as RpcReason));
       return result;
     },
     onSuccess: refresh,

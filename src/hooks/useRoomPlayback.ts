@@ -86,9 +86,8 @@ export function useRoomPlayback(roomId: string, userId: string | undefined): Roo
     (row: unknown) => {
       const incoming = toState(row);
       if (!incoming) return;
-      queryClient.setQueryData<PlaybackState | null>(
-        queryKeys.playback.state(roomId),
-        (prev) => (isNewerState(prev ?? null, incoming) ? incoming : (prev ?? null)),
+      queryClient.setQueryData<PlaybackState | null>(queryKeys.playback.state(roomId), (prev) =>
+        isNewerState(prev ?? null, incoming) ? incoming : (prev ?? null),
       );
     },
     [queryClient, roomId],

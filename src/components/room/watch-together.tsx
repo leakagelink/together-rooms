@@ -54,10 +54,7 @@ interface YouTubePlayer {
 }
 
 interface YTNamespace {
-  Player: new (
-    el: HTMLElement,
-    options: Record<string, unknown>,
-  ) => YouTubePlayer;
+  Player: new (el: HTMLElement, options: Record<string, unknown>) => YouTubePlayer;
   PlayerState: { PLAYING: number; PAUSED: number; ENDED: number };
 }
 
@@ -157,10 +154,15 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
 
   const mutation = useMutation({
     mutationFn: async (
-      action: { kind: "media"; mediaId: string } | { kind: "play" } | { kind: "pause" } | {
-        kind: "seek";
-        position: number;
-      } | { kind: "clear" },
+      action:
+        | { kind: "media"; mediaId: string }
+        | { kind: "play" }
+        | { kind: "pause" }
+        | {
+            kind: "seek";
+            position: number;
+          }
+        | { kind: "clear" },
     ) => {
       const expected_version = stateRef.current?.version ?? null;
       switch (action.kind) {
@@ -306,7 +308,9 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
 
   const controllerLabel = useMemo(() => {
     if (!state?.controlled_by) return "Nobody has controlled playback yet";
-    return state.controlled_by === userId ? "You control playback" : "A host or controller is in charge";
+    return state.controlled_by === userId
+      ? "You control playback"
+      : "A host or controller is in charge";
   }, [state?.controlled_by, userId]);
 
   const onSubmitUrl = (event: React.FormEvent) => {

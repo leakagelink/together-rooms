@@ -90,7 +90,8 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
     return data.id as string;
   }
 
-  const code = (prefix: string) => `${prefix}${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+  const code = (prefix: string) =>
+    `${prefix}${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
   async function currentVersion(room = roomId) {
     const { data } = await admin
@@ -316,9 +317,8 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
 
   it("PLAY-T19: host transfer moves playback authority", async () => {
     const transferRoom = await makeRoom(host, "Transfer room", code("T"));
-    const joinCode = (
-      await admin.from("rooms").select("join_code").eq("id", transferRoom).single()
-    ).data!.join_code as string;
+    const joinCode = (await admin.from("rooms").select("join_code").eq("id", transferRoom).single())
+      .data!.join_code as string;
     const join = await member.client.rpc("join_room_by_code", { _code: joinCode });
     expect((join.data as { ok: boolean }).ok).toBe(true);
 
@@ -404,21 +404,19 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
 
     const seen: number[] = [];
     await victim.client.realtime.setAuth(victim.token);
-    const channel: RealtimeChannel = victim.client
-      .channel(`play-${victim.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "room_playback_state",
-          filter: `room_id=eq.${liveRoom}`,
-        },
-        (payload) => {
-          const row = payload.new as { version?: number };
-          if (typeof row?.version === "number") seen.push(row.version);
-        },
-      );
+    const channel: RealtimeChannel = victim.client.channel(`play-${victim.id}`).on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "room_playback_state",
+        filter: `room_id=eq.${liveRoom}`,
+      },
+      (payload) => {
+        const row = payload.new as { version?: number };
+        if (typeof row?.version === "number") seen.push(row.version);
+      },
+    );
 
     const statuses: string[] = [];
     await new Promise<void>((resolve) => {
@@ -435,9 +433,13 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
     // Media select + play + pause + seek must all reach the joined member.
     expect(await setMedia(liveHost, liveRoom)).toMatchObject({ ok: true });
     await wait(600);
-    expect(await rpc(liveHost, "play_room_media", { _room_id: liveRoom })).toMatchObject({ ok: true });
+    expect(await rpc(liveHost, "play_room_media", { _room_id: liveRoom })).toMatchObject({
+      ok: true,
+    });
     await wait(600);
-    expect(await rpc(liveHost, "pause_room_media", { _room_id: liveRoom })).toMatchObject({ ok: true });
+    expect(await rpc(liveHost, "pause_room_media", { _room_id: liveRoom })).toMatchObject({
+      ok: true,
+    });
     await wait(600);
     expect(
       await rpc(liveHost, "seek_room_media", { _room_id: liveRoom, _position_seconds: 12 }),

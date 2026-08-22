@@ -171,7 +171,6 @@ suite("phase 3.2 realtime membership revocation (REV)", () => {
     expect(seen.insert).toContain(baseline.message_id);
   }, 60_000);
 
-
   it("REV-T2: membership is revoked while the socket stays connected", async () => {
     // Server-authoritative removal, exactly as a moderator kick would do it.
     const { error } = await admin

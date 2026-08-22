@@ -124,9 +124,7 @@ describe("sync labels", () => {
   it("uses accurate, non-absolute wording", () => {
     expect(syncLabel({ authorized: true, connected: true, syncing: false })).toBe("Synced");
     expect(syncLabel({ authorized: true, connected: true, syncing: true })).toBe("Syncing…");
-    expect(syncLabel({ authorized: true, connected: false, syncing: false })).toBe(
-      "Reconnecting…",
-    );
+    expect(syncLabel({ authorized: true, connected: false, syncing: false })).toBe("Reconnecting…");
     expect(syncLabel({ authorized: false, connected: false, syncing: false })).toBe(
       "Live updates unavailable",
     );

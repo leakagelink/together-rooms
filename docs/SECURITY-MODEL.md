@@ -4,26 +4,26 @@
 
 Verified with `aclexplode(pg_class.relacl)`.
 
-| Table                        | anon | authenticated  | staff (authenticated + role) | service_role |
-| ---------------------------- | ---- | -------------- | ---------------------------- | ------------ |
-| `room_messages`              | none | SELECT (RLS: joined member / host) | same as authenticated | ALL |
-| `message_reactions`          | none | SELECT (RLS: joined member / host) | same as authenticated | ALL |
-| `user_reports`               | none | SELECT own, INSERT own (RLS `reporter_id = auth.uid()`) | SELECT all via `is_staff()` | ALL |
-| `message_moderation_archive` | none | none (RLS enabled, zero policies) | only via `staff_get_removed_message()` | ALL |
+| Table                        | anon | authenticated                                           | staff (authenticated + role)           | service_role |
+| ---------------------------- | ---- | ------------------------------------------------------- | -------------------------------------- | ------------ |
+| `room_messages`              | none | SELECT (RLS: joined member / host)                      | same as authenticated                  | ALL          |
+| `message_reactions`          | none | SELECT (RLS: joined member / host)                      | same as authenticated                  | ALL          |
+| `user_reports`               | none | SELECT own, INSERT own (RLS `reporter_id = auth.uid()`) | SELECT all via `is_staff()`            | ALL          |
+| `message_moderation_archive` | none | none (RLS enabled, zero policies)                       | only via `staff_get_removed_message()` | ALL          |
 
 INSERT / UPDATE / DELETE on `room_messages` and `message_reactions` are granted to
 **no** end-user role. All writes are owned by SECURITY DEFINER RPCs:
 
-| Operation | Owning RPC |
-| --- | --- |
-| send message | `send_room_message` |
-| edit message | `edit_room_message` (15-minute window) |
-| delete / moderate message | `delete_room_message` |
-| react / replace / un-react | `toggle_message_reaction` |
-| mute member | `set_member_mute` |
-| report message | `report_message` |
-| read removed plaintext | `staff_get_removed_message` (staff only, audited) |
-| retention purge | `purge_expired_chat` (pg_cron only, no user EXECUTE) |
+| Operation                  | Owning RPC                                           |
+| -------------------------- | ---------------------------------------------------- |
+| send message               | `send_room_message`                                  |
+| edit message               | `edit_room_message` (15-minute window)               |
+| delete / moderate message  | `delete_room_message`                                |
+| react / replace / un-react | `toggle_message_reaction`                            |
+| mute member                | `set_member_mute`                                    |
+| report message             | `report_message`                                     |
+| read removed plaintext     | `staff_get_removed_message` (staff only, audited)    |
+| retention purge            | `purge_expired_chat` (pg_cron only, no user EXECUTE) |
 
 ## Guard trigger model
 
@@ -89,11 +89,11 @@ They are never stored on `profiles`, and no end-user role holds INSERT/UPDATE/DE
 on `user_roles` — every change goes through `assign_app_role` / `revoke_app_role`,
 which require `has_role(auth.uid(),'admin')`.
 
-| Table | anon | authenticated | service_role |
-| --- | --- | --- | --- |
-| `user_roles` | none | SELECT (RLS: own rows / staff) | ALL |
-| `audit_logs` | none | SELECT (RLS: staff) | ALL |
-| `moderation_actions` | none | SELECT (RLS: staff) | ALL |
+| Table                | anon | authenticated                  | service_role |
+| -------------------- | ---- | ------------------------------ | ------------ |
+| `user_roles`         | none | SELECT (RLS: own rows / staff) | ALL          |
+| `audit_logs`         | none | SELECT (RLS: staff)            | ALL          |
+| `moderation_actions` | none | SELECT (RLS: staff)            | ALL          |
 
 `bootstrap_first_admin(_email)` is operator-only: EXECUTE is revoked from
 `PUBLIC`, `anon` and `authenticated`, and the function aborts if any admin
@@ -104,16 +104,16 @@ last remaining admin cannot be revoked.
 
 ## Staff surface
 
-| Capability | RPC | Required role |
-| --- | --- | --- |
-| staff flags for UI | `my_staff_context` | any signed-in user (returns booleans) |
-| queue with filters + pagination | `staff_report_queue` | staff |
-| report detail, actions, audit | `staff_report_detail` | staff |
-| counters + recent actions | `staff_moderation_overview` | staff |
-| status transitions + note | `set_report_status` | staff |
-| record a moderation action | `create_moderation_action` | staff |
-| reveal removed plaintext | `staff_get_removed_message` | staff, audited |
-| list / search / grant / revoke roles | `admin_list_roles`, `admin_search_users`, `assign_app_role`, `revoke_app_role` | admin |
+| Capability                           | RPC                                                                            | Required role                         |
+| ------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------- |
+| staff flags for UI                   | `my_staff_context`                                                             | any signed-in user (returns booleans) |
+| queue with filters + pagination      | `staff_report_queue`                                                           | staff                                 |
+| report detail, actions, audit        | `staff_report_detail`                                                          | staff                                 |
+| counters + recent actions            | `staff_moderation_overview`                                                    | staff                                 |
+| status transitions + note            | `set_report_status`                                                            | staff                                 |
+| record a moderation action           | `create_moderation_action`                                                     | staff                                 |
+| reveal removed plaintext             | `staff_get_removed_message`                                                    | staff, audited                        |
+| list / search / grant / revoke roles | `admin_list_roles`, `admin_search_users`, `assign_app_role`, `revoke_app_role` | admin                                 |
 
 `/admin`, `/admin/reports/$reportId` and `/admin/roles` render behind
 `StaffGate`, which is **presentation only**. Authorization is re-checked in
@@ -137,7 +137,7 @@ against a socket that stays connected across the revocation:
 
 - REV-T1 — a joined member receives `postgres_changes` rows for the room.
 - REV-T2 — membership is revoked server-side; the socket is not torn down.
-- REV-T3/T4 — inserts, updates and reactions produced *after* revocation are
+- REV-T3/T4 — inserts, updates and reactions produced _after_ revocation are
   **not** delivered to the removed subscriber. Supabase Realtime re-evaluates
   RLS per change against current database state, so revocation takes effect on
   the existing connection without any transport-level invalidation.

@@ -21,12 +21,12 @@ lists to YouTube.
 
 One row per room in `room_playback_state`:
 
-| Column | Purpose |
-| --- | --- |
-| `provider` | `youtube` (the only allowed value today) |
-| `provider_media_id` | the 11-character video ID — **not** the pasted URL |
-| `title`, `thumbnail_url` | optional display cache supplied by the controller |
-| `playback_status`, `position_seconds`, `playback_started_at`, `version`, `controlled_by` | synchronization state |
+| Column                                                                                   | Purpose                                            |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `provider`                                                                               | `youtube` (the only allowed value today)           |
+| `provider_media_id`                                                                      | the 11-character video ID — **not** the pasted URL |
+| `title`, `thumbnail_url`                                                                 | optional display cache supplied by the controller  |
+| `playback_status`, `position_seconds`, `playback_started_at`, `version`, `controlled_by` | synchronization state                              |
 
 The pasted URL is parsed client-side and discarded; only the video ID is transmitted.
 There is no per-user watch history, no per-second progress log, and no record of how

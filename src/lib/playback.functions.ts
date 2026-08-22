@@ -36,12 +36,24 @@ export const setRoomMedia = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // Enforce the YouTube content policy before changing the room's media.
+    // The policy is resolved server-side and cached; this also blocks videos
+    // marked Made for Kids, non-embeddable, or private.
+    const { ok, policy } = await resolveMediaPolicy(context.supabase, data.media_id);
+    if (!ok) {
+      return {
+        ok: false as const,
+        reason: policy.status,
+        message: `This video cannot be played: ${policy.status}.`,
+      };
+    }
+
     const { data: result, error } = await context.supabase.rpc("set_room_media", {
       _room_id: data.room_id,
       _provider: data.provider,
       _media_id: data.media_id,
-      ...(data.title ? { _title: data.title } : {}),
-      ...(data.thumbnail_url ? { _thumbnail_url: data.thumbnail_url } : {}),
+      ...(policy.title ? { _title: policy.title } : {}),
+      ...(policy.thumbnail_url ? { _thumbnail_url: policy.thumbnail_url } : {}),
       ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
     });
     return normalizeRpc<StateResult>("set_room_media", result, error);

@@ -3,18 +3,31 @@ import { type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { evaluateYouTubePolicy, isPolicyFresh, policyFromJsonb, policyToJsonb, type MediaPolicy } from "@/lib/media-policy";
+import {
+  canAuthorizeEmbed,
+  evaluateYouTubePolicy,
+  policyFromJsonb,
+  providerVerificationFailedPolicy,
+  type MediaPolicy,
+  type MediaPolicyStatus,
+} from "@/lib/media-policy";
 import type { Database } from "@/integrations/supabase/types";
 
 /**
  * Phase 4.2 — server-side YouTube metadata + policy resolution.
  *
+ * Trust boundary:
+ *  - POLICY-CRITICAL data (made_for_kids, embeddable, privacy/playability) may
+ *    ONLY come from a fresh trusted cache row or from the official YouTube Data
+ *    API. If neither is available the lookup FAILS CLOSED with
+ *    `provider_verification_failed` and no new embed is authorized.
+ *  - DISPLAY data (title, thumbnail) may fall back to the public oEmbed
+ *    endpoint, but only after a policy decision has already authorized the
+ *    video. oEmbed is never used to determine Made for Kids status.
+ *
  * The YouTube Data API key is read server-side only; it never reaches the
- * browser. The Data API is used for policy-critical fields (Made for Kids,
- * embeddability, privacy status, existence). The public oEmbed endpoint is used
- * as a fallback for the title when the Data API is unavailable. Results are
- * cached in `media_metadata_cache` with a 24-hour TTL to respect API quota and
- * data-minimization principles.
+ * browser. Results are cached in `media_metadata_cache` with a 24-hour TTL to
+ * respect API quota and data-minimization principles.
  */
 
 const DATA_API_TIMEOUT_MS = 4000;
@@ -30,8 +43,18 @@ export interface PolicyOutcome {
 }
 
 export type MetadataOutcome =
-  | { status: "ok"; title: string; thumbnail_url: string | null; source: "provider"; policy: MediaPolicy }
-  | { status: "made_for_kids" | "not_embeddable" | "privacy_blocked" | "unavailable" | "network" | "unknown"; source: "fallback"; policy?: MediaPolicy };
+  | {
+      status: "ok" | "made_for_kids";
+      title: string;
+      thumbnail_url: string | null;
+      source: "provider" | "fallback";
+      policy: MediaPolicy;
+    }
+  | {
+      status: Exclude<MediaPolicyStatus, "ok" | "made_for_kids">;
+      source: "fallback";
+      policy: MediaPolicy;
+    };
 
 type DbClient = SupabaseClient<Database>;
 
@@ -54,7 +77,8 @@ async function fetchDataApiPolicy(mediaId: string): Promise<MediaPolicy | null> 
     if (!response.ok) return null;
     const body: unknown = await response.json();
     const record = body as Record<string, unknown>;
-    const items = Array.isArray(record["items"]) ? (record["items"] as unknown[]) : [];
+    if (!Array.isArray(record["items"])) return null;
+    const items = record["items"] as unknown[];
     return evaluateYouTubePolicy(mediaId, items[0] ?? null).policy;
   } catch {
     return null;
@@ -63,6 +87,10 @@ async function fetchDataApiPolicy(mediaId: string): Promise<MediaPolicy | null> 
   }
 }
 
+/**
+ * Display-only fallback. Never consulted for a policy decision — by the time
+ * this runs the video has already been authorized by the Data API or cache.
+ */
 async function fetchOembedTitle(mediaId: string): Promise<string | null> {
   const target = `https://www.youtube.com/watch?v=${mediaId}`;
   const endpoint = `https://www.youtube.com/oembed?url=${encodeURIComponent(target)}&format=json`;
@@ -85,7 +113,11 @@ async function fetchOembedTitle(mediaId: string): Promise<string | null> {
   }
 }
 
-async function lookupPolicyFromCache(supabase: DbClient, mediaId: string, now: number): Promise<MediaPolicy | null> {
+async function lookupPolicyFromCache(
+  supabase: DbClient,
+  mediaId: string,
+  now: number,
+): Promise<MediaPolicy | null> {
   const { data: cacheRows } = await supabase
     .from("media_metadata_cache")
     .select("*")
@@ -96,44 +128,26 @@ async function lookupPolicyFromCache(supabase: DbClient, mediaId: string, now: n
   const row = cacheRows?.[0];
   if (!row) return null;
 
-  // Supabase stores the authoritative expiration as expires_at. Use that
-  // rather than the policy's checked_at to avoid stale data being reused.
+  // The authoritative expiration is expires_at. An expired row can never
+  // authorize a new embed, so it is treated as a cache miss.
   const expiresAt = Date.parse(row.expires_at as string);
   if (Number.isNaN(expiresAt) || now >= expiresAt) return null;
 
   const cached = policyFromJsonb(row);
   if (cached) {
-    // Normalize checked_at to the recorded_at value so downstream TTL math
-    // reflects the actual cache row age.
     cached.checked_at = (row.recorded_at as string) ?? cached.checked_at;
+    // Remaining TTL, derived from the row rather than the payload.
+    cached.ttl_seconds = Math.max(
+      1,
+      Math.floor((expiresAt - Date.parse(cached.checked_at)) / 1000),
+    );
   }
   return cached;
 }
 
-async function resolvePolicyFromApi(mediaId: string): Promise<MediaPolicy> {
-  let policy = await fetchDataApiPolicy(mediaId);
-  if (!policy) {
-    // If the Data API is missing/unavailable, fall back to a permissive
-    // placeholder that relies on the IFrame player to refuse bad content.
-    policy = {
-      provider: "youtube",
-      media_id: mediaId,
-      status: "ok",
-      made_for_kids: false,
-      embeddable: true,
-      privacy_status: "unknown",
-      title: null,
-      thumbnail_url: null,
-      ttl_seconds: 60 * 60, // short TTL when we couldn't verify
-      checked_at: new Date().toISOString(),
-    };
-  }
-  return policy;
-}
-
 async function persistPolicy(policy: MediaPolicy): Promise<void> {
-  // Cache writes are privileged: only the server-side resolver can populate
-  // the policy table. End users are not allowed to execute upsert_media_metadata_cache.
+  // Cache writes are privileged: only the server-side resolver can populate the
+  // policy table. End users cannot execute upsert_media_metadata_cache.
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   await supabaseAdmin.rpc("upsert_media_metadata_cache", {
     _provider: "youtube",
@@ -145,25 +159,44 @@ async function persistPolicy(policy: MediaPolicy): Promise<void> {
     _privacy_status: policy.privacy_status,
     _status: policy.status,
     _source: "data_api",
-    _ttl_hours: Math.floor(policy.ttl_seconds / 3600),
+    _ttl_hours: Math.max(1, Math.floor(policy.ttl_seconds / 3600)),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
 }
 
-export async function resolveMediaPolicy(supabase: DbClient, mediaId: string): Promise<PolicyOutcome> {
+/**
+ * Authoritative policy resolution.
+ *
+ * A. fresh trusted cache → use it
+ * B. otherwise call the official Data API
+ * C. Data API answered → persist to the trusted cache and use it
+ * D. Data API failed and no valid cache → provider_verification_failed
+ */
+export async function resolveMediaPolicy(
+  supabase: DbClient,
+  mediaId: string,
+): Promise<PolicyOutcome> {
   const now = Date.now();
   const cached = await lookupPolicyFromCache(supabase, mediaId, now);
   if (cached) {
-    return { ok: cached.status === "ok", policy: cached };
+    return { ok: canAuthorizeEmbed(cached, now), policy: cached };
   }
-  const policy = await resolvePolicyFromApi(mediaId);
-  await persistPolicy(policy);
-  return { ok: policy.status === "ok", policy };
+
+  const fresh = await fetchDataApiPolicy(mediaId);
+  if (!fresh) {
+    // FAIL CLOSED. No oEmbed substitution, no permissive placeholder, and
+    // nothing is written to the trusted cache.
+    const policy = providerVerificationFailedPolicy(mediaId);
+    return { ok: false, policy };
+  }
+
+  await persistPolicy(fresh);
+  return { ok: canAuthorizeEmbed(fresh, Date.now()), policy: fresh };
 }
 
 /**
- * Resolves the policy for a YouTube video, preferring the cache and falling
- * back to the Data API. Cache misses are persisted for 24 hours.
+ * Resolves the policy for a YouTube video, preferring the trusted cache and
+ * falling back to the official Data API. Cache misses are persisted.
  */
 export const getYouTubeMediaPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -173,10 +206,10 @@ export const getYouTubeMediaPolicy = createServerFn({ method: "POST" })
   });
 
 /**
- * Resolves display metadata for a YouTube video. The policy check is always
- * performed first; if the video is blocked by policy, no metadata is returned.
- * Otherwise, the Data API title/thumbnail are preferred, with oEmbed as a
- * fallback for the title when the Data API title is unavailable.
+ * Resolves display metadata for a YouTube video. The policy check always runs
+ * first; if the video is not playable, no display metadata is returned. For a
+ * playable video the Data API title/thumbnail are preferred, with oEmbed as a
+ * display-only fallback for the title.
  */
 export const resolveYouTubeMetadata = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -184,24 +217,26 @@ export const resolveYouTubeMetadata = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<MetadataOutcome> => {
     const { policy } = await resolveMediaPolicy(context.supabase, data.media_id);
 
-    if (policy.status !== "ok") {
+    if (!policy.playable) {
       return {
-        status: policy.status as Exclude<MetadataOutcome["status"], "ok">,
+        status: policy.status as Exclude<MediaPolicyStatus, "ok" | "made_for_kids">,
         source: "fallback",
         policy,
       };
     }
 
     let title = policy.title;
+    let source: "provider" | "fallback" = title ? "provider" : "fallback";
     if (!title) {
       title = await fetchOembedTitle(data.media_id);
+      source = "fallback";
     }
 
     return {
-      status: "ok",
+      status: policy.status as "ok" | "made_for_kids",
       title: title ?? `YouTube video ${data.media_id}`,
       thumbnail_url: policy.thumbnail_url,
-      source: (title && policy.title ? "provider" : "fallback") as "provider" | "fallback",
+      source,
       policy,
-    } as MetadataOutcome;
+    };
   });

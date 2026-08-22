@@ -1208,11 +1208,8 @@ export type Database = {
         Args: {
           _expected_version?: number
           _media_id: string
-          _policy_check_result?: Json
           _provider: string
           _room_id: string
-          _thumbnail_url?: string
-          _title?: string
         }
         Returns: Json
       }

@@ -80,10 +80,10 @@ export function classifyYouTubePlayerError(code: unknown): ProviderError {
     case 150:
       return providerError("embed_disabled", "yt:101/150");
     case 153:
-      // Client identity error: the site origin is not allowed by YouTube's
-      // referrer restrictions. We report this as a playback failure, not as a
-      // generic sync error.
-      return providerError("unavailable", "yt:153");
+      // Client identity error: the embedding origin is not allowed by
+      // YouTube. This is distinct from an unavailable video — it means our
+      // Referer / origin was rejected, so it gets its own error kind.
+      return providerError("origin_not_allowed", "yt:153");
     default:
       return providerError("unknown", `yt:${String(code ?? "none")}`);
   }

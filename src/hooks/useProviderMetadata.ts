@@ -34,19 +34,19 @@ export function useProviderMetadata(mediaId: string | null | undefined): Provide
     retry: 1,
     queryFn: async () => {
       const result = await resolve({ data: { media_id: mediaId as string } });
-      if (result.status === "ok") {
+      if (result.status === "ok" || result.status === "made_for_kids") {
         return {
           metadata: {
             title: result.title,
             thumbnailUrl: result.thumbnail_url,
-            source: "provider",
+            source: result.source,
           } satisfies ProviderMetadata,
           policy: result.policy,
         };
       }
       return {
         metadata: fallbackMetadata(mediaId as string),
-        policy: result.policy ?? null,
+        policy: result.policy,
       };
     },
   });

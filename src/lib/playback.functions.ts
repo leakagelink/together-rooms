@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { policyToJsonb } from "@/lib/media-policy";
+
 import { resolveMediaPolicy } from "@/lib/media-metadata.functions";
 import { normalizeRpc } from "@/lib/server/rpc.server";
 import type { Json } from "@/lib/rpc-types";
@@ -35,9 +35,9 @@ export const setRoomMedia = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    // Enforce the YouTube content policy before changing the room's media.
-    // The policy is resolved server-side and cached; this also blocks videos
-    // marked Made for Kids, non-embeddable, or private.
+    // Resolve (and refresh) the server-side policy so the trusted cache is
+    // populated. The decision itself is re-made inside the RPC — the client
+    // never supplies a title, thumbnail or policy verdict.
     const { ok, policy } = await resolveMediaPolicy(context.supabase, data.media_id);
     if (!ok) {
       return { ok: false as const, reason: policy.status };
@@ -47,13 +47,11 @@ export const setRoomMedia = createServerFn({ method: "POST" })
       _room_id: data.room_id,
       _provider: data.provider,
       _media_id: data.media_id,
-      ...(policy.title ? { _title: policy.title } : {}),
-      ...(policy.thumbnail_url ? { _thumbnail_url: policy.thumbnail_url } : {}),
       ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
-      _policy_check_result: policyToJsonb(policy) as never,
     });
     return normalizeRpc<StateResult>("set_room_media", result, error);
   });
+
 
 export const playRoomMedia = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

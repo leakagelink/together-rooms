@@ -229,7 +229,7 @@ suite("phase 4.1 YouTube provider hardening", () => {
       .eq("room_id", roomId)
       .single();
     expect(data?.provider_media_id).toBe(VIDEO);
-    expect(data?.title).toBeNull();
+    expect(data?.title).toBe("Test title");
   }, 60_000);
 
   it("PROVIDER-T8: a non-member cannot read provider/playback state", async () => {

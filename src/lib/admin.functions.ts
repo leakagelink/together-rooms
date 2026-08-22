@@ -89,7 +89,13 @@ export const getModerationOverview = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase.rpc("staff_moderation_overview");
     return normalizeRpc<{
-      counts: { open: number; reviewing: number; actioned: number; dismissed: number; total: number };
+      counts: {
+        open: number;
+        reviewing: number;
+        actioned: number;
+        dismissed: number;
+        total: number;
+      };
       recent_actions: Json[];
       is_admin: boolean;
     }>("staff_moderation_overview", data, error);
@@ -226,9 +232,7 @@ export const listAppRoles = createServerFn({ method: "GET" })
 
 export const searchUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ q: z.string().trim().max(120) }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ q: z.string().trim().max(120) }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("admin_search_users", {
       _q: data.q,
@@ -238,9 +242,7 @@ export const searchUsers = createServerFn({ method: "POST" })
 
 export const assignAppRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ user_id: uuid, role: appRole }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ user_id: uuid, role: appRole }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("assign_app_role", {
       _user_id: data.user_id,
@@ -251,9 +253,7 @@ export const assignAppRole = createServerFn({ method: "POST" })
 
 export const revokeAppRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ user_id: uuid, role: appRole }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ user_id: uuid, role: appRole }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("revoke_app_role", {
       _user_id: data.user_id,

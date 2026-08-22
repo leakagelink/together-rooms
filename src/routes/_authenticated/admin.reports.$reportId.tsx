@@ -215,7 +215,9 @@ function ReportReview() {
         </div>
         <div className="sm:col-span-2">
           <dt className="text-muted-foreground">Reporter details</dt>
-          <dd className="whitespace-pre-wrap">{str(report["details"]) ?? "No details provided."}</dd>
+          <dd className="whitespace-pre-wrap">
+            {str(report["details"]) ?? "No details provided."}
+          </dd>
         </div>
       </dl>
       <p className="mt-2 text-xs text-muted-foreground">

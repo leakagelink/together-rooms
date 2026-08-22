@@ -124,7 +124,10 @@ function RolesPage() {
         your own admin role, and the last remaining admin cannot be removed.
       </p>
 
-      <section aria-labelledby="grant-heading" className="mt-8 rounded-lg border border-border bg-card p-4">
+      <section
+        aria-labelledby="grant-heading"
+        className="mt-8 rounded-lg border border-border bg-card p-4"
+      >
         <h2 id="grant-heading" className="text-lg font-semibold">
           Grant a role
         </h2>

@@ -111,7 +111,12 @@ suite("phase 3.2 realtime membership revocation (REV)", () => {
       .channel(`rev-${victim.id}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "room_messages",
+          filter: `room_id=eq.${roomId}`,
+        },
         (p) => {
           const row = p.new as { id?: string };
           if (row?.id) seen.insert.push(row.id);
@@ -119,7 +124,12 @@ suite("phase 3.2 realtime membership revocation (REV)", () => {
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` },
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "room_messages",
+          filter: `room_id=eq.${roomId}`,
+        },
         (p) => {
           const row = p.new as { id?: string };
           if (row?.id) seen.update.push(row.id);
@@ -127,7 +137,12 @@ suite("phase 3.2 realtime membership revocation (REV)", () => {
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "message_reactions", filter: `room_id=eq.${roomId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "message_reactions",
+          filter: `room_id=eq.${roomId}`,
+        },
         (p) => {
           const row = (p.new ?? {}) as { id?: string };
           if (row?.id) seen.reaction.push(row.id);

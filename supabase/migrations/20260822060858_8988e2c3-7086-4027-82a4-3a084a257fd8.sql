@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.guard_room_playback_state() FROM PUBLIC, anon, authenticated;

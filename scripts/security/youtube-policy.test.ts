@@ -256,13 +256,13 @@ suite("phase 4.2 YouTube policy completeness", () => {
   }, 60_000);
 
   it("YT-POLICY-T10: server-side metadata never accepts an untrusted thumbnail host", async () => {
-    await seedPolicy("EVIL-THUMB-01", "ok", {
+    await seedPolicy(EVIL_THUMB_VIDEO, "ok", {
       _thumbnail_url: "https://evil.test/phish.png",
     });
     const { data } = await host.client.rpc("set_room_media", {
       _room_id: roomId,
       _provider: "youtube",
-      _media_id: "EVIL-THUMB-01",
+      _media_id: EVIL_THUMB_VIDEO,
       _expected_version: null,
     });
     const res = (data ?? { ok: false, reason: "server_error" }) as RpcResponse;
@@ -275,7 +275,7 @@ suite("phase 4.2 YouTube policy completeness", () => {
       .single();
     // The policy layer replaces the malicious thumbnail with the canonical
     // YouTube thumbnail for the media id.
-    expect(row?.thumbnail_url).toBe("https://i.ytimg.com/vi/EVIL-THUMB-01/hqdefault.jpg");
+    expect(row?.thumbnail_url).toBe(`https://i.ytimg.com/vi/${EVIL_THUMB_VIDEO}/hqdefault.jpg`);
   }, 60_000);
 
   it("YT-POLICY-T11: direct authenticated writes to media_metadata_cache are blocked", async () => {

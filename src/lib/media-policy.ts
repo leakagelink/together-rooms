@@ -101,7 +101,11 @@ function basePolicy(videoId: string, ttlSeconds = DEFAULT_TTL_SECONDS) {
   };
 }
 
-function blockedPolicy(videoId: string, status: MediaPolicyStatus, ttlSeconds?: number): MediaPolicyOutcome {
+function blockedPolicy(
+  videoId: string,
+  status: MediaPolicyStatus,
+  ttlSeconds?: number,
+): MediaPolicyOutcome {
   return {
     ok: false,
     policy: {
@@ -254,8 +258,7 @@ export function policyFromJsonb(value: unknown): MediaPolicy | null {
 
   // The stored status is authoritative, but playability is always re-derived
   // so a poisoned or partial row cannot claim to be playable.
-  const playable =
-    isPlayableStatus(status) && embeddable && privacyStatus !== "private";
+  const playable = isPlayableStatus(status) && embeddable && privacyStatus !== "private";
 
   return {
     provider: "youtube",

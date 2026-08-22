@@ -58,8 +58,7 @@ const BLOCKED_COPY: Partial<Record<MediaPolicyStatus, string>> = {
 };
 
 export function planPlayerSurface(input: PlayerSurfaceInput): PlayerSurfacePlan {
-  const policyBlocked =
-    input.policyStatus !== null && !PLAYABLE.includes(input.policyStatus);
+  const policyBlocked = input.policyStatus !== null && !PLAYABLE.includes(input.policyStatus);
 
   const videoRendered =
     input.hasMedia &&
@@ -91,7 +90,8 @@ export function planPlayerSurface(input: PlayerSurfaceInput): PlayerSurfacePlan 
     if (input.providerFailure) overlay = input.providerFailure;
     else if (!input.authorized) overlay = "You no longer have access to this room's playback.";
     else if (policyBlocked)
-      overlay = BLOCKED_COPY[input.policyStatus as MediaPolicyStatus] ?? "This video can't be played here.";
+      overlay =
+        BLOCKED_COPY[input.policyStatus as MediaPolicyStatus] ?? "This video can't be played here.";
     else if (!input.hasMedia) overlay = "No video selected yet.";
     else if (!input.playerReady) overlay = "Starting the player…";
     else if (input.loading) overlay = "Loading playback state…";

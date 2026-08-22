@@ -52,7 +52,6 @@ export const setRoomMedia = createServerFn({ method: "POST" })
     return normalizeRpc<StateResult>("set_room_media", result, error);
   });
 
-
 export const playRoomMedia = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>

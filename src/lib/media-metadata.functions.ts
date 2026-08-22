@@ -202,5 +202,5 @@ export const resolveYouTubeMetadata = createServerFn({ method: "POST" })
       thumbnail_url: policy.thumbnail_url,
       source: (title && policy.title ? "provider" : "fallback") as "provider" | "fallback",
       policy,
-    };
+    } as MetadataOutcome;
   });

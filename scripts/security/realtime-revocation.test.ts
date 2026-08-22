@@ -106,7 +106,7 @@ suite("phase 3.2 realtime membership revocation (REV)", () => {
   }, 90_000);
 
   it("REV-T1: an active member can subscribe and receives room rows", async () => {
-    victim.client.realtime.setAuth(victim.token);
+    await victim.client.realtime.setAuth(victim.token);
     victimChannel = victim.client
       .channel(`rev-${victim.id}`)
       .on(
@@ -143,6 +143,8 @@ suite("phase 3.2 realtime membership revocation (REV)", () => {
       });
     });
     expect(statuses).toContain("SUBSCRIBED");
+    // Give the replication listener a moment to register the bindings.
+    await wait(1500);
 
     const baseline = await send(host, roomId, "pre-revocation message");
     expect(baseline.ok).toBe(true);
@@ -215,6 +217,7 @@ suite("phase 3.2 realtime membership revocation (REV)", () => {
     expect(allowed).toBe(false);
 
     // Even bypassing the app's authorization gate, the transport delivers nothing.
+    await victim.client.realtime.setAuth(victim.token);
     const channel = victim.client
       .channel(`rev-reconnect-${victim.id}`)
       .on(

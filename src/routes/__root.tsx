@@ -79,7 +79,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "referrer", content: "no-referrer" },
+      // YouTube validates the embedding origin; stripping the Referer entirely
+      // triggers player error 153. Send the origin (never the full path).
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
       { title: "SyncTogether — Watch. Listen. Study. Connect. Together." },
       {
         name: "description",

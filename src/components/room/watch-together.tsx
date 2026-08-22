@@ -26,6 +26,8 @@ import {
   playerEventMayMutate,
   type LocalPlayerSnapshot,
 } from "@/lib/playback-device";
+import { planPlayerSurface } from "@/lib/player-surface";
+import { setPlaybackTrackingRestricted } from "@/lib/analytics";
 import { providerError, type ProviderError } from "@/lib/providers/media-provider";
 import { youtubeProvider } from "@/lib/providers/youtube";
 import {
@@ -431,6 +433,12 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [suppress]);
+
+  // ---- Made for Kids: suppress playback analytics while such media is active.
+  useEffect(() => {
+    setPlaybackTrackingRestricted(Boolean(policy?.tracking_restricted));
+    return () => setPlaybackTrackingRestricted(false);
+  }, [policy?.tracking_restricted]);
 
   /** Manual resync: refresh authoritative state + clock, then reconcile locally. */
   const onResync = useCallback(() => {

@@ -666,6 +666,59 @@ export type Database = {
           },
         ]
       }
+      room_playback_state: {
+        Row: {
+          controlled_by: string | null
+          created_at: string
+          playback_started_at: string | null
+          playback_status: Database["public"]["Enums"]["playback_status"]
+          position_seconds: number
+          provider: Database["public"]["Enums"]["playback_provider"] | null
+          provider_media_id: string | null
+          room_id: string
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          controlled_by?: string | null
+          created_at?: string
+          playback_started_at?: string | null
+          playback_status?: Database["public"]["Enums"]["playback_status"]
+          position_seconds?: number
+          provider?: Database["public"]["Enums"]["playback_provider"] | null
+          provider_media_id?: string | null
+          room_id: string
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          controlled_by?: string | null
+          created_at?: string
+          playback_started_at?: string | null
+          playback_status?: Database["public"]["Enums"]["playback_status"]
+          position_seconds?: number
+          provider?: Database["public"]["Enums"]["playback_provider"] | null
+          provider_media_id?: string | null
+          room_id?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_playback_state_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_sessions: {
         Row: {
           created_at: string
@@ -944,9 +997,17 @@ export type Database = {
       }
       authorize_room_channel: { Args: { _room_id: string }; Returns: boolean }
       bootstrap_first_admin: { Args: { _email: string }; Returns: Json }
+      can_control_playback: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_moderate_room: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
+      }
+      clear_room_media: {
+        Args: { _expected_version?: number; _room_id: string }
+        Returns: Json
       }
       consume_rate_limit: {
         Args: { _action: string; _limit: number; _window_seconds: number }
@@ -980,6 +1041,10 @@ export type Database = {
         Args: { _content: string; _message_id: string }
         Returns: Json
       }
+      emit_playback_system_message: {
+        Args: { _code: string; _room_id: string; _text: string }
+        Returns: undefined
+      }
       end_room: { Args: { _room_id: string }; Returns: Json }
       export_user_data: { Args: never; Returns: Json }
       has_role: {
@@ -1002,9 +1067,33 @@ export type Database = {
       join_room_by_code: { Args: { _code: string }; Returns: Json }
       leave_room: { Args: { _room_id: string }; Returns: Json }
       my_staff_context: { Args: never; Returns: Json }
+      pause_room_media: {
+        Args: { _expected_version?: number; _room_id: string }
+        Returns: Json
+      }
       pick_room_successor: {
         Args: { _excluding: string; _room_id: string }
         Returns: string
+      }
+      play_room_media: {
+        Args: { _expected_version?: number; _room_id: string }
+        Returns: Json
+      }
+      playback_current_position: {
+        Args: {
+          _state: Database["public"]["Tables"]["room_playback_state"]["Row"]
+        }
+        Returns: number
+      }
+      playback_precheck: {
+        Args: {
+          _action: string
+          _expected_version: number
+          _limit: number
+          _room_id: string
+          _window_seconds: number
+        }
+        Returns: Json
       }
       purge_expired_chat: { Args: never; Returns: number }
       purge_user_data: { Args: { _user_id: string }; Returns: Json }
@@ -1038,6 +1127,15 @@ export type Database = {
           username: string
         }[]
       }
+      room_playback_snapshot: { Args: { _room_id: string }; Returns: Json }
+      seek_room_media: {
+        Args: {
+          _expected_version?: number
+          _position_seconds: number
+          _room_id: string
+        }
+        Returns: Json
+      }
       send_room_message: {
         Args: {
           _content: string
@@ -1055,6 +1153,17 @@ export type Database = {
           _note?: string
           _report_id: string
           _status: Database["public"]["Enums"]["report_status"]
+        }
+        Returns: Json
+      }
+      set_room_media: {
+        Args: {
+          _expected_version?: number
+          _media_id: string
+          _provider: string
+          _room_id: string
+          _thumbnail_url?: string
+          _title?: string
         }
         Returns: Json
       }
@@ -1109,6 +1218,8 @@ export type Database = {
         | "suspend"
         | "content_removed"
         | "dismissed"
+      playback_provider: "youtube"
+      playback_status: "idle" | "ready" | "playing" | "paused" | "ended"
       report_status: "open" | "reviewing" | "actioned" | "dismissed"
       report_target: "user" | "room" | "message" | "other"
       room_event_type:
@@ -1293,6 +1404,8 @@ export const Constants = {
         "content_removed",
         "dismissed",
       ],
+      playback_provider: ["youtube"],
+      playback_status: ["idle", "ready", "playing", "paused", "ended"],
       report_status: ["open", "reviewing", "actioned", "dismissed"],
       report_target: ["user", "room", "message", "other"],
       room_event_type: [

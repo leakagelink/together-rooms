@@ -119,8 +119,9 @@ export function evaluateYouTubePolicy(
   let thumbnailUrl: string | null = null;
   for (const key of ["maxres", "standard", "high", "medium", "default"]) {
     const thumb = thumbnails[key];
-    if (thumb?.url) {
-      thumbnailUrl = isSafeThumbnailUrl(thumb.url) ? thumb.url : null;
+    const thumbUrl = thumb?.["url"];
+    if (typeof thumbUrl === "string") {
+      thumbnailUrl = isSafeThumbnailUrl(thumbUrl) ? thumbUrl : null;
       break;
     }
   }

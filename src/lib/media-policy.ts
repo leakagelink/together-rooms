@@ -40,7 +40,10 @@ export function canonicalYouTubeThumbnailUrl(videoId: string): string | null {
 
 /** A valid thumbnail URL must be served from YouTube's own image host. */
 export function isSafeThumbnailUrl(url: string): boolean {
-  return url.startsWith(YOUTUBE_API_THUMBNAIL_HOST) && /^[A-Za-z0-9_/-.]+$/.test(url.slice(YOUTUBE_API_THUMBNAIL_HOST.length));
+  return (
+    url.startsWith(YOUTUBE_API_THUMBNAIL_HOST) &&
+    /^[A-Za-z0-9_/.-]+$/.test(url.slice(YOUTUBE_API_THUMBNAIL_HOST.length))
+  );
 }
 
 /**

@@ -1204,30 +1204,18 @@ export type Database = {
         }
         Returns: Json
       }
-      set_room_media:
-        | {
-            Args: {
-              _expected_version?: number
-              _media_id: string
-              _provider: string
-              _room_id: string
-              _thumbnail_url?: string
-              _title?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _expected_version?: number
-              _media_id: string
-              _policy_check_result?: Json
-              _provider: string
-              _room_id: string
-              _thumbnail_url?: string
-              _title?: string
-            }
-            Returns: Json
-          }
+      set_room_media: {
+        Args: {
+          _expected_version?: number
+          _media_id: string
+          _policy_check_result?: Json
+          _provider: string
+          _room_id: string
+          _thumbnail_url?: string
+          _title?: string
+        }
+        Returns: Json
+      }
       shares_room_with: { Args: { _a: string; _b: string }; Returns: boolean }
       staff_get_removed_message: {
         Args: { _message_id: string }

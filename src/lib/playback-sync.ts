@@ -33,48 +33,12 @@ export const DRIFT_CORRECTION_COOLDOWN_MS = 4000;
 /** How often the client re-checks drift. No database traffic is involved. */
 export const DRIFT_CHECK_INTERVAL_MS = 2000;
 
-const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
-
 /**
- * Extracts a YouTube video id from the common public URL shapes, or from a
- * bare id. Returns null for anything else — no network call, no guessing.
- * Only the 11-character id is ever persisted; the pasted URL is discarded.
+ * Provider-specific parsing and validation live in
+ * `src/lib/providers/youtube.ts` (Phase 4.1 provider boundary). This module is
+ * provider-agnostic synchronization maths only.
  */
-export function parseYouTubeVideoId(input: string): string | null {
-  const raw = input.trim();
-  if (!raw) return null;
-  if (YOUTUBE_ID.test(raw)) return raw;
 
-  let url: URL;
-  try {
-    url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
-  } catch {
-    return null;
-  }
-
-  const host = url.hostname.replace(/^www\./, "").toLowerCase();
-  const allowed = ["youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com"];
-  const segments = url.pathname.split("/").filter(Boolean);
-
-  if (host === "youtu.be") {
-    const id = segments[0];
-    return id && YOUTUBE_ID.test(id) ? id : null;
-  }
-  if (!allowed.includes(host)) return null;
-
-  const v = url.searchParams.get("v");
-  if (v && YOUTUBE_ID.test(v)) return v;
-
-  const [first, second] = segments;
-  if (first && ["embed", "v", "shorts", "live"].includes(first) && second) {
-    return YOUTUBE_ID.test(second) ? second : null;
-  }
-  return null;
-}
-
-export function isValidYouTubeVideoId(id: string): boolean {
-  return YOUTUBE_ID.test(id);
-}
 
 /**
  * Authoritative expected position.

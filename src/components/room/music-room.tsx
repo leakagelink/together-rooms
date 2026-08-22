@@ -123,9 +123,9 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
   }, [queryClient, queue, roomId]);
 
   const run = useMutation({
-    mutationFn: async (fn: () => Promise<{ ok: boolean; reason?: RpcReason }>) => {
+    mutationFn: async (fn: () => Promise<{ ok: boolean; reason?: string }>) => {
       const result = await fn();
-      if (!result.ok) throw new Error(rpcMessage(result.reason ?? "server_error"));
+      if (!result.ok) throw new Error(rpcMessage((result.reason ?? "server_error") as RpcReason));
       return result;
     },
     onSuccess: afterMutation,
@@ -166,7 +166,9 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
         size="sm"
         variant="outline"
         disabled={busy}
-        onClick={() => run.mutate(() => start({ data: { room_id: roomId, expected_version: version } }))}
+        onClick={() =>
+          run.mutate(() => start({ data: { room_id: roomId, expected_version: version } }))
+        }
       >
         <ListMusic className="size-4" aria-hidden="true" /> Start queue
       </Button>
@@ -214,7 +216,8 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
           )
         }
       >
-        <Repeat className="size-4" aria-hidden="true" /> {repeatLabel(settings?.repeat_mode ?? "off")}
+        <Repeat className="size-4" aria-hidden="true" />{" "}
+        {repeatLabel(settings?.repeat_mode ?? "off")}
       </Button>
       <Button
         size="sm"
@@ -250,7 +253,11 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{item.title ?? item.provider_media_id}</p>
         <p className="text-xs text-muted-foreground">
-          {item.status === "playing" ? "Now playing" : item.status === "suggested" ? "Suggested" : "Up next"}
+          {item.status === "playing"
+            ? "Now playing"
+            : item.status === "suggested"
+              ? "Suggested"
+              : "Up next"}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-1">
@@ -289,7 +296,7 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
                     data: {
                       item_id: item.id,
                       target_index: moveTargetIndex(index, -1, list.length),
-                      expected_queue_version: queueVersion,
+                      expected_queue_version: queueVersion ?? 0,
                     },
                   }),
                 )
@@ -308,7 +315,7 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
                     data: {
                       item_id: item.id,
                       target_index: moveTargetIndex(index, 1, list.length),
-                      expected_queue_version: queueVersion,
+                      expected_queue_version: queueVersion ?? 0,
                     },
                   }),
                 )
@@ -341,7 +348,7 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
         canControl={canManage}
         roomActive={roomActive}
         heading="Listen together"
-        onTrackEnded={roomActive ? onTrackEnded : undefined}
+        {...(roomActive ? { onTrackEnded } : {})}
         transport={transport}
       />
 
@@ -439,7 +446,9 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
 
         <div className="mt-5 space-y-5">
           {sections.nowPlaying ? (
-            <ul className="space-y-2">{renderItem(sections.nowPlaying, 0, [sections.nowPlaying])}</ul>
+            <ul className="space-y-2">
+              {renderItem(sections.nowPlaying, 0, [sections.nowPlaying])}
+            </ul>
           ) : null}
 
           <div>

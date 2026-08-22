@@ -115,6 +115,27 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
       _expected_version: version ?? null,
     });
 
+  async function seedPolicy(
+    mediaId: string,
+    status: string,
+    extras: Record<string, unknown> = {},
+  ) {
+    const { error } = await admin.rpc("upsert_media_metadata_cache", {
+      _provider: "youtube",
+      _media_id: mediaId,
+      _title: "Test title",
+      _thumbnail_url: `https://i.ytimg.com/vi/${mediaId}/hqdefault.jpg`,
+      _made_for_kids: status === "made_for_kids",
+      _embeddable: status !== "not_embeddable",
+      _privacy_status: status === "privacy_blocked" ? "private" : "public",
+      _status: status,
+      _source: "test",
+      _ttl_hours: 1,
+      ...extras,
+    });
+    if (error) throw error;
+  }
+
   beforeAll(async () => {
     host = await makeUser("host");
     controller = await makeUser("ctrl");

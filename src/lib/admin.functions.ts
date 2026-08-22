@@ -113,11 +113,11 @@ export const getReportQueue = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("staff_report_queue", {
-      _status: data.status ?? undefined,
-      _target_type: data.target_type ?? undefined,
-      _category: data.category || undefined,
-      _from: data.from ?? undefined,
-      _to: data.to ?? undefined,
+      ...(data.status ? { _status: data.status } : {}),
+      ...(data.target_type ? { _target_type: data.target_type } : {}),
+      ...(data.category ? { _category: data.category } : {}),
+      ...(data.from ? { _from: data.from } : {}),
+      ...(data.to ? { _to: data.to } : {}),
       _limit: data.limit,
       _offset: data.offset,
     });
@@ -180,10 +180,10 @@ export const createModerationAction = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("create_moderation_action", {
       _action: data.action,
-      _report_id: data.report_id ?? undefined,
-      _room_id: data.room_id ?? undefined,
-      _target_user_id: data.target_user_id ?? undefined,
-      _reason: data.reason ?? undefined,
+      ...(data.report_id ? { _report_id: data.report_id } : {}),
+      ...(data.room_id ? { _room_id: data.room_id } : {}),
+      ...(data.target_user_id ? { _target_user_id: data.target_user_id } : {}),
+      ...(data.reason ? { _reason: data.reason } : {}),
     });
     return normalizeRpc<{ id: string }>("create_moderation_action", result, error);
   });

@@ -70,3 +70,38 @@ the database with a `version_conflict` instead of being applied twice.
 This document describes implementation boundaries only. It is **not** a claim of
 YouTube/Google approval, YouTube API Services compliance certification, Google Play
 approval, or legal review of any kind.
+
+## Phase 4.1 — provider hardening (verified behaviour)
+
+### Metadata provenance
+Titles and thumbnails supplied by any client are ignored and stored as `NULL`;
+`set_room_media` accepts only `provider` + `provider_media_id`. Titles are resolved
+at display time from YouTube's public oEmbed endpoint **server-side**, sanitized, and
+thumbnails are accepted only from `i.ytimg.com`. The UI labels each title as
+`provider` (oEmbed-verified) or `fallback` (derived locally), so an unverified title
+can never masquerade as trusted metadata.
+
+### Failure states
+Player errors are classified rather than surfaced raw: `2` → invalid id,
+`5` → player init failed, `100` → unavailable/removed/private,
+`101`/`150` → embedding disabled by the uploader. Each state renders an explicit
+message; there is no silent black player and no retry loop that hammers YouTube.
+
+### Autoplay and user gesture
+When a browser refuses programmatic playback, the room shows a "Tap to Sync & Play"
+overlay. The gesture recomputes the expected position from the authoritative row at
+the moment of the tap — it never resumes from a stale offset and never writes to the
+database. Participants who are blocked cannot mutate room state at all.
+
+### Clock and reconciliation
+The client's clock offset is re-measured on load, reconnect, foreground and manual
+resync, throttled to at most one measurement per 30s and refreshed when older than
+10 minutes. Returning from background reconciles by re-deriving position from
+`playback_started_at` + `position_seconds`, re-verifying membership, and seeking
+locally.
+
+### Trust boundary
+Local device problems — provider failure, blocked autoplay, drift, backgrounding —
+are corrected locally only. The only writers to `room_playback_state` are the
+SECURITY DEFINER RPCs, gated by membership, control permission, room status,
+rate limits and `expected_version`.

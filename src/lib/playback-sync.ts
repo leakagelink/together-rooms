@@ -39,7 +39,6 @@ export const DRIFT_CHECK_INTERVAL_MS = 2000;
  * provider-agnostic synchronization maths only.
  */
 
-
 /**
  * Authoritative expected position.
  *

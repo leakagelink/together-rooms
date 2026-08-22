@@ -196,9 +196,9 @@ describe("DEVICE-T7/T8/T10: clock offset refresh policy", () => {
 
   it("DEVICE-T10: long sessions refresh only once the offset is stale", () => {
     expect(shouldRefreshClock({ reason: "interval", msSinceLastMeasurement: 60_000 })).toBe(false);
-    expect(shouldRefreshClock({ reason: "interval", msSinceLastMeasurement: CLOCK_MAX_AGE_MS })).toBe(
-      true,
-    );
+    expect(
+      shouldRefreshClock({ reason: "interval", msSinceLastMeasurement: CLOCK_MAX_AGE_MS }),
+    ).toBe(true);
   });
 
   it("never refreshes on a per-tick cadence", () => {

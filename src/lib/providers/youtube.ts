@@ -14,12 +14,7 @@ import {
 
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 
-const ALLOWED_HOSTS = [
-  "youtube.com",
-  "m.youtube.com",
-  "music.youtube.com",
-  "youtube-nocookie.com",
-];
+const ALLOWED_HOSTS = ["youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com"];
 
 /**
  * Extracts a YouTube video id from the common public URL shapes, or from a

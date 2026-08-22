@@ -124,11 +124,7 @@ export function playerEventMayMutate(input: {
 
 /** Reasons the server-time offset may be re-measured. */
 export type ClockRefreshReason =
-  | "initial"
-  | "reconnect"
-  | "foreground"
-  | "manual_resync"
-  | "interval";
+  "initial" | "reconnect" | "foreground" | "manual_resync" | "interval";
 
 /** Longest we trust a measured offset before refreshing it in a long session. */
 export const CLOCK_MAX_AGE_MS = 10 * 60 * 1000;

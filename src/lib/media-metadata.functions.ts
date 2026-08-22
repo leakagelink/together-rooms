@@ -130,8 +130,11 @@ async function resolvePolicyFromApi(mediaId: string): Promise<MediaPolicy> {
   return policy;
 }
 
-async function persistPolicy(supabase: DbClient, policy: MediaPolicy): Promise<void> {
-  await supabase.rpc("upsert_media_metadata_cache", {
+async function persistPolicy(policy: MediaPolicy): Promise<void> {
+  // Cache writes are privileged: only the server-side resolver can populate
+  // the policy table. End users are not allowed to execute upsert_media_metadata_cache.
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  await supabaseAdmin.rpc("upsert_media_metadata_cache", {
     _provider: "youtube",
     _media_id: policy.media_id,
     _title: policy.title,

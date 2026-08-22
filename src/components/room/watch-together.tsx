@@ -153,6 +153,10 @@ export function WatchTogether({
   const stateRef = useRef<PlaybackState | null>(null);
   stateRef.current = state;
 
+  const endedRef = useRef(onTrackEnded);
+  endedRef.current = onTrackEnded;
+  const endedForVersion = useRef(-1);
+
   const {
     metadata,
     policy,

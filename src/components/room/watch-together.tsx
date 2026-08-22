@@ -609,6 +609,8 @@ export function WatchTogether({
 
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
 
+      {transport ? <div className="mt-4">{transport}</div> : null}
+
       {canControl && roomActive ? (
         <div className="mt-4 space-y-3">
           <form onSubmit={onSubmitUrl} className="flex flex-wrap gap-2">

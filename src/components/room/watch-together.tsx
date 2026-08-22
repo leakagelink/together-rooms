@@ -475,17 +475,18 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
 
   const busy = mutation.isPending;
 
-  const overlay = (() => {
-    if (providerFailure) return providerFailure.message;
-    if (!playback.authorized) return "You no longer have access to this room's playback.";
-    if (!playerReady) return "Starting the player…";
-    if (playback.isPending || metadataPending) return "Loading playback state…";
-    if (!state?.provider_media_id) return "No video selected yet.";
-    if (!playback.connected) return "Connection lost — trying to reconnect…";
-    return null;
-  })();
+  const policyStatus = state?.provider_media_id ? (policy?.status ?? null) : null;
 
-  const policyStatus = state?.provider_media_id ? policy?.status ?? null : null;
+  const surface = planPlayerSurface({
+    providerFailure: providerFailure?.message ?? null,
+    authorized: playback.authorized,
+    playerReady,
+    loading: playback.isPending || metadataPending,
+    hasMedia: Boolean(state?.provider_media_id),
+    connected: playback.connected,
+    awaitingGesture,
+    policyStatus,
+  });
 
   return (
     <section className="surface-panel mt-8 p-5" aria-labelledby="watch-heading">
@@ -512,37 +513,46 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
       <div className="mt-4 overflow-hidden rounded-lg border border-border bg-muted/40">
         <div className="relative aspect-video w-full">
           <div ref={containerRef} className="absolute inset-0 size-full" />
-          {overlay ? (
+          {/*
+            Integrity rule: an overlay is only ever rendered while no video is
+            loaded in the frame. Notices and the gesture prompt live below.
+          */}
+          {surface.overlay ? (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/85 p-4 text-center text-sm text-muted-foreground">
-              {overlay}
-            </div>
-          ) : null}
-          {!overlay && awaitingGesture ? (
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/85 p-4 text-center">
-              <p className="text-sm font-medium">Ready to sync</p>
-              <p className="max-w-xs text-xs text-muted-foreground">
-                Your device needs a tap before it can start playing. The room keeps playing for
-                everyone else.
-              </p>
-              <Button className="pointer-events-auto" size="sm" onClick={onTapToSync}>
-                <Play className="size-4" aria-hidden="true" /> Tap to Sync &amp; Play
-              </Button>
-            </div>
-          ) : null}
-          {policyStatus && policyStatus !== "ok" ? (
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/85 p-4 text-center">
-              <p className="text-sm font-medium">This video can&apos;t be played here</p>
-              <p className="max-w-xs text-xs text-muted-foreground">
-                {policyStatus === "made_for_kids"
-                  ? "The video is marked Made for Kids and cannot be shared in this room."
-                  : policyStatus === "not_embeddable"
-                    ? "The owner has disabled embedding for this video."
-                    : "The video is unavailable, private, or restricted."}
-              </p>
+              {surface.overlay}
             </div>
           ) : null}
         </div>
       </div>
+
+      {surface.gesturePrompt ? (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
+          <div className="min-w-40 flex-1">
+            <p className="text-sm font-medium">Ready to sync</p>
+            <p className="text-xs text-muted-foreground">
+              Your device needs a tap before it can start playing. The room keeps playing for
+              everyone else.
+            </p>
+          </div>
+          <Button size="sm" onClick={onTapToSync}>
+            <Play className="size-4" aria-hidden="true" /> Tap to Sync &amp; Play
+          </Button>
+        </div>
+      ) : null}
+
+      {surface.notices.map((notice) => (
+        <p
+          key={notice.id}
+          role="status"
+          className={
+            notice.tone === "warning"
+              ? "mt-3 rounded-md border border-border bg-muted/40 p-2 text-xs text-foreground"
+              : "mt-3 rounded-md border border-border bg-muted/30 p-2 text-xs text-muted-foreground"
+          }
+        >
+          {notice.message}
+        </p>
+      ))}
 
       {state?.provider_media_id ? (
         <p className="mt-3 text-sm">
@@ -555,6 +565,7 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
           </span>
         </p>
       ) : null}
+
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
 
       {canControl && roomActive ? (

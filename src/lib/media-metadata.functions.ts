@@ -92,9 +92,21 @@ async function lookupPolicyFromCache(supabase: DbClient, mediaId: string, now: n
     .eq("media_id", mediaId)
     .limit(1);
 
-  const cached = cacheRows?.[0] ? policyFromJsonb(cacheRows[0]) : null;
-  if (cached && isPolicyFresh(cached, now)) return cached;
-  return null;
+  const row = cacheRows?.[0];
+  if (!row) return null;
+
+  // Supabase stores the authoritative expiration as expires_at. Use that
+  // rather than the policy's checked_at to avoid stale data being reused.
+  const expiresAt = Date.parse(row.expires_at as string);
+  if (Number.isNaN(expiresAt) || now >= expiresAt) return null;
+
+  const cached = policyFromJsonb(row);
+  if (cached) {
+    // Normalize checked_at to the recorded_at value so downstream TTL math
+    // reflects the actual cache row age.
+    cached.checked_at = (row.recorded_at as string) ?? cached.checked_at;
+  }
+  return cached;
 }
 
 async function resolvePolicyFromApi(mediaId: string): Promise<MediaPolicy> {

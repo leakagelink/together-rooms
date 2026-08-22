@@ -5,6 +5,11 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { queryKeys } from "@/lib/query-keys";
 import { isNewerState, type PlaybackState } from "@/lib/playback-sync";
+import {
+  CLOCK_MAX_AGE_MS,
+  shouldRefreshClock,
+  type ClockRefreshReason,
+} from "@/lib/playback-device";
 import { getServerTime } from "@/lib/playback.functions";
 
 const PLAYBACK_COLUMNS =
@@ -26,12 +31,14 @@ export interface RoomPlaybackState {
   isError: boolean;
   /** postgres_changes transport state for room_playback_state. */
   connected: boolean;
+  /** False when the viewer is not (or no longer) an admitted room member. */
   authorized: boolean;
   /** Client clock correction, in ms: serverNow - clientNow. */
   clockOffsetMs: number;
   /** Server-corrected wall clock, used for expected-position arithmetic. */
   now: () => number;
-  resync: () => void;
+  /** Local-only reconciliation. Never writes to the database. */
+  resync: (reason?: ClockRefreshReason) => void;
 }
 
 /**
@@ -42,13 +49,16 @@ export interface RoomPlaybackState {
  * - Rows are applied only when `version` is strictly greater than what we
  *   hold, so a delayed or duplicated realtime event cannot resurrect older
  *   state (out-of-order protection).
- * - Reconnect and tab-resume trigger a single authoritative re-read.
+ * - Reconnect, app foreground and manual resync trigger one authoritative
+ *   re-read plus a throttled clock re-measurement, and re-verify membership.
+ *   Nothing here mutates authoritative state.
  */
 export function useRoomPlayback(roomId: string, userId: string | undefined): RoomPlaybackState {
   const queryClient = useQueryClient();
   const [connected, setConnected] = useState(false);
   const [authorized, setAuthorized] = useState(true);
   const [clockOffsetMs, setClockOffsetMs] = useState(0);
+  const lastClockMeasurement = useRef(0);
 
   const query = useQuery({
     queryKey: queryKeys.playback.state(roomId),
@@ -64,8 +74,18 @@ export function useRoomPlayback(roomId: string, userId: string | undefined): Roo
     enabled: Boolean(roomId && userId),
   });
 
-  // Measure the client↔server clock offset once per mount (and on resync).
-  const measureClock = useCallback(async () => {
+  /**
+   * Measures the client↔server clock offset. Bounded by
+   * `shouldRefreshClock`: initial load always measures; reconnect, foreground
+   * and manual resync are throttled; a background interval only fires once the
+   * offset is genuinely stale. Never per playback tick.
+   */
+  const measureClock = useCallback(async (reason: ClockRefreshReason) => {
+    const since = lastClockMeasurement.current
+      ? Date.now() - lastClockMeasurement.current
+      : Number.POSITIVE_INFINITY;
+    if (!shouldRefreshClock({ reason, msSinceLastMeasurement: since })) return;
+    lastClockMeasurement.current = Date.now();
     const sent = Date.now();
     try {
       const res = await getServerTime();
@@ -77,10 +97,6 @@ export function useRoomPlayback(roomId: string, userId: string | undefined): Roo
       /* keep the previous offset; expected position degrades gracefully */
     }
   }, []);
-
-  useEffect(() => {
-    if (userId) void measureClock();
-  }, [measureClock, userId]);
 
   const applyRow = useCallback(
     (row: unknown) => {
@@ -96,13 +112,32 @@ export function useRoomPlayback(roomId: string, userId: string | undefined): Roo
   const applyRef = useRef(applyRow);
   applyRef.current = applyRow;
 
-  const resync = useCallback(() => {
-    void measureClock();
-    void queryClient.invalidateQueries({ queryKey: queryKeys.playback.state(roomId) });
-  }, [measureClock, queryClient, roomId]);
+  /** Re-checks membership; a revoked member stops synchronizing entirely. */
+  const verifyMembership = useCallback(async () => {
+    const { data, error } = await supabase.rpc("authorize_room_channel", { _room_id: roomId });
+    const ok = !error && data === true;
+    setAuthorized(ok);
+    return ok;
+  }, [roomId]);
+
+  const resync = useCallback(
+    (reason: ClockRefreshReason = "manual_resync") => {
+      void (async () => {
+        const stillMember = await verifyMembership();
+        if (!stillMember) return;
+        await measureClock(reason);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.playback.state(roomId) });
+      })();
+    },
+    [measureClock, queryClient, roomId, verifyMembership],
+  );
 
   const resyncRef = useRef(resync);
   resyncRef.current = resync;
+
+  useEffect(() => {
+    if (userId) void measureClock("initial");
+  }, [measureClock, userId]);
 
   useEffect(() => {
     if (!roomId || !userId) return;
@@ -110,15 +145,8 @@ export function useRoomPlayback(roomId: string, userId: string | undefined): Roo
     let channel: RealtimeChannel | null = null;
 
     void (async () => {
-      const { data: allowed, error } = await supabase.rpc("authorize_room_channel", {
-        _room_id: roomId,
-      });
-      if (cancelled) return;
-      if (error || allowed !== true) {
-        setAuthorized(false);
-        return;
-      }
-      setAuthorized(true);
+      const allowed = await verifyMembership();
+      if (cancelled || !allowed) return;
 
       channel = supabase
         .channel(`room-playback:${roomId}`)
@@ -142,24 +170,32 @@ export function useRoomPlayback(roomId: string, userId: string | undefined): Roo
           if (cancelled) return;
           const live = status === "SUBSCRIBED";
           setConnected(live);
-          if (live) resyncRef.current();
+          if (live) resyncRef.current("reconnect");
         });
     })();
 
+    // App foreground / network return: re-verify membership, refresh state,
+    // and re-measure the clock (throttled). No duplicate subscription is made.
     const onWake = () => {
-      if (document.visibilityState === "visible") resyncRef.current();
+      if (document.visibilityState === "visible") resyncRef.current("foreground");
     };
     document.addEventListener("visibilitychange", onWake);
     window.addEventListener("online", onWake);
+    window.addEventListener("focus", onWake);
+
+    // Long sessions: bounded staleness check, not a polling loop.
+    const clockTimer = setInterval(() => resyncRef.current("interval"), CLOCK_MAX_AGE_MS);
 
     return () => {
       cancelled = true;
       document.removeEventListener("visibilitychange", onWake);
       window.removeEventListener("online", onWake);
+      window.removeEventListener("focus", onWake);
+      clearInterval(clockTimer);
       setConnected(false);
       if (channel) void supabase.removeChannel(channel);
     };
-  }, [applyRow, queryClient, roomId, userId]);
+  }, [applyRow, queryClient, roomId, userId, verifyMembership]);
 
   const now = useCallback(() => Date.now() + clockOffsetMs, [clockOffsetMs]);
 

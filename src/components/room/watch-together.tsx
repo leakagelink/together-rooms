@@ -534,7 +534,7 @@ export function WatchTogether({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="watch-heading" className="flex items-center gap-2 text-lg font-semibold">
-            <Youtube className="size-5" aria-hidden="true" /> Watch together
+            <Youtube className="size-5" aria-hidden="true" /> {heading ?? "Watch together"}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Playback is kept close across devices from the room&apos;s saved state. It is not

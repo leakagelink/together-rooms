@@ -530,6 +530,8 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
           <span className="text-muted-foreground">
             · {state.playback_status} · v{state.version}
             {metadata?.source === "fallback" ? " · title unavailable from YouTube" : ""}
+            {policy?.made_for_kids ? " · Made for Kids" : ""}
+            {policy?.privacy_status ? ` · ${policy.privacy_status}` : ""}
           </span>
         </p>
       ) : null}

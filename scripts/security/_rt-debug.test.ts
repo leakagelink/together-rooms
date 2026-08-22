@@ -12,6 +12,17 @@ describe("rt", () => { it("debug", async () => {
   const {data:room,error}=await c.from("rooms").insert({owner_id:uid,host_id:uid,name:"rt",type:"watch",status:"active",privacy:"private",max_members:5,join_code:"RTX"+Math.random().toString(36).slice(2,6).toUpperCase()}).select("id").single();
   console.log("room err",error);
   const rid=room!.id as string;
+  const email2=`rt2-${Date.now()}@example.com`;
+  const {data:u2}=await admin.auth.admin.createUser({email:email2,password:"Test-Password-123!",email_confirm:true});
+  const c2=createClient(url,ak,{auth:{persistSession:false}});
+  const si2=await c2.auth.signInWithPassword({email:email2,password:"Test-Password-123!"});
+  const jc=(await admin.from("rooms").select("join_code").eq("id",rid).single()).data!.join_code as string;
+  console.log("join",(await c2.rpc("join_room_by_code",{_code:jc})).data);
+  await c2.realtime.setAuth(si2.data.session!.access_token);
+  const got2:any[]=[];
+  const ch2=c2.channel("dbg2").on("postgres_changes",{event:"*",schema:"public",table:"room_playback_state",filter:`room_id=eq.${rid}`},p=>got2.push(p.eventType));
+  await new Promise<void>(res=>ch2.subscribe((s)=>{ if(s==="SUBSCRIBED"||s==="CHANNEL_ERROR") res();}));
+  (globalThis as any).__got2=got2;
   await c.realtime.setAuth(si.data.session!.access_token);
   const got:any[]=[]; const st:string[]=[];
   const ch=c.channel("dbg").on("postgres_changes",{event:"*",schema:"public",table:"room_playback_state",filter:`room_id=eq.${rid}`},p=>got.push(p.eventType))
@@ -24,7 +35,7 @@ describe("rt", () => { it("debug", async () => {
   const r2=await c.rpc("play_room_media",{_room_id:rid});
   console.log("play",JSON.stringify(r2.data)?.slice(0,120),r2.error);
   await wait(3000);
-  console.log("statuses",st,"events",got);
-  await admin.from("rooms").delete().eq("id",rid); await admin.auth.admin.deleteUser(uid);
+  console.log("statuses",st,"events",got,"member events",got2);
+  await admin.from("rooms").delete().eq("id",rid); await admin.auth.admin.deleteUser(uid); await admin.auth.admin.deleteUser(u2!.user!.id);
   expect(true).toBe(true);
 },120000);});

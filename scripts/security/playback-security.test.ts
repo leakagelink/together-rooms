@@ -274,14 +274,27 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
       .insert({ room_id: roomId, provider_media_id: OTHER_VIDEO });
     expect(insert.error).not.toBeNull();
 
+    // No UPDATE/DELETE grant and no policy: PostgREST either errors or matches
+    // zero rows. Either way the authoritative row must be untouched.
     const update = await controller.client
       .from("room_playback_state")
       .update({ playback_status: "playing", position_seconds: 9999 })
-      .eq("room_id", roomId);
-    expect(update.error).not.toBeNull();
+      .eq("room_id", roomId)
+      .select("room_id");
+    expect(update.error ? true : (update.data ?? []).length === 0).toBe(true);
 
-    const del = await host.client.from("room_playback_state").delete().eq("room_id", roomId);
-    expect(del.error).not.toBeNull();
+    const del = await host.client
+      .from("room_playback_state")
+      .delete()
+      .eq("room_id", roomId)
+      .select("room_id");
+    expect(del.error ? true : (del.data ?? []).length === 0).toBe(true);
+
+    const { data: still } = await admin
+      .from("room_playback_state")
+      .select("room_id")
+      .eq("room_id", roomId);
+    expect(still).toHaveLength(1);
 
     const { data } = await admin
       .from("room_playback_state")
@@ -378,7 +391,10 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
   }, 90_000);
 
   it("PLAY-T18 / SYNC-T5-T7: members receive playback rows until membership is revoked", async () => {
-    const liveRoom = await makeRoom(host, "Realtime playback room", code("L"));
+    // A dedicated controller keeps this case clear of the shared host's
+    // media-change rate-limit budget consumed by the cases above.
+    const liveHost = await makeUser("livehost");
+    const liveRoom = await makeRoom(liveHost, "Realtime playback room", code("L"));
     const joinCode = (await admin.from("rooms").select("join_code").eq("id", liveRoom).single())
       .data!.join_code as string;
     const victim = await makeUser("victim");
@@ -416,13 +432,15 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
     await wait(1500);
 
     // Media select + play + pause + seek must all reach the joined member.
-    await setMedia(host, liveRoom);
-    await wait(400);
-    await rpc(host, "play_room_media", { _room_id: liveRoom });
-    await wait(400);
-    await rpc(host, "pause_room_media", { _room_id: liveRoom });
-    await wait(400);
-    await rpc(host, "seek_room_media", { _room_id: liveRoom, _position_seconds: 12 });
+    expect(await setMedia(liveHost, liveRoom)).toMatchObject({ ok: true });
+    await wait(600);
+    expect(await rpc(liveHost, "play_room_media", { _room_id: liveRoom })).toMatchObject({ ok: true });
+    await wait(600);
+    expect(await rpc(liveHost, "pause_room_media", { _room_id: liveRoom })).toMatchObject({ ok: true });
+    await wait(600);
+    expect(
+      await rpc(liveHost, "seek_room_media", { _room_id: liveRoom, _position_seconds: 12 }),
+    ).toMatchObject({ ok: true });
     await wait(1500);
     const beforeRevoke = seen.length;
     expect(beforeRevoke).toBeGreaterThanOrEqual(3);
@@ -436,7 +454,9 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
     expect(kickError).toBeNull();
     await wait(1000);
 
-    await rpc(host, "seek_room_media", { _room_id: liveRoom, _position_seconds: 300 });
+    expect(
+      await rpc(liveHost, "seek_room_media", { _room_id: liveRoom, _position_seconds: 300 }),
+    ).toMatchObject({ ok: true });
     await wait(2500);
     expect(seen.length).toBe(beforeRevoke);
 

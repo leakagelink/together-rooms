@@ -33,6 +33,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Button asChild variant="ghost" size="sm">
               <Link to="/rooms">Rooms</Link>
             </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/playlists">Playlists</Link>
+            </Button>
             {isStaff ? (
               <Button asChild variant="ghost" size="sm">
                 <Link to="/admin">

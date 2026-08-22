@@ -77,3 +77,72 @@ room hosts/moderators, reporter identity never exposed to the reported user.
 `pg_cron` job `synctogether-purge-expired-chat` runs `SELECT public.purge_expired_chat();`
 hourly at minute 7. `purge_expired_chat` has no EXECUTE grant for `anon` or
 `authenticated`, so it cannot be user-invoked.
+
+---
+
+# Phase 3.2 — Moderation operations, roles & realtime revocation
+
+## Role model
+
+Roles live only in `public.user_roles` (`app_role`: `user`, `moderator`, `admin`).
+They are never stored on `profiles`, and no end-user role holds INSERT/UPDATE/DELETE
+on `user_roles` — every change goes through `assign_app_role` / `revoke_app_role`,
+which require `has_role(auth.uid(),'admin')`.
+
+| Table | anon | authenticated | service_role |
+| --- | --- | --- | --- |
+| `user_roles` | none | SELECT (RLS: own rows / staff) | ALL |
+| `audit_logs` | none | SELECT (RLS: staff) | ALL |
+| `moderation_actions` | none | SELECT (RLS: staff) | ALL |
+
+`bootstrap_first_admin(_email)` is operator-only: EXECUTE is revoked from
+`PUBLIC`, `anon` and `authenticated`, and the function aborts if any admin
+already exists. It is the only path that creates the first admin.
+
+Guard rails on role changes: an admin cannot revoke their own admin role, and the
+last remaining admin cannot be revoked.
+
+## Staff surface
+
+| Capability | RPC | Required role |
+| --- | --- | --- |
+| staff flags for UI | `my_staff_context` | any signed-in user (returns booleans) |
+| queue with filters + pagination | `staff_report_queue` | staff |
+| report detail, actions, audit | `staff_report_detail` | staff |
+| counters + recent actions | `staff_moderation_overview` | staff |
+| status transitions + note | `set_report_status` | staff |
+| record a moderation action | `create_moderation_action` | staff |
+| reveal removed plaintext | `staff_get_removed_message` | staff, audited |
+| list / search / grant / revoke roles | `admin_list_roles`, `admin_search_users`, `assign_app_role`, `revoke_app_role` | admin |
+
+`/admin`, `/admin/reports/$reportId` and `/admin/roles` render behind
+`StaffGate`, which is **presentation only**. Authorization is re-checked in
+Postgres by every RPC above, so calling the endpoints directly as a normal user
+returns `forbidden` (covered by MOD-T3 … MOD-T15).
+
+Privacy invariants preserved by the console:
+
+- the reporter's identity is never returned to the reported user, and is not
+  rendered in the review screen;
+- removed-message plaintext is never included in queue or detail payloads — it
+  is fetched only through the audited reveal RPC and held in component state,
+  never in the query cache;
+- every status change, action and reveal writes an `audit_logs` row attributed
+  to the acting staff member.
+
+## Realtime membership revocation
+
+Verified by `scripts/security/realtime-revocation.test.ts` (REV-T1 … REV-T5)
+against a socket that stays connected across the revocation:
+
+- REV-T1 — a joined member receives `postgres_changes` rows for the room.
+- REV-T2 — membership is revoked server-side; the socket is not torn down.
+- REV-T3/T4 — inserts, updates and reactions produced *after* revocation are
+  **not** delivered to the removed subscriber. Supabase Realtime re-evaluates
+  RLS per change against current database state, so revocation takes effect on
+  the existing connection without any transport-level invalidation.
+- REV-T5 — the removed member cannot re-authorize a new subscription
+  (`authorize_room_channel` returns false) and REST reads return zero rows.
+
+Conclusion: RLS is the revocation boundary for realtime as well as REST. No
+socket-kill mechanism is required, and none is relied upon.

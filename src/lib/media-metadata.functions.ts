@@ -146,7 +146,8 @@ async function persistPolicy(policy: MediaPolicy): Promise<void> {
     _status: policy.status,
     _source: "data_api",
     _ttl_hours: Math.floor(policy.ttl_seconds / 3600),
-  } as unknown as Parameters<DbClient["rpc"]>[1]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
 }
 
 export async function resolveMediaPolicy(supabase: DbClient, mediaId: string): Promise<PolicyOutcome> {

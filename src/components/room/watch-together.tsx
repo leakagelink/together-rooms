@@ -111,9 +111,26 @@ export interface WatchTogetherProps {
   canControl: boolean;
   /** False once the room has ended or expired. */
   roomActive: boolean;
+  /**
+   * End-of-track report (music rooms). Carries the authoritative version the
+   * device saw, so the database rejects every simultaneous report but one.
+   */
+  onTrackEnded?: (version: number) => void;
+  /** Extra controls rendered under the player, e.g. queue transport. */
+  transport?: React.ReactNode;
+  /** Overrides the section heading for music rooms. */
+  heading?: string;
 }
 
-export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchTogetherProps) {
+export function WatchTogether({
+  roomId,
+  userId,
+  canControl,
+  roomActive,
+  onTrackEnded,
+  transport,
+  heading,
+}: WatchTogetherProps) {
   const playback = useRoomPlayback(roomId, userId);
   const queryClient = useQueryClient();
 

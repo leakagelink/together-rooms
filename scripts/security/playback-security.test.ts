@@ -374,11 +374,12 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
   }, 60_000);
 
   it("PLAY-T20: playback command spam is rate limited", async () => {
-    const spamRoom = await makeRoom(host, "Spam room", code("Z"));
-    expect(await setMedia(host, spamRoom)).toMatchObject({ ok: true });
+    const spamHost = await makeUser("spam");
+    const spamRoom = await makeRoom(spamHost, "Spam room", code("Z"));
+    expect(await setMedia(spamHost, spamRoom)).toMatchObject({ ok: true });
     let limited = false;
     for (let i = 0; i < 40; i += 1) {
-      const res = await rpc(host, "seek_room_media", {
+      const res = await rpc(spamHost, "seek_room_media", {
         _room_id: spamRoom,
         _position_seconds: i,
       });

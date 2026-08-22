@@ -101,6 +101,27 @@ suite("phase 4.1 YouTube provider hardening", () => {
       ...args,
     });
 
+  async function seedPolicy(
+    mediaId: string,
+    status: string,
+    extras: Record<string, unknown> = {},
+  ) {
+    const { error } = await admin.rpc("upsert_media_metadata_cache", {
+      _provider: "youtube",
+      _media_id: mediaId,
+      _title: "Test title",
+      _thumbnail_url: `https://i.ytimg.com/vi/${mediaId}/hqdefault.jpg`,
+      _made_for_kids: status === "made_for_kids",
+      _embeddable: status !== "not_embeddable",
+      _privacy_status: status === "privacy_blocked" ? "private" : "public",
+      _status: status,
+      _source: "test",
+      _ttl_hours: 1,
+      ...extras,
+    });
+    if (error) throw error;
+  }
+
   beforeAll(async () => {
     host = await makeUser("host");
     member = await makeUser("member");
@@ -110,6 +131,10 @@ suite("phase 4.1 YouTube provider hardening", () => {
     roomId = await makeRoom(host, joinCode);
     const join = await member.client.rpc("join_room_by_code", { _code: joinCode });
     expect((join.data as { ok: boolean }).ok).toBe(true);
+
+    // Seed policy cache for the video used in these tests.
+    await seedPolicy(VIDEO, "ok");
+    await seedPolicy(OTHER_VIDEO, "ok");
   }, 120_000);
 
   // Rate limiting is asserted explicitly in PROVIDER-T6; every other test must

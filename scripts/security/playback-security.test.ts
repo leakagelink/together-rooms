@@ -90,7 +90,8 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
     return data.id as string;
   }
 
-  const code = (prefix: string) => `${prefix}${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+  const code = (prefix: string) =>
+    `${prefix}${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
   async function currentVersion(room = roomId) {
     const { data } = await admin
@@ -274,14 +275,27 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
       .insert({ room_id: roomId, provider_media_id: OTHER_VIDEO });
     expect(insert.error).not.toBeNull();
 
+    // No UPDATE/DELETE grant and no policy: PostgREST either errors or matches
+    // zero rows. Either way the authoritative row must be untouched.
     const update = await controller.client
       .from("room_playback_state")
       .update({ playback_status: "playing", position_seconds: 9999 })
-      .eq("room_id", roomId);
-    expect(update.error).not.toBeNull();
+      .eq("room_id", roomId)
+      .select("room_id");
+    expect(update.error ? true : (update.data ?? []).length === 0).toBe(true);
 
-    const del = await host.client.from("room_playback_state").delete().eq("room_id", roomId);
-    expect(del.error).not.toBeNull();
+    const del = await host.client
+      .from("room_playback_state")
+      .delete()
+      .eq("room_id", roomId)
+      .select("room_id");
+    expect(del.error ? true : (del.data ?? []).length === 0).toBe(true);
+
+    const { data: still } = await admin
+      .from("room_playback_state")
+      .select("room_id")
+      .eq("room_id", roomId);
+    expect(still).toHaveLength(1);
 
     const { data } = await admin
       .from("room_playback_state")
@@ -303,9 +317,8 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
 
   it("PLAY-T19: host transfer moves playback authority", async () => {
     const transferRoom = await makeRoom(host, "Transfer room", code("T"));
-    const joinCode = (
-      await admin.from("rooms").select("join_code").eq("id", transferRoom).single()
-    ).data!.join_code as string;
+    const joinCode = (await admin.from("rooms").select("join_code").eq("id", transferRoom).single())
+      .data!.join_code as string;
     const join = await member.client.rpc("join_room_by_code", { _code: joinCode });
     expect((join.data as { ok: boolean }).ok).toBe(true);
 
@@ -361,11 +374,12 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
   }, 60_000);
 
   it("PLAY-T20: playback command spam is rate limited", async () => {
-    const spamRoom = await makeRoom(host, "Spam room", code("Z"));
-    expect(await setMedia(host, spamRoom)).toMatchObject({ ok: true });
+    const spamHost = await makeUser("spam");
+    const spamRoom = await makeRoom(spamHost, "Spam room", code("Z"));
+    expect(await setMedia(spamHost, spamRoom)).toMatchObject({ ok: true });
     let limited = false;
     for (let i = 0; i < 40; i += 1) {
-      const res = await rpc(host, "seek_room_media", {
+      const res = await rpc(spamHost, "seek_room_media", {
         _room_id: spamRoom,
         _position_seconds: i,
       });
@@ -378,7 +392,10 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
   }, 90_000);
 
   it("PLAY-T18 / SYNC-T5-T7: members receive playback rows until membership is revoked", async () => {
-    const liveRoom = await makeRoom(host, "Realtime playback room", code("L"));
+    // A dedicated controller keeps this case clear of the shared host's
+    // media-change rate-limit budget consumed by the cases above.
+    const liveHost = await makeUser("livehost");
+    const liveRoom = await makeRoom(liveHost, "Realtime playback room", code("L"));
     const joinCode = (await admin.from("rooms").select("join_code").eq("id", liveRoom).single())
       .data!.join_code as string;
     const victim = await makeUser("victim");
@@ -387,21 +404,19 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
 
     const seen: number[] = [];
     await victim.client.realtime.setAuth(victim.token);
-    const channel: RealtimeChannel = victim.client
-      .channel(`play-${victim.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "room_playback_state",
-          filter: `room_id=eq.${liveRoom}`,
-        },
-        (payload) => {
-          const row = payload.new as { version?: number };
-          if (typeof row?.version === "number") seen.push(row.version);
-        },
-      );
+    const channel: RealtimeChannel = victim.client.channel(`play-${victim.id}`).on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "room_playback_state",
+        filter: `room_id=eq.${liveRoom}`,
+      },
+      (payload) => {
+        const row = payload.new as { version?: number };
+        if (typeof row?.version === "number") seen.push(row.version);
+      },
+    );
 
     const statuses: string[] = [];
     await new Promise<void>((resolve) => {
@@ -416,13 +431,19 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
     await wait(1500);
 
     // Media select + play + pause + seek must all reach the joined member.
-    await setMedia(host, liveRoom);
-    await wait(400);
-    await rpc(host, "play_room_media", { _room_id: liveRoom });
-    await wait(400);
-    await rpc(host, "pause_room_media", { _room_id: liveRoom });
-    await wait(400);
-    await rpc(host, "seek_room_media", { _room_id: liveRoom, _position_seconds: 12 });
+    expect(await setMedia(liveHost, liveRoom)).toMatchObject({ ok: true });
+    await wait(600);
+    expect(await rpc(liveHost, "play_room_media", { _room_id: liveRoom })).toMatchObject({
+      ok: true,
+    });
+    await wait(600);
+    expect(await rpc(liveHost, "pause_room_media", { _room_id: liveRoom })).toMatchObject({
+      ok: true,
+    });
+    await wait(600);
+    expect(
+      await rpc(liveHost, "seek_room_media", { _room_id: liveRoom, _position_seconds: 12 }),
+    ).toMatchObject({ ok: true });
     await wait(1500);
     const beforeRevoke = seen.length;
     expect(beforeRevoke).toBeGreaterThanOrEqual(3);
@@ -436,7 +457,9 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
     expect(kickError).toBeNull();
     await wait(1000);
 
-    await rpc(host, "seek_room_media", { _room_id: liveRoom, _position_seconds: 300 });
+    expect(
+      await rpc(liveHost, "seek_room_media", { _room_id: liveRoom, _position_seconds: 300 }),
+    ).toMatchObject({ ok: true });
     await wait(2500);
     expect(seen.length).toBe(beforeRevoke);
 

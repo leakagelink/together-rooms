@@ -39,9 +39,9 @@ export const setRoomMedia = createServerFn({ method: "POST" })
       _room_id: data.room_id,
       _provider: data.provider,
       _media_id: data.media_id,
-      _title: data.title ?? null,
-      _thumbnail_url: data.thumbnail_url ?? null,
-      _expected_version: data.expected_version ?? null,
+      ...(data.title ? { _title: data.title } : {}),
+      ...(data.thumbnail_url ? { _thumbnail_url: data.thumbnail_url } : {}),
+      ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
     });
     return normalizeRpc<StateResult>("set_room_media", result, error);
   });
@@ -54,7 +54,7 @@ export const playRoomMedia = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("play_room_media", {
       _room_id: data.room_id,
-      _expected_version: data.expected_version ?? null,
+      ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
     });
     return normalizeRpc<StateResult>("play_room_media", result, error);
   });
@@ -67,7 +67,7 @@ export const pauseRoomMedia = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("pause_room_media", {
       _room_id: data.room_id,
-      _expected_version: data.expected_version ?? null,
+      ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
     });
     return normalizeRpc<StateResult>("pause_room_media", result, error);
   });
@@ -87,7 +87,7 @@ export const seekRoomMedia = createServerFn({ method: "POST" })
     const { data: result, error } = await context.supabase.rpc("seek_room_media", {
       _room_id: data.room_id,
       _position_seconds: data.position_seconds,
-      _expected_version: data.expected_version ?? null,
+      ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
     });
     return normalizeRpc<StateResult>("seek_room_media", result, error);
   });
@@ -100,7 +100,7 @@ export const clearRoomMedia = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("clear_room_media", {
       _room_id: data.room_id,
-      _expected_version: data.expected_version ?? null,
+      ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
     });
     return normalizeRpc<StateResult>("clear_room_media", result, error);
   });

@@ -185,7 +185,7 @@ export const resolveYouTubeMetadata = createServerFn({ method: "POST" })
 
     if (policy.status !== "ok") {
       return {
-        status: policy.status,
+        status: policy.status as Exclude<MetadataOutcome["status"], "ok">,
         source: "fallback",
         policy,
       };
@@ -200,7 +200,7 @@ export const resolveYouTubeMetadata = createServerFn({ method: "POST" })
       status: "ok",
       title: title ?? `YouTube video ${data.media_id}`,
       thumbnail_url: policy.thumbnail_url,
-      source: title && policy.title ? "provider" : "fallback",
+      source: (title && policy.title ? "provider" : "fallback") as "provider" | "fallback",
       policy,
     };
   });

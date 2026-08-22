@@ -19,6 +19,10 @@ export type ProviderErrorKind =
   | "sign_in_required"
   | "player_init_failed"
   | "network"
+  | "policy_blocked"
+  | "made_for_kids"
+  | "not_embeddable"
+  | "privacy_blocked"
   | "unknown";
 
 export interface ProviderError {
@@ -61,6 +65,10 @@ const messages: Record<ProviderErrorKind, string> = {
   sign_in_required: "YouTube requires sign-in to play this video.",
   player_init_failed: "Unable to load the YouTube player.",
   network: "Connection problem while loading the video.",
+  policy_blocked: "This video can't be played in this room.",
+  made_for_kids: "This video is marked Made for Kids and can't be played here.",
+  not_embeddable: "The owner doesn't allow this video to be played outside YouTube.",
+  privacy_blocked: "This video is private.",
   unknown: "This video can't be played here.",
 };
 

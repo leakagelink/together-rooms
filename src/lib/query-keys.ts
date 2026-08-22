@@ -13,6 +13,14 @@ export const queryKeys = {
   playback: {
     state: (roomId: string) => ["rooms", "detail", roomId, "playback"] as const,
   },
+  queue: {
+    snapshot: (roomId: string) => ["rooms", "detail", roomId, "queue"] as const,
+    settings: (roomId: string) => ["rooms", "detail", roomId, "queue", "settings"] as const,
+  },
+  playlists: {
+    mine: () => ["playlists", "mine"] as const,
+    items: (playlistId: string) => ["playlists", playlistId, "items"] as const,
+  },
   account: {
     profile: (userId: string | undefined) => ["account", "profile", userId] as const,
     settings: (userId: string | undefined) => ["user_settings", userId] as const,

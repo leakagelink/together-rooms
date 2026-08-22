@@ -111,9 +111,26 @@ export interface WatchTogetherProps {
   canControl: boolean;
   /** False once the room has ended or expired. */
   roomActive: boolean;
+  /**
+   * End-of-track report (music rooms). Carries the authoritative version the
+   * device saw, so the database rejects every simultaneous report but one.
+   */
+  onTrackEnded?: (version: number) => void;
+  /** Extra controls rendered under the player, e.g. queue transport. */
+  transport?: React.ReactNode;
+  /** Overrides the section heading for music rooms. */
+  heading?: string;
 }
 
-export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchTogetherProps) {
+export function WatchTogether({
+  roomId,
+  userId,
+  canControl,
+  roomActive,
+  onTrackEnded,
+  transport,
+  heading,
+}: WatchTogetherProps) {
   const playback = useRoomPlayback(roomId, userId);
   const queryClient = useQueryClient();
 
@@ -135,6 +152,10 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
   const state = playback.state;
   const stateRef = useRef<PlaybackState | null>(null);
   stateRef.current = state;
+
+  const endedRef = useRef(onTrackEnded);
+  endedRef.current = onTrackEnded;
+  const endedForVersion = useRef(-1);
 
   const {
     metadata,
@@ -338,6 +359,16 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
                 return;
               }
 
+              // End of track: report once per authoritative version. The
+              // database resolves simultaneous reports via expected_version.
+              if (event.data === YTState.ENDED) {
+                if (endedRef.current && endedForVersion.current !== current.version) {
+                  endedForVersion.current = current.version;
+                  endedRef.current(current.version);
+                }
+                return;
+              }
+
               if (event.data === YTState.PLAYING && current.playback_status !== "playing") {
                 mutate({ kind: "play" });
               } else if (event.data === YTState.PAUSED && current.playback_status === "playing") {
@@ -503,7 +534,7 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="watch-heading" className="flex items-center gap-2 text-lg font-semibold">
-            <Youtube className="size-5" aria-hidden="true" /> Watch together
+            <Youtube className="size-5" aria-hidden="true" /> {heading ?? "Watch together"}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Playback is kept close across devices from the room&apos;s saved state. It is not
@@ -577,6 +608,8 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
       ) : null}
 
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
+
+      {transport ? <div className="mt-4">{transport}</div> : null}
 
       {canControl && roomActive ? (
         <div className="mt-4 space-y-3">

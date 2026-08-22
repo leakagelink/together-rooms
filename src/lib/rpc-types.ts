@@ -27,6 +27,10 @@ export type RpcReason =
   | "message_not_editable"
   | "edit_window_expired"
   | "version_conflict"
+  | "duplicate_item"
+  | "queue_empty"
+  | "queue_full"
+  | "provider_verification_failed"
   | "made_for_kids"
   | "not_embeddable"
   | "privacy_blocked"
@@ -60,6 +64,10 @@ const MESSAGES: Record<RpcReason, string> = {
   message_not_editable: "That message can no longer be edited.",
   edit_window_expired: "The 15-minute edit window has passed.",
   version_conflict: "Playback changed a moment ago. Resynced to the latest state.",
+  duplicate_item: "That track is already in the queue.",
+  queue_empty: "The queue is empty.",
+  queue_full: "The queue is full.",
+  provider_verification_failed: "We couldn't verify this video with YouTube. Try again.",
   made_for_kids: "This video is marked Made for Kids and can't be played here.",
   not_embeddable: "The owner doesn't allow this video to be played outside YouTube.",
   privacy_blocked: "This video is private.",

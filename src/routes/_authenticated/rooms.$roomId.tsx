@@ -23,6 +23,7 @@ import { endRoom, leaveRoom, listRoomMembers, transferRoomHost } from "@/lib/roo
 import { rpcMessage } from "@/lib/rpc-types";
 import { RoomChat } from "@/components/room/room-chat";
 import { WatchTogether } from "@/components/room/watch-together";
+import { MusicRoom } from "@/components/room/music-room";
 import { setMemberMute } from "@/lib/chat.functions";
 
 export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
@@ -333,12 +334,21 @@ function RoomPage() {
         </div>
       </section>
 
-      <WatchTogether
-        roomId={room.id}
-        userId={user?.id}
-        canControl={isHost || myMembership?.can_control_playback === true}
-        roomActive={lifecycle === "ok"}
-      />
+      {room.type === "music" ? (
+        <MusicRoom
+          roomId={room.id}
+          userId={user?.id}
+          canManage={isHost || myMembership?.can_control_playback === true}
+          roomActive={lifecycle === "ok"}
+        />
+      ) : (
+        <WatchTogether
+          roomId={room.id}
+          userId={user?.id}
+          canControl={isHost || myMembership?.can_control_playback === true}
+          roomActive={lifecycle === "ok"}
+        />
+      )}
 
       <RoomChat
         roomId={room.id}

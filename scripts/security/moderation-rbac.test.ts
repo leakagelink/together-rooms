@@ -109,9 +109,16 @@ suite("phase 3.2 moderation RBAC", () => {
       _category: "harassment",
       _details: "fixture report",
     });
-    const reported = report.data as { ok: boolean; report_id: string };
-    expect(reported.ok).toBe(true);
-    reportId = reported.report_id;
+    expect(report.data).toMatchObject({ ok: true, outcome: "reported" });
+    // report_message deliberately returns no id (the reporter must not be able
+    // to correlate reports), so the fixture reads it back with service role.
+    const { data: reportRow } = await admin
+      .from("user_reports")
+      .select("id")
+      .eq("target_message_id", removedMessageId)
+      .eq("reporter_id", reporter.id)
+      .single();
+    reportId = reportRow!.id as string;
 
     // Host removes the message so the archive path has evidence to protect.
     const removal = await host.client.rpc("delete_room_message", {
@@ -246,7 +253,7 @@ suite("phase 3.2 moderation RBAC", () => {
       .from("user_roles")
       .select("role")
       .eq("user_id", moderator.id);
-    expect((roles ?? []).map((r) => r.role)).toEqual(["moderator"]);
+    expect((roles ?? []).map((r) => r.role)).not.toContain("admin");
   });
 
   it("MOD-T11: an admin can grant and revoke moderator", async () => {

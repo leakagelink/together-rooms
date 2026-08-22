@@ -150,13 +150,11 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
       expect((join.data as { ok: boolean }).ok).toBe(true);
     }
 
-    // Grant playback control to one member through trusted execution only.
-    const { error } = await admin
-      .from("room_members")
-      .update({ can_control_playback: true })
-      .eq("room_id", roomId)
-      .eq("user_id", controller.id);
-    expect(error).toBeNull();
+    // Seed policy cache for the public videos used in these tests. The RPC now
+    // enforces the cache, so every video must have a fresh, server-populated
+    // policy row.
+    await seedPolicy(VIDEO, "ok");
+    await seedPolicy(OTHER_VIDEO, "ok");
   }, 120_000);
 
   afterAll(async () => {

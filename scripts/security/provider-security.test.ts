@@ -18,8 +18,8 @@ const enabled = Boolean(url && serviceKey && anonKey);
 const suite = enabled ? describe : describe.skip;
 
 const password = "Test-Password-123!";
-const VIDEO = "dQw4w9WgXcQ";
-const OTHER_VIDEO = "9bZkp7q19f0";
+const VIDEO = "PROVIDERID1";
+const OTHER_VIDEO = "PROVIDERID2";
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 interface TestUser {

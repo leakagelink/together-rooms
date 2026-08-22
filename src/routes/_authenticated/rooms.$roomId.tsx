@@ -333,12 +333,21 @@ function RoomPage() {
         </div>
       </section>
 
-      <WatchTogether
-        roomId={room.id}
-        userId={user?.id}
-        canControl={isHost || myMembership?.can_control_playback === true}
-        roomActive={lifecycle === "ok"}
-      />
+      {room.type === "music" ? (
+        <MusicRoom
+          roomId={room.id}
+          userId={user?.id}
+          canManage={isHost || myMembership?.can_control_playback === true}
+          roomActive={lifecycle === "ok"}
+        />
+      ) : (
+        <WatchTogether
+          roomId={room.id}
+          userId={user?.id}
+          canControl={isHost || myMembership?.can_control_playback === true}
+          roomActive={lifecycle === "ok"}
+        />
+      )}
 
       <RoomChat
         roomId={room.id}

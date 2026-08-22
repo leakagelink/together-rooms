@@ -196,8 +196,9 @@ suite("phase 4.1 YouTube provider hardening", () => {
       .select("title, thumbnail_url, provider, provider_media_id")
       .eq("room_id", roomId)
       .single();
-    expect(data?.title).toBeNull();
-    expect(data?.thumbnail_url).toBeNull();
+    // The authoritative policy cache is used, not the caller's metadata.
+    expect(data?.title).toBe("Test title");
+    expect(data?.thumbnail_url).toBe(`https://i.ytimg.com/vi/${VIDEO}/hqdefault.jpg`);
     expect(data?.provider).toBe("youtube");
     expect(data?.provider_media_id).toBe(VIDEO);
   }, 60_000);

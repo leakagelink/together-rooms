@@ -311,11 +311,12 @@ suite("phase 4.2 YouTube policy completeness", () => {
     // Seed an expired policy that would otherwise allow the video. Because the
     // cache row is stale, the server must re-resolve the policy from the Data
     // API, which will reject the fake video id.
+    const staleVideoId = "STALE-01ABC";
     await admin.rpc("upsert_media_metadata_cache", {
       _provider: "youtube",
-      _media_id: "STALE-01",
+      _media_id: staleVideoId,
       _title: "Stale",
-      _thumbnail_url: "https://i.ytimg.com/vi/STALE-01/hqdefault.jpg",
+      _thumbnail_url: `https://i.ytimg.com/vi/${staleVideoId}/hqdefault.jpg`,
       _made_for_kids: false,
       _embeddable: true,
       _privacy_status: "public",
@@ -328,12 +329,12 @@ suite("phase 4.2 YouTube policy completeness", () => {
       .from("media_metadata_cache")
       .select("expires_at")
       .eq("provider", "youtube")
-      .eq("media_id", "STALE-01")
+      .eq("media_id", staleVideoId)
       .limit(1);
     expect(rows?.length).toBe(1);
     expect(new Date(rows![0].expires_at as string).getTime()).toBeLessThan(Date.now());
 
-    const res = await setMedia(host, "STALE-01");
+    const res = await setMedia(host, staleVideoId);
     expect(res.ok).toBe(false);
     expect(res.reason).toBe("unavailable");
   }, 60_000);

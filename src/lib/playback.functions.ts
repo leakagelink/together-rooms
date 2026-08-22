@@ -29,8 +29,6 @@ export const setRoomMedia = createServerFn({ method: "POST" })
         room_id: uuid,
         provider: z.literal("youtube"),
         media_id: z.string().regex(/^[A-Za-z0-9_-]{11}$/),
-        title: z.string().trim().max(200).optional(),
-        thumbnail_url: z.string().url().max(500).optional(),
         expected_version: version,
       })
       .parse(input),

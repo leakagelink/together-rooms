@@ -266,6 +266,7 @@ suite("phase 4.2 YouTube policy completeness", () => {
       _expected_version: null,
     });
     const res = (data ?? { ok: false, reason: "server_error" }) as RpcResponse;
+    console.log("T10 res", res);
     expect(res.ok).toBe(true);
 
     const { data: row } = await admin

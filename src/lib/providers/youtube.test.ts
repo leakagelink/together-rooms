@@ -76,14 +76,15 @@ describe("provider error classification", () => {
     expect(classifyYouTubePlayerError(100).kind).toBe("unavailable");
     expect(classifyYouTubePlayerError(101).kind).toBe("embed_disabled");
     expect(classifyYouTubePlayerError(150).kind).toBe("embed_disabled");
-    expect(classifyYouTubePlayerError(153).kind).toBe("unavailable");
+    expect(classifyYouTubePlayerError(153).kind).toBe("origin_not_allowed");
     expect(classifyYouTubePlayerError(undefined).kind).toBe("unknown");
   });
 
   it("classifies error 153 as a client-identity/referrer failure", () => {
     const failure = classifyYouTubePlayerError(153);
     expect(failure.diagnostic).toBe("yt:153");
-    expect(failure.message).toBe("This video is unavailable.");
+    expect(failure.kind).toBe("origin_not_allowed");
+    expect(failure.message).toContain("site");
   });
 
   it("never surfaces a raw provider payload, only sanitized diagnostics", () => {

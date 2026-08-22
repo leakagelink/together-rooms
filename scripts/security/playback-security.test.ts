@@ -115,11 +115,7 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
       _expected_version: version ?? null,
     });
 
-  async function seedPolicy(
-    mediaId: string,
-    status: string,
-    extras: Record<string, unknown> = {},
-  ) {
+  async function seedPolicy(mediaId: string, status: string, extras: Record<string, unknown> = {}) {
     const { error } = await admin.rpc("upsert_media_metadata_cache", {
       _provider: "youtube",
       _media_id: mediaId,

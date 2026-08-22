@@ -91,11 +91,7 @@ suite("phase 4.2 YouTube policy completeness (corrected)", () => {
   }
 
   /** Only the service role may populate the trusted policy cache. */
-  async function seedPolicy(
-    mediaId: string,
-    status: string,
-    extras: Record<string, unknown> = {},
-  ) {
+  async function seedPolicy(mediaId: string, status: string, extras: Record<string, unknown> = {}) {
     const { error } = await admin.rpc("upsert_media_metadata_cache", {
       _provider: "youtube",
       _media_id: mediaId,
@@ -478,7 +474,7 @@ suite("phase 4.2 YouTube policy completeness (corrected)", () => {
     const component = readFileSync("src/components/room/watch-together.tsx", "utf8");
     const handler = component.slice(
       component.indexOf("const onVisibility"),
-      component.indexOf("document.addEventListener(\"visibilitychange\""),
+      component.indexOf('document.addEventListener("visibilitychange"'),
     );
     expect(handler).toContain("pauseVideo");
     expect(handler).not.toContain("mutate(");

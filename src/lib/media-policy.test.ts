@@ -35,16 +35,18 @@ describe("YT-POLICY-T2: malformed or missing Data API responses are rejected", (
   });
 });
 
-describe("YT-POLICY-T3: Made for Kids content is rejected", () => {
-  it("flags madeForKids=true as a policy violation", () => {
+describe("YT-POLICY-T3: Made for Kids content stays playable, tracking restricted", () => {
+  it("flags madeForKids=true without blocking playback", () => {
     const item = {
       ...baseItem(),
       status: { ...baseItem().status, madeForKids: true },
     };
     const result = evaluateYouTubePolicy(VIDEO_ID, item);
-    expect(result.ok).toBe(false);
+    expect(result.ok).toBe(true);
     expect(result.policy.status).toBe("made_for_kids");
     expect(result.policy.made_for_kids).toBe(true);
+    expect(result.policy.playable).toBe(true);
+    expect(result.policy.tracking_restricted).toBe(true);
   });
 });
 

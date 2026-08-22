@@ -101,11 +101,7 @@ suite("phase 4.1 YouTube provider hardening", () => {
       ...args,
     });
 
-  async function seedPolicy(
-    mediaId: string,
-    status: string,
-    extras: Record<string, unknown> = {},
-  ) {
+  async function seedPolicy(mediaId: string, status: string, extras: Record<string, unknown> = {}) {
     const { error } = await admin.rpc("upsert_media_metadata_cache", {
       _provider: "youtube",
       _media_id: mediaId,
@@ -184,11 +180,21 @@ suite("phase 4.1 YouTube provider hardening", () => {
     }
   }, 60_000);
 
-  it("PROVIDER-T5: caller-supplied metadata is never stored or trusted", async () => {
-    const res = await setMedia(host, roomId, {
+  it("PROVIDER-T5: caller-supplied metadata is never accepted or stored", async () => {
+    // The hardened RPC exposes no metadata parameters at all, so a client that
+    // tries to pass them cannot even resolve a function signature.
+    const forged = await host.client.rpc("set_room_media", {
+      _room_id: roomId,
+      _provider: "youtube",
+      _media_id: VIDEO,
+      _expected_version: null,
       _title: "TOTALLY LEGIT BANK LOGIN",
       _thumbnail_url: "https://evil.test/phish.png",
-    });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    expect(forged.error).not.toBeNull();
+
+    const res = await setMedia(host, roomId);
     expect(res).toMatchObject({ ok: true });
 
     const { data } = await admin
@@ -204,6 +210,8 @@ suite("phase 4.1 YouTube provider hardening", () => {
   }, 60_000);
 
   it("PROVIDER-T4: direct writes to playback state remain blocked", async () => {
+    expect(await setMedia(host, roomId)).toMatchObject({ ok: true });
+
     const insert = await host.client
       .from("room_playback_state")
       .insert({ room_id: roomId, provider: "youtube", provider_media_id: OTHER_VIDEO });

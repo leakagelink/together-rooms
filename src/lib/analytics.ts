@@ -24,9 +24,41 @@ export type AnalyticsEventName =
   | "report_submitted"
   | "user_blocked"
   | "chat_message_sent"
-  | "chat_reaction_added";
+  | "chat_reaction_added"
+  | "playback_media_selected"
+  | "playback_started"
+  | "playback_paused"
+  | "playback_seeked";
 
 export type AnalyticsProperties = Record<string, string | number | boolean | null>;
+
+/**
+ * Playback events are suppressed entirely while the room is showing content
+ * marked "Made for Kids". The video still plays; we simply collect nothing
+ * about the viewing session, per YouTube's kids-content requirements.
+ */
+export const PLAYBACK_EVENTS: readonly AnalyticsEventName[] = [
+  "playback_media_selected",
+  "playback_started",
+  "playback_paused",
+  "playback_seeked",
+];
+
+let playbackTrackingRestricted = false;
+
+/** Set when the active media is Made for Kids. */
+export function setPlaybackTrackingRestricted(restricted: boolean) {
+  playbackTrackingRestricted = restricted;
+}
+
+export function isPlaybackTrackingRestricted(): boolean {
+  return playbackTrackingRestricted;
+}
+
+/** True when this event must not be recorded for the current media. */
+export function isEventSuppressed(name: AnalyticsEventName): boolean {
+  return playbackTrackingRestricted && PLAYBACK_EVENTS.includes(name);
+}
 
 /**
  * Minimal storage contract so the consent logic is testable without a browser.
@@ -97,6 +129,8 @@ export function hasAnalyticsConsent(): boolean {
 /** Fire-and-forget. Analytics must never break a user flow. */
 export async function track(name: AnalyticsEventName, properties: AnalyticsProperties = {}) {
   if (!hasAnalyticsConsent()) return;
+  // Made for Kids content: no playback telemetry, even with consent.
+  if (isEventSuppressed(name)) return;
   try {
     const { data } = await supabase.auth.getUser();
     if (!data.user) return;

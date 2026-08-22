@@ -281,7 +281,9 @@ function AdminDashboard() {
                         {r.room_name ? ` · Room: ${r.room_name}` : ""}
                         {r.action_count > 0 ? ` · ${r.action_count} action(s)` : ""}
                       </p>
-                      <p className="mt-1 text-xs text-muted-foreground">{formatDate(r.created_at)}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatDate(r.created_at)}
+                      </p>
                     </div>
                     <Button asChild size="sm" variant="outline">
                       <Link to="/admin/reports/$reportId" params={{ reportId: r.id }}>

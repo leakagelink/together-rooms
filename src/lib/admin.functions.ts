@@ -89,7 +89,13 @@ export const getModerationOverview = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase.rpc("staff_moderation_overview");
     return normalizeRpc<{
-      counts: { open: number; reviewing: number; actioned: number; dismissed: number; total: number };
+      counts: {
+        open: number;
+        reviewing: number;
+        actioned: number;
+        dismissed: number;
+        total: number;
+      };
       recent_actions: Json[];
       is_admin: boolean;
     }>("staff_moderation_overview", data, error);
@@ -113,11 +119,11 @@ export const getReportQueue = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("staff_report_queue", {
-      _status: data.status ?? undefined,
-      _target_type: data.target_type ?? undefined,
-      _category: data.category || undefined,
-      _from: data.from ?? undefined,
-      _to: data.to ?? undefined,
+      ...(data.status ? { _status: data.status } : {}),
+      ...(data.target_type ? { _target_type: data.target_type } : {}),
+      ...(data.category ? { _category: data.category } : {}),
+      ...(data.from ? { _from: data.from } : {}),
+      ...(data.to ? { _to: data.to } : {}),
       _limit: data.limit,
       _offset: data.offset,
     });
@@ -179,11 +185,19 @@ export const createModerationAction = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("create_moderation_action", {
+      // The SQL signature defaults these to NULL; the generated types mark
+      // them required, so nulls are passed explicitly.
       _action: data.action,
-      _report_id: data.report_id ?? undefined,
-      _room_id: data.room_id ?? undefined,
-      _target_user_id: data.target_user_id ?? undefined,
-      _reason: data.reason ?? undefined,
+      _report_id: data.report_id ?? null,
+      _room_id: data.room_id ?? null,
+      _target_user_id: data.target_user_id ?? null,
+      _reason: data.reason ?? null,
+    } as unknown as {
+      _action: ModerationActionType;
+      _report_id: string;
+      _room_id: string;
+      _target_user_id: string;
+      _reason: string;
     });
     return normalizeRpc<{ id: string }>("create_moderation_action", result, error);
   });
@@ -218,9 +232,7 @@ export const listAppRoles = createServerFn({ method: "GET" })
 
 export const searchUsers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ q: z.string().trim().max(120) }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ q: z.string().trim().max(120) }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("admin_search_users", {
       _q: data.q,
@@ -230,9 +242,7 @@ export const searchUsers = createServerFn({ method: "POST" })
 
 export const assignAppRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ user_id: uuid, role: appRole }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ user_id: uuid, role: appRole }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("assign_app_role", {
       _user_id: data.user_id,
@@ -243,9 +253,7 @@ export const assignAppRole = createServerFn({ method: "POST" })
 
 export const revokeAppRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ user_id: uuid, role: appRole }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ user_id: uuid, role: appRole }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("revoke_app_role", {
       _user_id: data.user_id,

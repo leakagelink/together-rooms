@@ -111,7 +111,12 @@ suite("phase 3.2 realtime membership revocation (REV)", () => {
       .channel(`rev-${victim.id}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "room_messages",
+          filter: `room_id=eq.${roomId}`,
+        },
         (p) => {
           const row = p.new as { id?: string };
           if (row?.id) seen.insert.push(row.id);
@@ -119,7 +124,12 @@ suite("phase 3.2 realtime membership revocation (REV)", () => {
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` },
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "room_messages",
+          filter: `room_id=eq.${roomId}`,
+        },
         (p) => {
           const row = p.new as { id?: string };
           if (row?.id) seen.update.push(row.id);
@@ -127,7 +137,12 @@ suite("phase 3.2 realtime membership revocation (REV)", () => {
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "message_reactions", filter: `room_id=eq.${roomId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "message_reactions",
+          filter: `room_id=eq.${roomId}`,
+        },
         (p) => {
           const row = (p.new ?? {}) as { id?: string };
           if (row?.id) seen.reaction.push(row.id);
@@ -148,9 +163,14 @@ suite("phase 3.2 realtime membership revocation (REV)", () => {
 
     const baseline = await send(host, roomId, "pre-revocation message");
     expect(baseline.ok).toBe(true);
-    await wait(SETTLE_MS);
+    // Delivery latency varies with replication load, so poll rather than
+    // assert once against a fixed sleep.
+    for (let i = 0; i < 20 && !seen.insert.includes(baseline.message_id!); i += 1) {
+      await wait(1000);
+    }
     expect(seen.insert).toContain(baseline.message_id);
   }, 60_000);
+
 
   it("REV-T2: membership is revoked while the socket stays connected", async () => {
     // Server-authoritative removal, exactly as a moderator kick would do it.

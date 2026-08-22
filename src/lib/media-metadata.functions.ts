@@ -33,7 +33,7 @@ export type MetadataOutcome =
   | { status: "ok"; title: string; thumbnail_url: string | null; source: "provider"; policy: MediaPolicy }
   | { status: "made_for_kids" | "not_embeddable" | "privacy_blocked" | "unavailable" | "network" | "unknown"; source: "fallback"; policy?: MediaPolicy };
 
-type SupabaseAdmin = Awaited<ReturnType<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"]>;
+type DbClient = SupabaseClient<Database>;
 
 async function fetchDataApiPolicy(mediaId: string): Promise<MediaPolicy | null> {
   const key = dataApiKey();
@@ -75,9 +75,7 @@ async function fetchOembedTitle(mediaId: string): Promise<string | null> {
     });
     if (!response.ok) return null;
     const body: unknown = await response.json();
-    const parsed = z
-      .object({ title: z.string().min(1).max(300) })
-      .safeParse(body);
+    const parsed = z.object({ title: z.string().min(1).max(300) }).safeParse(body);
     return parsed.success ? parsed.data.title.slice(0, 200) : null;
   } catch {
     return null;
@@ -86,7 +84,7 @@ async function fetchOembedTitle(mediaId: string): Promise<string | null> {
   }
 }
 
-async function lookupPolicyFromCache(supabase: SupabaseAdmin, mediaId: string, now: number): Promise<MediaPolicy | null> {
+async function lookupPolicyFromCache(supabase: DbClient, mediaId: string, now: number): Promise<MediaPolicy | null> {
   const { data: cacheRows } = await supabase
     .from("media_metadata_cache")
     .select("*")
@@ -120,7 +118,7 @@ async function resolvePolicyFromApi(mediaId: string): Promise<MediaPolicy> {
   return policy;
 }
 
-async function persistPolicy(supabase: SupabaseAdmin, policy: MediaPolicy): Promise<void> {
+async function persistPolicy(supabase: DbClient, policy: MediaPolicy): Promise<void> {
   await supabase.rpc("upsert_media_metadata_cache", {
     _provider: "youtube",
     _media_id: policy.media_id,
@@ -135,7 +133,7 @@ async function persistPolicy(supabase: SupabaseAdmin, policy: MediaPolicy): Prom
   });
 }
 
-export async function resolveMediaPolicy(supabase: SupabaseAdmin, mediaId: string): Promise<PolicyOutcome> {
+export async function resolveMediaPolicy(supabase: DbClient, mediaId: string): Promise<PolicyOutcome> {
   const now = Date.now();
   const cached = await lookupPolicyFromCache(supabase, mediaId, now);
   if (cached) {

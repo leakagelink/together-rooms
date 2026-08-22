@@ -138,8 +138,8 @@ async function persistPolicy(policy: MediaPolicy): Promise<void> {
   await supabaseAdmin.rpc("upsert_media_metadata_cache", {
     _provider: "youtube",
     _media_id: policy.media_id,
-    _title: policy.title,
-    _thumbnail_url: policy.thumbnail_url,
+    _title: policy.title ?? undefined,
+    _thumbnail_url: policy.thumbnail_url ?? undefined,
     _made_for_kids: policy.made_for_kids,
     _embeddable: policy.embeddable,
     _privacy_status: policy.privacy_status,

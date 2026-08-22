@@ -19,11 +19,12 @@ const suite = enabled ? describe : describe.skip;
 
 const password = "Test-Password-123!";
 const PUBLIC_VIDEO = "dQw4w9WgXcQ";
-const MFK_VIDEO = "MFK-TEST-VIDEO-01";
-const PRIVATE_VIDEO = "PRIV-TEST-VIDEO-01";
-const NON_EMBED_VIDEO = "NOEMBED-TEST-01";
-const UNAVAILABLE_VIDEO = "UNAVAIL-TEST-01";
-const FALLBACK_VIDEO = "FALLBACK-TTL-01";
+const MFK_VIDEO = "MFKTESTVID0";
+const PRIVATE_VIDEO = "PRIVTESTVID";
+const NON_EMBED_VIDEO = "NOEMBEDTEST";
+const UNAVAILABLE_VIDEO = "UNAVAILTEST";
+const FALLBACK_VIDEO = "FALLBACKTTL";
+const EVIL_THUMB_VIDEO = "EVILTHUMB01";
 
 interface TestUser {
   id: string;

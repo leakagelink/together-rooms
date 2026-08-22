@@ -28,6 +28,7 @@ import { Route as AuthenticatedRoomsJoinRouteImport } from './routes/_authentica
 import { Route as AuthenticatedRoomsNewRouteImport } from './routes/_authenticated/rooms.new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_authenticated/settings.privacy'
+import { Route as AuthenticatedAdminReportsReportIdRouteImport } from './routes/_authenticated/admin.reports.$reportId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -126,6 +127,12 @@ const AuthenticatedSettingsPrivacyRoute =
     path: '/settings/privacy',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminReportsReportIdRoute =
+  AuthenticatedAdminReportsReportIdRouteImport.update({
+    id: '/admin/reports/$reportId',
+    path: '/admin/reports/$reportId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -166,6 +174,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/rooms': typeof AuthenticatedRoomsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -188,6 +197,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/_authenticated/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/rooms/'
     | '/settings/'
+    | '/admin/reports/$reportId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -230,6 +241,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/rooms'
     | '/settings'
+    | '/admin/reports/$reportId'
   id:
     | '__root__'
     | '/'
@@ -251,6 +263,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/rooms/'
     | '/_authenticated/settings/'
+    | '/_authenticated/admin/reports/$reportId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -402,6 +415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPrivacyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/reports/$reportId': {
+      id: '/_authenticated/admin/reports/$reportId'
+      path: '/admin/reports/$reportId'
+      fullPath: '/admin/reports/$reportId'
+      preLoaderRoute: typeof AuthenticatedAdminReportsReportIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -414,6 +434,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedRoomsIndexRoute: typeof AuthenticatedRoomsIndexRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedAdminReportsReportIdRoute: typeof AuthenticatedAdminReportsReportIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -425,6 +446,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedRoomsIndexRoute: AuthenticatedRoomsIndexRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  AuthenticatedAdminReportsReportIdRoute:
+    AuthenticatedAdminReportsReportIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

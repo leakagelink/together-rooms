@@ -170,6 +170,10 @@ suite("phase 4 playback security (database / RLS / realtime)", () => {
     for (const u of created) await admin.auth.admin.deleteUser(u.id);
   }, 120_000);
 
+  afterEach(async () => {
+    if (host) await admin.from("rate_limits").delete().eq("user_id", host.id);
+  });
+
   it("PLAY-T6: an authorized host can select media", async () => {
     const res = await setMedia(host, roomId);
     expect(res.ok).toBe(true);

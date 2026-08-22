@@ -22,6 +22,7 @@ import { roomJoinability } from "@/lib/room-rules";
 import { endRoom, leaveRoom, listRoomMembers, transferRoomHost } from "@/lib/rooms.functions";
 import { rpcMessage } from "@/lib/rpc-types";
 import { RoomChat } from "@/components/room/room-chat";
+import { WatchTogether } from "@/components/room/watch-together";
 import { setMemberMute } from "@/lib/chat.functions";
 
 export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
@@ -94,7 +95,7 @@ function RoomPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("room_members")
-        .select("user_id, role, is_muted, status")
+        .select("user_id, role, is_muted, status, can_control_playback")
         .eq("room_id", roomId);
       if (error) throw error;
       return data ?? [];
@@ -351,9 +352,9 @@ function RoomPage() {
       <section className="surface-panel mt-8 p-5">
         <h2 className="text-sm font-semibold">Coming in a later phase</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Synchronized playback, shared listening, voice and video and the AI room assistant are not
-          implemented yet. The room engine, roles, permissions, realtime event log and chat
-          foundation that these features need are in place.
+          Shared listening, voice and video and the AI room assistant are not implemented yet.
+          YouTube watch-together, the room engine, roles, permissions, realtime event log and chat
+          foundation are in place.
         </p>
       </section>
     </AppShell>

@@ -147,15 +147,23 @@ export function policyFromJsonb(value: unknown): MediaPolicy | null {
   if (!value || typeof value !== "object") return null;
   const r = value as Record<string, unknown>;
   if (r["provider"] !== "youtube" || typeof r["media_id"] !== "string") return null;
+
+  const mediaId = r["media_id"];
+  let thumbnailUrl: string | null =
+    r["thumbnail_url"] === null ? null : String(r["thumbnail_url"]);
+  if (thumbnailUrl && !isSafeThumbnailUrl(thumbnailUrl)) {
+    thumbnailUrl = canonicalYouTubeThumbnailUrl(mediaId) ?? null;
+  }
+
   return {
     provider: "youtube",
-    media_id: r["media_id"],
+    media_id: mediaId,
     status: String(r["status"] ?? "unknown") as MediaPolicyStatus,
     made_for_kids: Boolean(r["made_for_kids"]),
     embeddable: Boolean(r["embeddable"]),
     privacy_status: String(r["privacy_status"] ?? "unknown") as MediaPrivacyStatus,
     title: r["title"] === null ? null : String(r["title"]),
-    thumbnail_url: r["thumbnail_url"] === null ? null : String(r["thumbnail_url"]),
+    thumbnail_url: thumbnailUrl,
     ttl_seconds: Number(r["ttl_seconds"] ?? 24 * 60 * 60),
     checked_at: String(r["checked_at"] ?? new Date().toISOString()),
   };

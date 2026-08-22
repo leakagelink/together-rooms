@@ -389,6 +389,94 @@ export type Database = {
         }
         Relationships: []
       }
+      playlist_items: {
+        Row: {
+          created_at: string
+          id: string
+          playlist_id: string
+          position: number
+          provider: Database["public"]["Enums"]["playback_provider"]
+          provider_media_id: string
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          playlist_id: string
+          position: number
+          provider?: Database["public"]["Enums"]["playback_provider"]
+          provider_media_id: string
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          playlist_id?: string
+          position?: number
+          provider?: Database["public"]["Enums"]["playback_provider"]
+          provider_media_id?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_items_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          room_id: string | null
+          updated_at: string
+          version: number
+          visibility: Database["public"]["Enums"]["playlist_visibility"]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          room_id?: string | null
+          updated_at?: string
+          version?: number
+          visibility?: Database["public"]["Enums"]["playlist_visibility"]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          room_id?: string | null
+          updated_at?: string
+          version?: number
+          visibility?: Database["public"]["Enums"]["playlist_visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlists_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       privacy_settings: {
         Row: {
           activity_visibility: Database["public"]["Enums"]["visibility_level"]
@@ -589,6 +677,62 @@ export type Database = {
           },
         ]
       }
+      room_media_queue: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          id: string
+          played_at: string | null
+          policy_check_result: Json | null
+          position: number
+          provider: Database["public"]["Enums"]["playback_provider"]
+          provider_media_id: string
+          room_id: string
+          status: Database["public"]["Enums"]["queue_item_status"]
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          played_at?: string | null
+          policy_check_result?: Json | null
+          position: number
+          provider?: Database["public"]["Enums"]["playback_provider"]
+          provider_media_id: string
+          room_id: string
+          status?: Database["public"]["Enums"]["queue_item_status"]
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          played_at?: string | null
+          policy_check_result?: Json | null
+          position?: number
+          provider?: Database["public"]["Enums"]["playback_provider"]
+          provider_media_id?: string
+          room_id?: string
+          status?: Database["public"]["Enums"]["queue_item_status"]
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_media_queue_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_members: {
         Row: {
           can_control_playback: boolean
@@ -760,6 +904,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "room_playback_state_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_queue_settings: {
+        Row: {
+          created_at: string
+          queue_mode: Database["public"]["Enums"]["room_queue_mode"]
+          queue_version: number
+          repeat_mode: Database["public"]["Enums"]["room_repeat_mode"]
+          room_id: string
+          shuffle_enabled: boolean
+          shuffle_seed: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          queue_mode?: Database["public"]["Enums"]["room_queue_mode"]
+          queue_version?: number
+          repeat_mode?: Database["public"]["Enums"]["room_repeat_mode"]
+          room_id: string
+          shuffle_enabled?: boolean
+          shuffle_seed?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          queue_mode?: Database["public"]["Enums"]["room_queue_mode"]
+          queue_version?: number
+          repeat_mode?: Database["public"]["Enums"]["room_repeat_mode"]
+          room_id?: string
+          shuffle_enabled?: boolean
+          shuffle_seed?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_queue_settings_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: true
             referencedRelation: "rooms"
@@ -1026,6 +1211,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_playlist_item: {
+        Args: { _media_id: string; _playlist_id: string; _provider: string }
+        Returns: Json
+      }
+      add_to_queue: {
+        Args: { _media_id: string; _provider: string; _room_id: string }
+        Returns: Json
+      }
       admin_list_roles: { Args: never; Returns: Json }
       admin_search_users: { Args: { _q: string }; Returns: Json }
       admit_member: {
@@ -1036,6 +1229,19 @@ export type Database = {
         }
         Returns: Json
       }
+      advance_queue: {
+        Args: { _cause?: string; _expected_version?: number; _room_id: string }
+        Returns: Json
+      }
+      apply_queue_item: {
+        Args: {
+          _item: Database["public"]["Tables"]["room_media_queue"]["Row"]
+          _room_id: string
+          _uid: string
+        }
+        Returns: undefined
+      }
+      approve_queue_item: { Args: { _item_id: string }; Returns: Json }
       assign_app_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1045,13 +1251,22 @@ export type Database = {
       }
       authorize_room_channel: { Args: { _room_id: string }; Returns: boolean }
       bootstrap_first_admin: { Args: { _email: string }; Returns: Json }
+      bump_queue_version: { Args: { _room_id: string }; Returns: number }
       can_control_playback: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_manage_queue: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
       can_moderate_room: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
+      }
+      clear_queue: {
+        Args: { _expected_queue_version?: number; _room_id: string }
+        Returns: Json
       }
       clear_room_media: {
         Args: { _expected_version?: number; _room_id: string }
@@ -1071,6 +1286,10 @@ export type Database = {
         }
         Returns: Json
       }
+      create_playlist: {
+        Args: { _description?: string; _name: string }
+        Returns: Json
+      }
       create_room_invite: {
         Args: {
           _expires_in_hours: number
@@ -1084,6 +1303,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["subscription_tier"]
       }
+      delete_playlist: { Args: { _playlist_id: string }; Returns: Json }
       delete_room_message: { Args: { _message_id: string }; Returns: Json }
       edit_room_message: {
         Args: { _content: string; _message_id: string }
@@ -1114,10 +1334,69 @@ export type Database = {
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       join_room_by_code: { Args: { _code: string }; Returns: Json }
       leave_room: { Args: { _room_id: string }; Returns: Json }
+      lock_queue_settings: {
+        Args: { _room_id: string }
+        Returns: {
+          created_at: string
+          queue_mode: Database["public"]["Enums"]["room_queue_mode"]
+          queue_version: number
+          repeat_mode: Database["public"]["Enums"]["room_repeat_mode"]
+          room_id: string
+          shuffle_enabled: boolean
+          shuffle_seed: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "room_queue_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      move_playlist_item: {
+        Args: {
+          _expected_version?: number
+          _item_id: string
+          _target_index: number
+        }
+        Returns: Json
+      }
+      move_queue_item: {
+        Args: {
+          _expected_queue_version: number
+          _item_id: string
+          _target_index: number
+        }
+        Returns: Json
+      }
       my_staff_context: { Args: never; Returns: Json }
       pause_room_media: {
         Args: { _expected_version?: number; _room_id: string }
         Returns: Json
+      }
+      pick_next_queue_item: {
+        Args: { _exclude: string; _room_id: string }
+        Returns: {
+          added_by: string | null
+          created_at: string
+          id: string
+          played_at: string | null
+          policy_check_result: Json | null
+          position: number
+          provider: Database["public"]["Enums"]["playback_provider"]
+          provider_media_id: string
+          room_id: string
+          status: Database["public"]["Enums"]["queue_item_status"]
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "room_media_queue"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       pick_room_successor: {
         Args: { _excluding: string; _room_id: string }
@@ -1143,14 +1422,36 @@ export type Database = {
         }
         Returns: Json
       }
+      previous_queue_item: {
+        Args: { _expected_version?: number; _room_id: string }
+        Returns: Json
+      }
       purge_expired_chat: { Args: never; Returns: number }
       purge_user_data: { Args: { _user_id: string }; Returns: Json }
+      queue_precheck: {
+        Args: {
+          _action: string
+          _expected_queue_version?: number
+          _limit: number
+          _room_id: string
+          _window_seconds: number
+        }
+        Returns: Json
+      }
+      queue_snapshot: { Args: { _room_id: string }; Returns: Json }
       redeem_room_invite: { Args: { _token_hash: string }; Returns: Json }
+      reject_queue_item: { Args: { _item_id: string }; Returns: Json }
+      remove_from_queue: { Args: { _item_id: string }; Returns: Json }
+      remove_playlist_item: { Args: { _item_id: string }; Returns: Json }
       report_message: {
         Args: { _category: string; _details?: string; _message_id: string }
         Returns: Json
       }
       request_account_deletion: { Args: { _reason: string }; Returns: Json }
+      restart_current_item: {
+        Args: { _expected_version?: number; _room_id: string }
+        Returns: Json
+      }
       revoke_app_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1196,6 +1497,14 @@ export type Database = {
         Args: { _muted: boolean; _room_id: string; _user_id: string }
         Returns: Json
       }
+      set_queue_mode: {
+        Args: { _mode: string; _room_id: string }
+        Returns: Json
+      }
+      set_repeat_mode: {
+        Args: { _mode: string; _room_id: string }
+        Returns: Json
+      }
       set_report_status: {
         Args: {
           _note?: string
@@ -1211,6 +1520,10 @@ export type Database = {
           _provider: string
           _room_id: string
         }
+        Returns: Json
+      }
+      set_shuffle_enabled: {
+        Args: { _enabled: boolean; _room_id: string }
         Returns: Json
       }
       shares_room_with: { Args: { _a: string; _b: string }; Returns: boolean }
@@ -1232,12 +1545,30 @@ export type Database = {
         }
         Returns: Json
       }
+      start_queue: {
+        Args: { _expected_version?: number; _room_id: string }
+        Returns: Json
+      }
+      start_room_from_playlist: {
+        Args: { _playlist_id: string; _room_id: string }
+        Returns: Json
+      }
       toggle_message_reaction: {
         Args: { _message_id: string; _reaction: string }
         Returns: Json
       }
       transfer_room_host: {
         Args: { _room_id: string; _to_user: string }
+        Returns: Json
+      }
+      update_playlist: {
+        Args: {
+          _description?: string
+          _name?: string
+          _playlist_id: string
+          _room_id?: string
+          _visibility?: string
+        }
         Returns: Json
       }
       upsert_media_metadata_cache: {
@@ -1255,6 +1586,7 @@ export type Database = {
         }
         Returns: string
       }
+      verified_media_snapshot: { Args: { _media_id: string }; Returns: Json }
     }
     Enums: {
       account_status: "active" | "suspended" | "deactivated" | "deleted"
@@ -1281,6 +1613,14 @@ export type Database = {
         | "dismissed"
       playback_provider: "youtube"
       playback_status: "idle" | "ready" | "playing" | "paused" | "ended"
+      playlist_visibility: "private" | "shared_with_room"
+      queue_item_status:
+        | "suggested"
+        | "queued"
+        | "playing"
+        | "played"
+        | "removed"
+        | "rejected"
       report_status: "open" | "reviewing" | "actioned" | "dismissed"
       report_target: "user" | "room" | "message" | "other"
       room_event_type:
@@ -1301,6 +1641,8 @@ export type Database = {
       room_member_role: "host" | "co_host" | "moderator" | "member" | "guest"
       room_member_status: "invited" | "joined" | "left" | "kicked" | "banned"
       room_privacy: "private" | "invite_only" | "unlisted" | "public"
+      room_queue_mode: "host_only" | "collaborative" | "host_approval"
+      room_repeat_mode: "off" | "repeat_one" | "repeat_queue"
       room_status: "draft" | "active" | "paused" | "ended" | "archived"
       room_type:
         | "couple"
@@ -1467,6 +1809,15 @@ export const Constants = {
       ],
       playback_provider: ["youtube"],
       playback_status: ["idle", "ready", "playing", "paused", "ended"],
+      playlist_visibility: ["private", "shared_with_room"],
+      queue_item_status: [
+        "suggested",
+        "queued",
+        "playing",
+        "played",
+        "removed",
+        "rejected",
+      ],
       report_status: ["open", "reviewing", "actioned", "dismissed"],
       report_target: ["user", "room", "message", "other"],
       room_event_type: [
@@ -1488,6 +1839,8 @@ export const Constants = {
       room_member_role: ["host", "co_host", "moderator", "member", "guest"],
       room_member_status: ["invited", "joined", "left", "kicked", "banned"],
       room_privacy: ["private", "invite_only", "unlisted", "public"],
+      room_queue_mode: ["host_only", "collaborative", "host_approval"],
+      room_repeat_mode: ["off", "repeat_one", "repeat_queue"],
       room_status: ["draft", "active", "paused", "ended", "archived"],
       room_type: [
         "couple",

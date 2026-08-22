@@ -115,7 +115,15 @@ suite("phase 4.1 YouTube provider hardening", () => {
   // Rate limiting is asserted explicitly in PROVIDER-T6; every other test must
   // start from a clean budget so limiter state cannot mask a real assertion.
   afterEach(async () => {
-    await admin.from("rate_limits").delete().neq("user_id", "00000000-0000-0000-0000-000000000000");
+    if (created.length > 0) {
+      await admin
+        .from("rate_limits")
+        .delete()
+        .in(
+          "user_id",
+          created.map((user) => user.id),
+        );
+    }
   });
 
   afterAll(async () => {

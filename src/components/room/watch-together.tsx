@@ -418,6 +418,20 @@ export function WatchTogether({ roomId, userId, canControl, roomActive }: WatchT
     return () => clearInterval(id);
   }, [playback, playerReady, suppress]);
 
+  // ---- background playback prevention: pause the local player only,
+  //      never mutate the room's authoritative state. Returning to the tab
+  //      triggers a normal resync path.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onVisibility = () => {
+      if (document.hidden && playerRef.current) {
+        suppress(() => playerRef.current?.pauseVideo());
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [suppress]);
+
   /** Manual resync: refresh authoritative state + clock, then reconcile locally. */
   const onResync = useCallback(() => {
     playback.resync("manual_resync");

@@ -19,8 +19,8 @@ const enabled = Boolean(url && serviceKey && anonKey);
 const suite = enabled ? describe : describe.skip;
 
 const password = "Test-Password-123!";
-const VIDEO = "dQw4w9WgXcQ";
-const OTHER_VIDEO = "9bZkp7q19f0";
+const VIDEO = "PLAYBACKID1";
+const OTHER_VIDEO = "PLAYBACKID2";
 
 interface TestUser {
   id: string;

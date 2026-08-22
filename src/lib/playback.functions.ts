@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveMediaPolicy } from "@/lib/media-metadata.functions";
 import { normalizeRpc } from "@/lib/server/rpc.server";
 import type { Json } from "@/lib/rpc-types";
 

@@ -186,7 +186,13 @@ export const createModerationAction = createServerFn({ method: "POST" })
       _room_id: data.room_id ?? null,
       _target_user_id: data.target_user_id ?? null,
       _reason: data.reason ?? null,
-    } as unknown as { _action: ModerationActionType });
+    } as unknown as {
+      _action: ModerationActionType;
+      _report_id: string;
+      _room_id: string;
+      _target_user_id: string;
+      _reason: string;
+    });
     return normalizeRpc<{ id: string }>("create_moderation_action", result, error);
   });
 

@@ -179,12 +179,14 @@ export const createModerationAction = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("create_moderation_action", {
+      // The SQL signature defaults these to NULL; the generated types mark
+      // them required, so nulls are passed explicitly.
       _action: data.action,
-      ...(data.report_id ? { _report_id: data.report_id } : {}),
-      ...(data.room_id ? { _room_id: data.room_id } : {}),
-      ...(data.target_user_id ? { _target_user_id: data.target_user_id } : {}),
-      ...(data.reason ? { _reason: data.reason } : {}),
-    });
+      _report_id: data.report_id ?? null,
+      _room_id: data.room_id ?? null,
+      _target_user_id: data.target_user_id ?? null,
+      _reason: data.reason ?? null,
+    } as unknown as { _action: ModerationActionType });
     return normalizeRpc<{ id: string }>("create_moderation_action", result, error);
   });
 

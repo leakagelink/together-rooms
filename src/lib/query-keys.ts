@@ -28,6 +28,9 @@ export const queryKeys = {
   localMedia: {
     session: (roomId: string) => ["rooms", "detail", roomId, "local-media"] as const,
   },
+  calls: {
+    snapshot: (roomId: string) => ["rooms", "detail", roomId, "call"] as const,
+  },
   playlists: {
     mine: () => ["playlists", "mine"] as const,
     items: (playlistId: string) => ["playlists", playlistId, "items"] as const,

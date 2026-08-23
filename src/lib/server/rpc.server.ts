@@ -7,6 +7,23 @@ export function newTraceId(): string {
 }
 
 /**
+ * Builds RPC arguments where optional parameters are omitted entirely rather
+ * than sent as null/undefined, so Postgres applies its own DEFAULTs and the
+ * generated argument types stay satisfied.
+ */
+export function rpcArgs<R extends Record<string, unknown>, O extends Record<string, unknown>>(
+  required: R,
+  optional: O,
+): R & { [K in keyof O]?: NonNullable<O[K]> } {
+  const out: Record<string, unknown> = { ...required };
+  for (const [key, value] of Object.entries(optional)) {
+    if (value !== undefined && value !== null) out[key] = value;
+  }
+  return out as R & { [K in keyof O]?: NonNullable<O[K]> };
+}
+
+
+/**
  * Normalizes an RPC response. Postgres-level errors are logged with a trace id
  * and collapsed into a generic reason so no database internals reach the browser.
  */

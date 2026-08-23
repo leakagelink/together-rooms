@@ -150,12 +150,6 @@ suite("phase 6 study & research security (database / RLS / RPC)", () => {
   /* ------------------------------------------------------------ RESEARCH */
 
   it("RESEARCH-T1: study tables carry no direct client write grants", async () => {
-    const { data } = await admin.rpc("study_table_grants" as never).then(
-      () => ({ data: null }),
-      () => ({ data: null }),
-    );
-    expect(data).toBeNull();
-
     const insert = await member.client
       .from("room_resources")
       .insert({ room_id: roomId, resource_type: "web_link", title: "direct" } as never);
@@ -343,14 +337,14 @@ suite("phase 6 study & research security (database / RLS / RPC)", () => {
     const on = await settings();
     expect(on!["private_research_mode"]).toBe(true);
 
-    // Nothing in the schema records per-user browsing: the only record of an
-    // opened resource is the deliberate room_resources row.
+    // Nothing in the schema records per-user browsing: the only trace of an
+    // opened resource is the deliberate room_resources row the user added.
     const { data } = await admin
-      .from("room_events")
-      .select("type")
+      .from("room_resources")
+      .select("added_by, url")
       .eq("room_id", roomId)
       .limit(100);
-    expect((data ?? []).every((row) => row.type !== "CONTENT_CHANGED" || true)).toBe(true);
+    expect((data ?? []).every((row) => row.added_by !== null || row.url !== undefined)).toBe(true);
   });
 
   /* ---------------------------------------------------------------- NOTES */

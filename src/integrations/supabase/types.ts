@@ -50,6 +50,24 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_config: {
+        Row: {
+          config: Json
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          config: Json
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string
@@ -241,10 +259,17 @@ export type Database = {
       }
       entitlements: {
         Row: {
+          cancel_at_period_end: boolean
           created_at: string
+          entitlement_key: string
+          event_seq: number
           expires_at: string | null
+          grace_until: string | null
           id: string
+          last_event_at: string | null
           plan: Database["public"]["Enums"]["subscription_tier"]
+          product_id: string | null
+          purchase_token_hash: string | null
           source: Database["public"]["Enums"]["entitlement_source"]
           starts_at: string
           status: Database["public"]["Enums"]["entitlement_status"]
@@ -252,10 +277,17 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cancel_at_period_end?: boolean
           created_at?: string
+          entitlement_key?: string
+          event_seq?: number
           expires_at?: string | null
+          grace_until?: string | null
           id?: string
+          last_event_at?: string | null
           plan?: Database["public"]["Enums"]["subscription_tier"]
+          product_id?: string | null
+          purchase_token_hash?: string | null
           source?: Database["public"]["Enums"]["entitlement_source"]
           starts_at?: string
           status?: Database["public"]["Enums"]["entitlement_status"]
@@ -263,10 +295,17 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cancel_at_period_end?: boolean
           created_at?: string
+          entitlement_key?: string
+          event_seq?: number
           expires_at?: string | null
+          grace_until?: string | null
           id?: string
+          last_event_at?: string | null
           plan?: Database["public"]["Enums"]["subscription_tier"]
+          product_id?: string | null
+          purchase_token_hash?: string | null
           source?: Database["public"]["Enums"]["entitlement_source"]
           starts_at?: string
           status?: Database["public"]["Enums"]["entitlement_status"]
@@ -599,6 +638,24 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      plan_limits: {
+        Row: {
+          limits: Json
+          plan_key: string
+          updated_at: string
+        }
+        Insert: {
+          limits: Json
+          plan_key: string
+          updated_at?: string
+        }
+        Update: {
+          limits?: Json
+          plan_key?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1843,6 +1900,96 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_events: {
+        Row: {
+          applied: boolean
+          created_at: string
+          dedupe_key: string
+          event_seq: number
+          event_time: string
+          event_type: string
+          id: string
+          metadata: Json
+          outcome: string
+          product_id: string | null
+          provider: string
+          purchase_token_hash: string | null
+          user_id: string
+        }
+        Insert: {
+          applied?: boolean
+          created_at?: string
+          dedupe_key: string
+          event_seq?: number
+          event_time?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          outcome?: string
+          product_id?: string | null
+          provider?: string
+          purchase_token_hash?: string | null
+          user_id: string
+        }
+        Update: {
+          applied?: boolean
+          created_at?: string
+          dedupe_key?: string
+          event_seq?: number
+          event_time?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          outcome?: string
+          product_id?: string | null
+          provider?: string
+          purchase_token_hash?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscription_products: {
+        Row: {
+          base_plan_id: string | null
+          created_at: string
+          entitlement_key: string
+          id: string
+          is_active: boolean
+          offer_id: string | null
+          period: string
+          plan: Database["public"]["Enums"]["subscription_tier"]
+          platform: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          base_plan_id?: string | null
+          created_at?: string
+          entitlement_key?: string
+          id: string
+          is_active?: boolean
+          offer_id?: string | null
+          period?: string
+          plan?: Database["public"]["Enums"]["subscription_tier"]
+          platform?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          base_plan_id?: string | null
+          created_at?: string
+          entitlement_key?: string
+          id?: string
+          is_active?: boolean
+          offer_id?: string | null
+          period?: string
+          plan?: Database["public"]["Enums"]["subscription_tier"]
+          platform?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_blocks: {
         Row: {
           blocked_id: string
@@ -2016,8 +2163,18 @@ export type Database = {
         Args: { _media_id: string; _provider: string; _room_id: string }
         Returns: Json
       }
+      admin_grant_entitlement: {
+        Args: {
+          _expires_at?: string
+          _reason: string
+          _revoke?: boolean
+          _user_id: string
+        }
+        Returns: Json
+      }
       admin_list_roles: { Args: never; Returns: Json }
       admin_search_users: { Args: { _q: string }; Returns: Json }
+      admin_subscription_overview: { Args: { _user_id: string }; Returns: Json }
       admit_member: {
         Args: {
           _room: Database["public"]["Tables"]["rooms"]["Row"]
@@ -2028,6 +2185,22 @@ export type Database = {
       }
       advance_queue: {
         Args: { _cause?: string; _expected_version?: number; _room_id: string }
+        Returns: Json
+      }
+      apply_billing_event: {
+        Args: {
+          _cancel_at_period_end?: boolean
+          _event_seq?: number
+          _event_time?: string
+          _event_type: string
+          _expires_at?: string
+          _grace_until?: string
+          _metadata?: Json
+          _product_id?: string
+          _provider?: string
+          _purchase_token?: string
+          _user_id: string
+        }
         Returns: Json
       }
       apply_queue_item: {
@@ -2226,6 +2399,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      entitlement_precheck: { Args: { _feature: string }; Returns: Json }
+      entitlement_snapshot: { Args: { _user_id: string }; Returns: Json }
       export_user_data: { Args: never; Returns: Json }
       fetch_call_signals: {
         Args: { _session_id: string; _token: string }
@@ -2243,6 +2418,7 @@ export type Database = {
         Returns: boolean
       }
       is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
+      is_premium: { Args: { _user_id: string }; Returns: boolean }
       is_room_host: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
@@ -2316,7 +2492,9 @@ export type Database = {
         }
         Returns: Json
       }
+      my_entitlement: { Args: never; Returns: Json }
       my_staff_context: { Args: never; Returns: Json }
+      my_subscription_events: { Args: { _limit?: number }; Returns: Json }
       pause_room_media: {
         Args: { _expected_version?: number; _room_id: string }
         Returns: Json
@@ -2530,6 +2708,10 @@ export type Database = {
       }
       set_resource_status: {
         Args: { _resource_id: string; _status: string }
+        Returns: Json
+      }
+      set_room_capacity: {
+        Args: { _max_members: number; _room_id: string }
         Returns: Json
       }
       set_room_media: {

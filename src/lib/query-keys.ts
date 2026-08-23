@@ -41,6 +41,10 @@ export const queryKeys = {
     settings: (userId: string | undefined) => ["user_settings", userId] as const,
     privacy: (userId: string | undefined) => ["privacy_settings", userId] as const,
     entitlement: (userId: string | undefined) => ["account", "entitlement", userId] as const,
+    subscriptionHistory: (userId: string | undefined) =>
+      ["account", "subscription", "history", userId] as const,
+    subscriptionProducts: () => ["account", "subscription", "products"] as const,
+    adConfig: (userId: string | undefined) => ["account", "ads", "config", userId] as const,
     deletion: (userId: string | undefined) => ["account", "deletion", userId] as const,
   },
   staff: {

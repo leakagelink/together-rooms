@@ -1,35 +1,65 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useCallback } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  FREE_SNAPSHOT,
+  isSnapshotPremium,
+  type EntitlementSnapshot,
+  type PlanKey,
+  type PlanLimits,
+} from "@/lib/entitlements";
+import { getMyEntitlement } from "@/lib/monetization.functions";
 import { queryKeys } from "@/lib/query-keys";
 
-export type Plan = "free" | "pro" | "pro_plus";
-
 /**
- * Reads the caller's own entitlement. The table is SELECT-only for
- * `authenticated` and has no client INSERT/UPDATE/DELETE grant at all, so a
- * user cannot grant themselves a plan. profiles.subscription_tier is
- * deprecated and must never be used for gating.
+ * PHASE 9 — the single client entry point for entitlement state.
+ *
+ * The value is produced by the server (`my_entitlement`), which reads the
+ * `entitlements` table the client has no write path to. Client-side code can
+ * therefore only *display* a plan; every protected action is re-checked in the
+ * database when it is performed.
+ *
+ * Offline behaviour: a failed refresh keeps the last authoritative snapshot
+ * (React Query cache) rather than downgrading the user, and premium lapses
+ * only when the snapshot's own expiry/grace timestamp has passed.
  */
 export function useEntitlement() {
   const { user } = useAuth();
+  const fetchEntitlement = useServerFn(getMyEntitlement);
+  const queryClient = useQueryClient();
+
   const query = useQuery({
     enabled: Boolean(user),
     queryKey: queryKeys.account.entitlement(user?.id),
     staleTime: 60_000,
-    queryFn: async (): Promise<Plan> => {
-      const { data, error } = await supabase
-        .from("entitlements")
-        .select("plan, status, starts_at, expires_at")
-        .eq("user_id", user!.id)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data || data.status !== "active") return "free";
-      if (data.expires_at && new Date(data.expires_at) <= new Date()) return "free";
-      return data.plan as Plan;
+    // Keep the previous authoritative value on transient failures.
+    retry: 2,
+    queryFn: async (): Promise<EntitlementSnapshot> => {
+      const result = await fetchEntitlement();
+      if (!result || result.ok !== true) throw new Error("entitlement_unavailable");
+      return result as unknown as EntitlementSnapshot;
     },
   });
 
-  return { plan: query.data ?? "free", isLoading: query.isPending };
+  const snapshot = query.data ?? null;
+  const premium = isSnapshotPremium(snapshot);
+  const limits: PlanLimits = snapshot?.limits ?? FREE_SNAPSHOT.limits;
+
+  const refresh = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: queryKeys.account.entitlement(user?.id) }),
+    [queryClient, user?.id],
+  );
+
+  return {
+    snapshot: snapshot ?? FREE_SNAPSHOT,
+    plan: (premium ? "premium" : "free") as PlanKey,
+    premium,
+    limits,
+    adsEnabled: !premium && (snapshot?.ads_enabled ?? true),
+    isLoading: query.isPending,
+    isError: query.isError,
+    refresh,
+  };
 }

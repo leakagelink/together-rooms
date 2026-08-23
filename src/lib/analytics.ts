@@ -40,7 +40,19 @@ export type AnalyticsEventName =
   | "call_joined"
   | "call_left"
   | "call_ended"
-  | "call_connection_failed";
+  | "call_connection_failed"
+  // Phase 9: monetization + ads. Operational only — never prices paid, payment
+  // identifiers, purchase tokens, ad content or behavioural profiles
+  // (see ads/analytics-safety).
+  | "subscription_screen_viewed"
+  | "purchase_started"
+  | "purchase_verified"
+  | "purchase_failed"
+  | "restore_requested"
+  | "entitlement_changed"
+  | "ad_requested"
+  | "ad_blocked"
+  | "ad_shown";
 
 export type AnalyticsProperties = Record<string, string | number | boolean | null>;
 

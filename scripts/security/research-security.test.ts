@@ -74,20 +74,25 @@ suite("phase 6 study & research security (database / RLS / RPC)", () => {
     return (data ?? { ok: false, reason: "server_error" }) as Rpc;
   };
 
+  let urlSeq = 0;
   const addResource = (
     user: TestUser,
     overrides: Record<string, unknown> = {},
     room = roomId,
-  ) =>
-    rpc(user, "add_room_resource", {
+  ) => {
+    // Each fixture gets its own URL: the RPC deduplicates by normalized URL
+    // per room, which would otherwise make later additions fail.
+    const link = `https://example.com/paper-${++urlSeq}-${Math.random().toString(36).slice(2, 8)}`;
+    return rpc(user, "add_room_resource", {
       _room_id: room,
       _resource_type: "web_link",
       _title: "Reference",
-      _url: "https://example.com/paper",
-      _normalized_url: "https://example.com/paper",
+      _url: link,
+      _normalized_url: link,
       _host: "example.com",
       ...overrides,
     });
+  };
 
   const settings = async (room = roomId) => {
     const { data } = await admin

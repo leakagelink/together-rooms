@@ -22,7 +22,6 @@ export function rpcArgs<R extends Record<string, unknown>, O extends Record<stri
   return out as R & { [K in keyof O]?: NonNullable<O[K]> };
 }
 
-
 /**
  * Normalizes an RPC response. Postgres-level errors are logged with a trace id
  * and collapsed into a generic reason so no database internals reach the browser.

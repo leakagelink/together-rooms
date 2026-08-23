@@ -359,7 +359,6 @@ function RoomPage() {
         />
       )}
 
-
       <RoomChat
         roomId={room.id}
         userId={user?.id}

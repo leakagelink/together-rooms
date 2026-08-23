@@ -75,11 +75,7 @@ suite("phase 6 study & research security (database / RLS / RPC)", () => {
   };
 
   let urlSeq = 0;
-  const addResource = (
-    user: TestUser,
-    overrides: Record<string, unknown> = {},
-    room = roomId,
-  ) => {
+  const addResource = (user: TestUser, overrides: Record<string, unknown> = {}, room = roomId) => {
     // Each fixture gets its own URL: the RPC deduplicates by normalized URL
     // per room, which would otherwise make later additions fail.
     const link = `https://example.com/paper-${++urlSeq}-${Math.random().toString(36).slice(2, 8)}`;
@@ -138,10 +134,13 @@ suite("phase 6 study & research security (database / RLS / RPC)", () => {
   afterEach(async () => {
     // Rate limiting is a per-user sliding window; clearing it keeps the
     // sequential test bodies from starving each other.
-    await admin.from("rate_limits").delete().in(
-      "user_id",
-      created.map((u) => u.id),
-    );
+    await admin
+      .from("rate_limits")
+      .delete()
+      .in(
+        "user_id",
+        created.map((u) => u.id),
+      );
   });
 
   afterAll(async () => {
@@ -315,9 +314,21 @@ suite("phase 6 study & research security (database / RLS / RPC)", () => {
 
   it("RESEARCH-T10: the host can pin, archive and reject resources", async () => {
     const resource = await addResource(member, { _title: "Moderated" });
-    expect((await rpc(host, "set_resource_pinned", { _resource_id: resource.resource_id, _pinned: true })).ok).toBe(true);
     expect(
-      (await rpc(host, "set_resource_status", { _resource_id: resource.resource_id, _status: "archived" })).ok,
+      (
+        await rpc(host, "set_resource_pinned", {
+          _resource_id: resource.resource_id,
+          _pinned: true,
+        })
+      ).ok,
+    ).toBe(true);
+    expect(
+      (
+        await rpc(host, "set_resource_status", {
+          _resource_id: resource.resource_id,
+          _status: "archived",
+        })
+      ).ok,
     ).toBe(true);
 
     const { data } = await admin
@@ -330,10 +341,7 @@ suite("phase 6 study & research security (database / RLS / RPC)", () => {
   });
 
   it("RESEARCH-T11: resource rows never leak across rooms", async () => {
-    const { data } = await outsider.client
-      .from("room_resources")
-      .select("id, room_id")
-      .limit(50);
+    const { data } = await outsider.client.from("room_resources").select("id, room_id").limit(50);
     expect((data ?? []).some((row) => row.room_id === roomId)).toBe(false);
   });
 

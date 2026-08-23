@@ -117,7 +117,9 @@ export const updateRoomResource = createServerFn({ method: "POST" })
 export const setResourceStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ resource_id: uuid, status: z.enum(["active", "archived", "rejected"]) }).parse(input),
+    z
+      .object({ resource_id: uuid, status: z.enum(["active", "archived", "rejected"]) })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("set_resource_status", {
@@ -211,9 +213,7 @@ export const setStudySettings = createServerFn({ method: "POST" })
 export const createRoomNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z
-      .object({ room_id: uuid, title, content: z.string().max(20000).optional() })
-      .parse(input),
+    z.object({ room_id: uuid, title, content: z.string().max(20000).optional() }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("create_room_note", {

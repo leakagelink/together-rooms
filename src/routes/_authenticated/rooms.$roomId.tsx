@@ -370,6 +370,14 @@ function RoomPage() {
         />
       ) : null}
 
+      {/* Phase 8: live, unrecorded voice & video for members of this room. */}
+      <RoomCall
+        roomId={room.id}
+        userId={user?.id}
+        canModerate={canModerate}
+        roomActive={lifecycle === "ok"}
+      />
+
       <RoomChat
         roomId={room.id}
         userId={user?.id}

@@ -190,10 +190,13 @@ suite("phase 6 study & research realtime (postgres_changes)", () => {
     if (memberChannel) await member.client.removeChannel(memberChannel);
     if (outsiderChannel) await outsider.client.removeChannel(outsiderChannel);
     for (const room of rooms) await admin.from("rooms").delete().eq("id", room);
-    await admin.from("rate_limits").delete().in(
-      "user_id",
-      created.map((u) => u.id),
-    );
+    await admin
+      .from("rate_limits")
+      .delete()
+      .in(
+        "user_id",
+        created.map((u) => u.id),
+      );
     for (const user of created) {
       await user.client.auth.signOut();
       await admin.auth.admin.deleteUser(user.id);

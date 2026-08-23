@@ -107,8 +107,7 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
   const [draft, setDraft] = useState<{ revision: number; content: string } | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
-  const canAddResources =
-    roomActive && (settings.resource_mode !== "host_only" || canControl);
+  const canAddResources = roomActive && (settings.resource_mode !== "host_only" || canControl);
   const canEditNotes = roomActive && (settings.note_mode !== "host_only" || canControl);
   const canUseTimer = roomActive && (settings.timer_mode !== "host_only" || canControl);
 
@@ -139,8 +138,7 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
 
   const left = useMemo(() => remainingSeconds(timer, new Date(now)), [timer, now]);
 
-  const invalidate = (key: readonly unknown[]) =>
-    queryClient.invalidateQueries({ queryKey: key });
+  const invalidate = (key: readonly unknown[]) => queryClient.invalidateQueries({ queryKey: key });
 
   const addMutation = useMutation({
     mutationFn: async () => {
@@ -191,9 +189,7 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
 
   const noteCreate = useMutation({
     mutationFn: async () =>
-      unwrap(
-        (await newNote({ data: { room_id: roomId, title: noteTitle.trim() } })) as Result,
-      ),
+      unwrap((await newNote({ data: { room_id: roomId, title: noteTitle.trim() } })) as Result),
     onSuccess: async () => {
       setNoteTitle("");
       await invalidate(queryKeys.study.notes(roomId));
@@ -469,9 +465,7 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
                   >
                     <div>
                       <p className="text-sm font-medium">{resource.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {displayHost(resource.host)}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{displayHost(resource.host)}</p>
                     </div>
                     {canControl ? (
                       <div className="flex gap-2">
@@ -711,8 +705,7 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
                       variant="ghost"
                       onClick={() =>
                         taskAction.mutate(
-                          async () =>
-                            (await dropTask({ data: { task_id: task.id } })) as Result,
+                          async () => (await dropTask({ data: { task_id: task.id } })) as Result,
                         )
                       }
                     >
@@ -894,8 +887,7 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
               <div>
                 <p className="text-sm font-medium">Private Research Mode</p>
                 <p className="text-xs text-muted-foreground">
-                  No browsing activity is recorded or shared. Not a VPN, proxy or incognito
-                  browser.
+                  No browsing activity is recorded or shared. Not a VPN, proxy or incognito browser.
                 </p>
               </div>
               <Switch

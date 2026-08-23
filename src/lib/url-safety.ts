@@ -55,11 +55,7 @@ const PRIVATE_HOST_SUFFIXES = [".local", ".internal", ".localhost", ".home", ".l
 export const MAX_URL_LENGTH = 2048;
 
 export type UrlRejection =
-  | "malformed"
-  | "scheme_not_allowed"
-  | "credentials_not_allowed"
-  | "too_long"
-  | "private_network";
+  "malformed" | "scheme_not_allowed" | "credentials_not_allowed" | "too_long" | "private_network";
 
 export interface UrlAccepted {
   ok: true;

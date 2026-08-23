@@ -125,6 +125,19 @@ suite("phase 7 local media (security / playback / transport)", () => {
       ...overrides,
     });
 
+  /** Guarantees an active session exists for tests that only read one. */
+  async function ensureActiveSession(): Promise<void> {
+    const { data } = await admin
+      .from("room_local_media_sessions")
+      .select("id")
+      .eq("room_id", roomId)
+      .eq("status", "active")
+      .maybeSingle();
+    if (data) return;
+    const started = await startSession(host);
+    expect(started.ok).toBe(true);
+  }
+
   beforeAll(async () => {
     host = await makeUser("host");
     member = await makeUser("member");

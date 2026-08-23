@@ -35,6 +35,14 @@ export type RpcReason =
   | "not_embeddable"
   | "privacy_blocked"
   | "unavailable"
+  // Phase 9 — monetization. Verification failures are deliberately vague:
+  // a client can't tell "no such purchase" from "we couldn't reach Google".
+  | "premium_required"
+  | "plan_limit_reached"
+  | "verification_unavailable"
+  | "verification_failed"
+  | "purchase_not_found"
+  | "purchase_pending"
   | "server_error";
 
 /** JSON values that survive the server-function serialization boundary. */
@@ -72,6 +80,12 @@ const MESSAGES: Record<RpcReason, string> = {
   not_embeddable: "The owner doesn't allow this video to be played outside YouTube.",
   privacy_blocked: "This video is private.",
   unavailable: "This video is unavailable on YouTube.",
+  premium_required: "Premium is needed for this. Everything else stays available.",
+  plan_limit_reached: "You've reached your plan's limit. Close a room or upgrade to raise it.",
+  verification_unavailable: "We couldn't confirm your purchase right now. Nothing was charged twice — try again shortly.",
+  verification_failed: "We couldn't confirm this purchase with Google Play.",
+  purchase_not_found: "Google Play has no record of this purchase for your account.",
+  purchase_pending: "Google Play is still processing this purchase.",
   server_error: "Something went wrong. Try again.",
 };
 

@@ -2692,8 +2692,20 @@ export type Database = {
         | "completed"
         | "failed"
         | "cancelled"
-      entitlement_source: "system" | "grant" | "promo" | "billing"
-      entitlement_status: "active" | "expired" | "revoked" | "pending"
+      entitlement_source:
+        | "system"
+        | "grant"
+        | "promo"
+        | "billing"
+        | "admin_grant"
+        | "play_billing"
+      entitlement_status:
+        | "active"
+        | "expired"
+        | "revoked"
+        | "pending"
+        | "grace_period"
+        | "paused"
       focus_timer_phase: "focus" | "short_break" | "long_break" | "custom"
       focus_timer_status: "idle" | "running" | "paused" | "completed"
       local_media_kind: "image" | "video" | "audio"
@@ -2906,8 +2918,22 @@ export const Constants = {
         "failed",
         "cancelled",
       ],
-      entitlement_source: ["system", "grant", "promo", "billing"],
-      entitlement_status: ["active", "expired", "revoked", "pending"],
+      entitlement_source: [
+        "system",
+        "grant",
+        "promo",
+        "billing",
+        "admin_grant",
+        "play_billing",
+      ],
+      entitlement_status: [
+        "active",
+        "expired",
+        "revoked",
+        "pending",
+        "grace_period",
+        "paused",
+      ],
       focus_timer_phase: ["focus", "short_break", "long_break", "custom"],
       focus_timer_status: ["idle", "running", "paused", "completed"],
       local_media_kind: ["image", "video", "audio"],

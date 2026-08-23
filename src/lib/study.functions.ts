@@ -82,7 +82,7 @@ export const addRoomResource = createServerFn({ method: "POST" })
       _url: url,
       _normalized_url: normalized,
       _host: host,
-      _description: data.description ?? null,
+      _description: data.description ?? undefined,
       _provider_media_id: providerMediaId,
     });
     return normalizeRpc<StudyResult>("add_room_resource", result, error);
@@ -98,8 +98,8 @@ export const updateRoomResource = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("update_room_resource", {
       _resource_id: data.resource_id,
-      _title: data.title ?? null,
-      _description: data.description ?? null,
+      _title: data.title ?? undefined,
+      _description: data.description ?? undefined,
     });
     return normalizeRpc<StudyResult>("update_room_resource", result, error);
   });
@@ -179,11 +179,11 @@ export const setStudySettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("set_study_settings", {
       _room_id: data.room_id,
-      _resource_mode: data.resource_mode ?? null,
-      _note_mode: data.note_mode ?? null,
-      _timer_mode: data.timer_mode ?? null,
-      _focus_mode: data.focus_mode ?? null,
-      _private_research: data.private_research ?? null,
+      _resource_mode: data.resource_mode ?? undefined,
+      _note_mode: data.note_mode ?? undefined,
+      _timer_mode: data.timer_mode ?? undefined,
+      _focus_mode: data.focus_mode ?? undefined,
+      _private_research: data.private_research ?? undefined,
     });
     return normalizeRpc<StudyResult>("set_study_settings", result, error);
   });
@@ -222,8 +222,8 @@ export const updateRoomNote = createServerFn({ method: "POST" })
     const { data: result, error } = await context.supabase.rpc("update_room_note", {
       _note_id: data.note_id,
       _expected_revision: data.expected_revision,
-      _title: data.title ?? null,
-      _content: data.content ?? null,
+      _title: data.title ?? undefined,
+      _content: data.content ?? undefined,
     });
     return normalizeRpc<StudyResult>("update_room_note", result, error);
   });
@@ -251,8 +251,8 @@ export const createRoomTask = createServerFn({ method: "POST" })
     const { data: result, error } = await context.supabase.rpc("create_room_task", {
       _room_id: data.room_id,
       _title: data.title,
-      _description: data.description ?? null,
-      _assigned_to: data.assigned_to ?? null,
+      _description: data.description ?? undefined,
+      _assigned_to: data.assigned_to ?? undefined,
     });
     return normalizeRpc<StudyResult>("create_room_task", result, error);
   });
@@ -272,8 +272,8 @@ export const updateRoomTask = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("update_room_task", {
       _task_id: data.task_id,
-      _status: data.status ?? null,
-      _assigned_to: data.assigned_to ?? null,
+      _status: data.status ?? undefined,
+      _assigned_to: data.assigned_to ?? undefined,
       _clear_assignee: data.clear_assignee ?? false,
     });
     return normalizeRpc<StudyResult>("update_room_task", result, error);
@@ -308,8 +308,8 @@ export const controlFocusTimer = createServerFn({ method: "POST" })
     const { data: result, error } = await context.supabase.rpc("control_focus_timer", {
       _room_id: data.room_id,
       _action: data.action,
-      _phase: data.phase ?? null,
-      _duration_seconds: data.duration_seconds ?? null,
+      _phase: data.phase ?? undefined,
+      _duration_seconds: data.duration_seconds ?? undefined,
       ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
     });
     return normalizeRpc<StudyResult>("control_focus_timer", result, error);

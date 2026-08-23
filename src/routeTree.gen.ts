@@ -30,6 +30,7 @@ import { Route as AuthenticatedRoomsJoinRouteImport } from './routes/_authentica
 import { Route as AuthenticatedRoomsNewRouteImport } from './routes/_authenticated/rooms.new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_authenticated/settings.privacy'
+import { Route as AuthenticatedSettingsSubscriptionRouteImport } from './routes/_authenticated/settings.subscription'
 import { Route as AuthenticatedAdminReportsReportIdRouteImport } from './routes/_authenticated/admin.reports.$reportId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -139,6 +140,12 @@ const AuthenticatedSettingsPrivacyRoute =
     path: '/settings/privacy',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSettingsSubscriptionRoute =
+  AuthenticatedSettingsSubscriptionRouteImport.update({
+    id: '/settings/subscription',
+    path: '/settings/subscription',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminReportsReportIdRoute =
   AuthenticatedAdminReportsReportIdRouteImport.update({
     id: '/admin/reports/$reportId',
@@ -164,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/rooms/join': typeof AuthenticatedRoomsJoinRoute
   '/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
+  '/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -187,6 +195,7 @@ export interface FileRoutesByTo {
   '/rooms/join': typeof AuthenticatedRoomsJoinRoute
   '/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
+  '/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/rooms': typeof AuthenticatedRoomsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -212,6 +221,7 @@ export interface FileRoutesById {
   '/_authenticated/rooms/join': typeof AuthenticatedRoomsJoinRoute
   '/_authenticated/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/_authenticated/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
+  '/_authenticated/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/rooms/join'
     | '/rooms/new'
     | '/settings/privacy'
+    | '/settings/subscription'
     | '/admin/'
     | '/rooms/'
     | '/settings/'
@@ -260,6 +271,7 @@ export interface FileRouteTypes {
     | '/rooms/join'
     | '/rooms/new'
     | '/settings/privacy'
+    | '/settings/subscription'
     | '/admin'
     | '/rooms'
     | '/settings'
@@ -284,6 +296,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rooms/join'
     | '/_authenticated/rooms/new'
     | '/_authenticated/settings/privacy'
+    | '/_authenticated/settings/subscription'
     | '/_authenticated/admin/'
     | '/_authenticated/rooms/'
     | '/_authenticated/settings/'
@@ -453,6 +466,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPrivacyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/subscription': {
+      id: '/_authenticated/settings/subscription'
+      path: '/settings/subscription'
+      fullPath: '/settings/subscription'
+      preLoaderRoute: typeof AuthenticatedSettingsSubscriptionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/reports/$reportId': {
       id: '/_authenticated/admin/reports/$reportId'
       path: '/admin/reports/$reportId'
@@ -471,6 +491,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRoomsJoinRoute: typeof AuthenticatedRoomsJoinRoute
   AuthenticatedRoomsNewRoute: typeof AuthenticatedRoomsNewRoute
   AuthenticatedSettingsPrivacyRoute: typeof AuthenticatedSettingsPrivacyRoute
+  AuthenticatedSettingsSubscriptionRoute: typeof AuthenticatedSettingsSubscriptionRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedRoomsIndexRoute: typeof AuthenticatedRoomsIndexRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -485,6 +506,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRoomsJoinRoute: AuthenticatedRoomsJoinRoute,
   AuthenticatedRoomsNewRoute: AuthenticatedRoomsNewRoute,
   AuthenticatedSettingsPrivacyRoute: AuthenticatedSettingsPrivacyRoute,
+  AuthenticatedSettingsSubscriptionRoute:
+    AuthenticatedSettingsSubscriptionRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedRoomsIndexRoute: AuthenticatedRoomsIndexRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,

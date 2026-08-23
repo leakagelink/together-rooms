@@ -43,6 +43,7 @@ import {
   issueCallGrant,
   joinCallSession,
   leaveCallSession,
+  postCallSignal,
   setCallMediaState,
   setCallSettings,
   startCallSession,
@@ -139,7 +140,7 @@ export function useRoomCall(
   const mediaStateFn = useServerFn(setCallMediaState);
   const heartbeatFn = useServerFn(callHeartbeat);
   const grantFn = useServerFn(issueCallGrant);
-  const signalFn = useServerFn(postCallSignalRef);
+  const signalFn = useServerFn(postCallSignal);
   const pollFn = useServerFn(fetchCallSignals);
   const settingsFn = useServerFn(setCallSettings);
 
@@ -216,7 +217,7 @@ export function useRoomCall(
             table: "room_call_participants",
             filter: `room_id=eq.${roomId}`,
           },
-          () => void queryClient.invalidateQueries({ queryKey: key.slice(0, key.length) }),
+          () => void queryClient.invalidateQueries({ queryKey: key }),
         )
         .subscribe((status) => setConnected(status === "SUBSCRIBED"));
     })();

@@ -1,0 +1,310 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Images, MonitorPlay, Pause, Play, RotateCcw, Square, Upload } from "lucide-react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useLocalMedia } from "@/hooks/useLocalMedia";
+import {
+  capabilityMessage,
+  checkSelection,
+  describeSelection,
+  detectCapability,
+  selectionMessage,
+  type LocalMediaKind,
+} from "@/lib/local-media/capability";
+import { MAX_IMAGE_ITEMS } from "@/lib/local-media/limits";
+import { localExpectedPosition, shouldCorrectDrift } from "@/lib/local-media/sync";
+
+interface LocalMediaRoomProps {
+  roomId: string;
+  userId: string | undefined;
+  /** Client-side gating only; SQL re-enforces who may share and control. */
+  canShare: boolean;
+  roomActive: boolean;
+}
+
+/**
+ * Phase 7 — private local media sharing surface.
+ *
+ * What this deliberately is NOT: an upload feature. Selected files never leave
+ * the device except as a live, encrypted peer stream to authorized members of
+ * this room, and nothing is stored on any server. When the session ends the
+ * object URLs are revoked and playback stops for everyone.
+ */
+export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMediaRoomProps) {
+  const media = useLocalMedia(roomId, userId, roomActive);
+  const [files, setFiles] = useState<File[]>([]);
+  const [objectUrls, setObjectUrls] = useState<string[]>([]);
+  const [warning, setWarning] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const session = media.session;
+  const isOwner = media.isOwner;
+
+  /** Object URLs are the only handle to the bytes and are always revoked. */
+  const releaseUrls = useCallback(() => {
+    setObjectUrls((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url));
+      return [];
+    });
+  }, []);
+
+  useEffect(() => releaseUrls, [releaseUrls]);
+
+  // Session gone (ended, expired, owner absent, membership revoked) → stop.
+  useEffect(() => {
+    if (!session) {
+      releaseUrls();
+      setFiles([]);
+    }
+  }, [session, releaseUrls]);
+
+  const onPick = useCallback((picked: FileList | null) => {
+    const list = picked ? [...picked] : [];
+    const check = checkSelection(list);
+    if (!check.ok) {
+      setWarning(selectionMessage(check.reason ?? "empty"));
+      setFiles([]);
+      return;
+    }
+    const probe =
+      check.kind === "image"
+        ? null
+        : document.createElement(check.kind === "audio" ? "audio" : "video");
+    const verdict = detectCapability(list[0]!.type, probe);
+    setWarning(capabilityMessage(verdict, list[0]!.type));
+    if (verdict === "unsupported") {
+      setFiles([]);
+      return;
+    }
+    setFiles(list);
+    setObjectUrls(list.map((file) => URL.createObjectURL(file)));
+  }, []);
+
+  const startShare = useCallback(async () => {
+    const descriptor = describeSelection(files);
+    if (!descriptor) return;
+    const id = await media.start(descriptor);
+    if (!id) toast.error("Couldn't start sharing. Check you're still in this room.");
+  }, [files, media]);
+
+  const stopShare = useCallback(async () => {
+    await media.end();
+    releaseUrls();
+    setFiles([]);
+    toast.success("Sharing stopped. Access ended for everyone.");
+  }, [media, releaseUrls]);
+
+  /** Viewer-side drift correction against the authoritative timestamps. */
+  useEffect(() => {
+    const element = videoRef.current;
+    if (!element || !session || session.media_kind === "image") return;
+    const target = localExpectedPosition(
+      {
+        playback_status: session.playback_status,
+        position_seconds: session.position_seconds,
+        playback_started_at: session.playback_started_at,
+      },
+      Date.now(),
+    );
+    if (shouldCorrectDrift(element.currentTime, target)) element.currentTime = target;
+    if (session.playback_status === "playing" && element.paused) {
+      void element.play().catch(() => setWarning("Tap play once to allow sound on this device."));
+    }
+    if (session.playback_status !== "playing" && !element.paused) element.pause();
+  }, [session]);
+
+  const kind: LocalMediaKind | null = session?.media_kind ?? null;
+  const currentUrl = objectUrls[session?.current_index ?? 0] ?? objectUrls[0] ?? null;
+
+  const transportLabel = useMemo(() => {
+    switch (media.transportState) {
+      case "direct":
+        return "Direct encrypted connection";
+      case "relay":
+        return "Encrypted via relay";
+      default:
+        return "Not connected";
+    }
+  }, [media.transportState]);
+
+  return (
+    <section className="surface-panel mt-8 p-5" aria-labelledby="local-media-heading">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 id="local-media-heading" className="text-lg font-semibold">
+            Share from this device
+          </h2>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+            Photos, video and audio you pick are streamed live to people in this room. Nothing is
+            uploaded or stored, and access ends the moment you stop sharing.
+          </p>
+        </div>
+        <Badge variant={media.transportState === "unavailable" ? "secondary" : "default"}>
+          {transportLabel}
+        </Badge>
+      </div>
+
+      {!media.authorized ? (
+        <p role="status" className="mt-4 text-sm text-muted-foreground">
+          You no longer have access to this room's shared media.
+        </p>
+      ) : null}
+
+      {session ? (
+        <div className="mt-5 space-y-3">
+          <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
+            {kind === "image" ? (
+              currentUrl ? (
+                <img
+                  src={currentUrl}
+                  alt={`Shared photo ${(session.current_index ?? 0) + 1} of ${session.item_count}`}
+                  className="max-h-[60vh] w-full object-contain"
+                />
+              ) : (
+                <p className="p-6 text-sm text-muted-foreground">
+                  Waiting for the shared photo to arrive…
+                </p>
+              )
+            ) : (
+              <video
+                ref={videoRef}
+                src={currentUrl ?? undefined}
+                controls={isOwner}
+                playsInline
+                className="max-h-[60vh] w-full bg-black"
+                // Background playback is not offered: the stream is live and
+                // ends with the session, so there is nothing to play in the
+                // background.
+                disablePictureInPicture
+              />
+            )}
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            {session.media_kind === "image"
+              ? `Photo ${session.current_index + 1} of ${session.item_count}`
+              : `Live ${session.media_kind} from ${isOwner ? "your device" : "another member's device"}`}
+            {" · "}
+            Ends {new Date(session.expires_at).toLocaleTimeString()}
+          </p>
+
+          {isOwner ? (
+            <div className="flex flex-wrap gap-2">
+              {session.media_kind === "image" ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      void media.control({
+                        action: "set_index",
+                        index: Math.max(0, session.current_index - 1),
+                      })
+                    }
+                    disabled={session.current_index === 0}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      void media.control({
+                        action: "set_index",
+                        index: Math.min(session.item_count - 1, session.current_index + 1),
+                      })
+                    }
+                    disabled={session.current_index >= session.item_count - 1}
+                  >
+                    Next
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      void media.control({
+                        action: "play",
+                        position_seconds: videoRef.current?.currentTime ?? 0,
+                      })
+                    }
+                  >
+                    <Play className="size-4" aria-hidden="true" /> Play
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      void media.control({
+                        action: "pause",
+                        position_seconds: videoRef.current?.currentTime ?? 0,
+                      })
+                    }
+                  >
+                    <Pause className="size-4" aria-hidden="true" /> Pause
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      void media.control({
+                        action: "seek",
+                        position_seconds: videoRef.current?.currentTime ?? 0,
+                      })
+                    }
+                  >
+                    <RotateCcw className="size-4" aria-hidden="true" /> Resync here
+                  </Button>
+                </>
+              )}
+              <Button variant="destructive" onClick={() => void stopShare()}>
+                <Square className="size-4" aria-hidden="true" /> Stop sharing
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      ) : canShare ? (
+        <div className="mt-5 space-y-3">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*,video/*,audio/*"
+            multiple
+            className="sr-only"
+            onChange={(event) => onPick(event.target.files)}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => inputRef.current?.click()}>
+              <Upload className="size-4" aria-hidden="true" /> Choose from this device
+            </Button>
+            <Button onClick={() => void startShare()} disabled={files.length === 0 || !roomActive}>
+              <MonitorPlay className="size-4" aria-hidden="true" /> Start sharing
+            </Button>
+          </div>
+          {files.length > 0 ? (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Images className="size-4" aria-hidden="true" />
+              {files.length === 1
+                ? `1 ${files[0]!.type.split("/")[0]} ready to share`
+                : `${files.length} photos ready (up to ${MAX_IMAGE_ITEMS})`}
+            </p>
+          ) : null}
+          {warning ? (
+            <p role="status" className="text-sm text-amber-600 dark:text-amber-400">
+              {warning}
+            </p>
+          ) : null}
+          <p className="text-xs text-muted-foreground">
+            Only share media you have the right to share. Sharing is peer-to-peer and encrypted in
+            transit, but people in the room can record their own screen — treat it as visible to
+            everyone here.
+          </p>
+        </div>
+      ) : (
+        <p className="mt-5 text-sm text-muted-foreground">
+          Only the host can share media from their device in this room.
+        </p>
+      )}
+    </section>
+  );
+}

@@ -74,11 +74,7 @@ export interface SelectedMediaLike {
 }
 
 export type SelectionRejection =
-  | "unsupported_kind"
-  | "too_large"
-  | "too_many_items"
-  | "mixed_kinds"
-  | "empty";
+  "unsupported_kind" | "too_large" | "too_many_items" | "mixed_kinds" | "empty";
 
 export interface SelectionCheck {
   ok: boolean;

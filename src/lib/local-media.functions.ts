@@ -126,10 +126,9 @@ export const reapLocalMediaOwnerAbsence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ session_id: uuid }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc(
-      "reap_local_media_owner_absence",
-      { _session_id: data.session_id },
-    );
+    const { data: result, error } = await context.supabase.rpc("reap_local_media_owner_absence", {
+      _session_id: data.session_id,
+    });
     return normalizeRpc<{ ended: boolean }>("reap_local_media_owner_absence", result, error);
   });
 

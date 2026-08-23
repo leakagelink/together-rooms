@@ -33,7 +33,14 @@ export type AnalyticsEventName =
   // media bytes or transport credentials (see local-media/analytics-safety).
   | "local_media_session_started"
   | "local_media_session_ended"
-  | "local_media_transport_failed";
+  | "local_media_transport_failed"
+  // Phase 8: call control only. Never carries audio, video, transcripts,
+  // device identity or transport credentials (see calls/analytics-safety).
+  | "call_started"
+  | "call_joined"
+  | "call_left"
+  | "call_ended"
+  | "call_connection_failed";
 
 export type AnalyticsProperties = Record<string, string | number | boolean | null>;
 

@@ -362,6 +362,7 @@ suite("phase 7 local media (security / playback / transport)", () => {
   });
 
   it("LM-P2 pause freezes the position and clears the start timestamp", async () => {
+    await ensureActiveSession();
     const { data } = await admin
       .from("room_local_media_sessions")
       .select("id, version")
@@ -493,6 +494,7 @@ suite("phase 7 local media (security / playback / transport)", () => {
   });
 
   it("LM-X2 only the hash is stored: the plaintext token is never persisted", async () => {
+    await ensureActiveSession();
     const session = (
       await admin
         .from("room_local_media_sessions")
@@ -516,6 +518,7 @@ suite("phase 7 local media (security / playback / transport)", () => {
   });
 
   it("LM-X3 a viewer grant is issued with the viewer role", async () => {
+    await ensureActiveSession();
     const session = (
       await admin
         .from("room_local_media_sessions")
@@ -532,6 +535,7 @@ suite("phase 7 local media (security / playback / transport)", () => {
   });
 
   it("LM-X4 redeeming a valid token succeeds and re-checks membership", async () => {
+    await ensureActiveSession();
     const session = (
       await admin
         .from("room_local_media_sessions")
@@ -609,6 +613,7 @@ suite("phase 7 local media (security / playback / transport)", () => {
   });
 
   it("LM-X8 a signal is delivered only to its addressed recipient", async () => {
+    await ensureActiveSession();
     const session = (
       await admin
         .from("room_local_media_sessions")

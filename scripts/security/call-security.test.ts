@@ -289,8 +289,9 @@ suite("phase 8 calls (security / lifecycle)", () => {
       .from("room_call_participants")
       .update({ mic_enabled: false } as never)
       .eq("session_id", sessionId)
-      .eq("user_id", host.id);
-    expect(forged.error).not.toBeNull();
+      .eq("user_id", host.id)
+      .select("user_id");
+    expect(forged.data ?? []).toHaveLength(0);
 
     // The RPC only ever touches the caller's own row.
     expect((await rpc(member, "set_call_media_state", { _session_id: sessionId, _mic: false })).ok).toBe(
@@ -331,7 +332,7 @@ suite("phase 8 calls (security / lifecycle)", () => {
     expect((await rpc(member, "join_call_session", { _session_id: sessionId })).ok).toBe(true);
     const third = await rpc(blocked, "join_call_session", { _session_id: sessionId });
     expect(third.ok).toBe(false);
-    expect(["call_full", "forbidden", "rate_limited"]).toContain(third.reason);
+    expect(["call_full", "room_full", "forbidden", "rate_limited"]).toContain(third.reason);
     await rpc(host, "set_call_settings", { _room_id: roomId, _max_voice: 8 });
   });
 

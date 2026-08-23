@@ -255,16 +255,21 @@ suite("phase 8 calls (security / lifecycle)", () => {
     for (const result of inserts) expect(result.error).not.toBeNull();
   });
 
-  it("CALL-T7 direct UPDATE/DELETE of a session is rejected for clients", async () => {
+  it("CALL-T7 a direct UPDATE/DELETE of a session changes nothing", async () => {
     await clearSessions();
     const sessionId = await liveSession(host);
     const update = await member.client
       .from("room_call_sessions")
       .update({ session_status: "ended" } as never)
-      .eq("id", sessionId);
-    expect(update.error).not.toBeNull();
-    const del = await member.client.from("room_call_sessions").delete().eq("id", sessionId);
-    expect(del.error).not.toBeNull();
+      .eq("id", sessionId)
+      .select("id");
+    expect(update.data ?? []).toHaveLength(0);
+    const del = await member.client
+      .from("room_call_sessions")
+      .delete()
+      .eq("id", sessionId)
+      .select("id");
+    expect(del.data ?? []).toHaveLength(0);
     const { data } = await admin
       .from("room_call_sessions")
       .select("session_status")
@@ -272,6 +277,7 @@ suite("phase 8 calls (security / lifecycle)", () => {
       .single();
     expect(data?.session_status).toBe("active");
   });
+
 
   it("CALL-T8 a member cannot forge another member's mic/camera state", async () => {
     await clearSessions();

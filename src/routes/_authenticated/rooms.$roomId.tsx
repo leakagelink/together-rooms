@@ -334,7 +334,14 @@ function RoomPage() {
         </div>
       </section>
 
-      {room.type === "music" ? (
+      {room.type === "study" || room.type === "research" ? (
+        <StudyRoom
+          roomId={room.id}
+          userId={user?.id}
+          canControl={isHost || myMembership?.can_control_playback === true}
+          roomActive={lifecycle === "ok"}
+        />
+      ) : room.type === "music" ? (
         <MusicRoom
           roomId={room.id}
           userId={user?.id}
@@ -349,6 +356,7 @@ function RoomPage() {
           roomActive={lifecycle === "ok"}
         />
       )}
+
 
       <RoomChat
         roomId={room.id}

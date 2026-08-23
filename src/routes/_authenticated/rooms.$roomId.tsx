@@ -24,6 +24,8 @@ import { rpcMessage } from "@/lib/rpc-types";
 import { RoomChat } from "@/components/room/room-chat";
 import { WatchTogether } from "@/components/room/watch-together";
 import { MusicRoom } from "@/components/room/music-room";
+import { StudyRoom } from "@/components/room/study-room";
+
 import { setMemberMute } from "@/lib/chat.functions";
 
 export const Route = createFileRoute("/_authenticated/rooms/$roomId")({

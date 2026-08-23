@@ -11,7 +11,7 @@ export function newTraceId(): string {
  * than sent as null/undefined, so Postgres applies its own DEFAULTs and the
  * generated argument types stay satisfied.
  */
-export function rpcArgs<R extends object, O extends object>(
+export function rpcArgs<R extends Record<string, unknown>, O extends Record<string, unknown>>(
   required: R,
   optional: O,
 ): R & { [K in keyof O]?: NonNullable<O[K]> } {

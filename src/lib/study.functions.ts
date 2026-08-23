@@ -165,8 +165,9 @@ export const setFocusedResource = createServerFn({ method: "POST" })
     const { data: result, error } = await context.supabase.rpc(
       "set_focused_resource",
       rpcArgs(
-        { _room_id: data.room_id },
-        { _resource_id: data.resource_id, _expected_version: data.expected_version },
+        // A null resource id clears the focus, which the SQL default cannot express.
+        { _room_id: data.room_id, _resource_id: data.resource_id as string },
+        { _expected_version: data.expected_version },
       ),
     );
     return normalizeRpc<StudyResult>("set_focused_resource", result, error);

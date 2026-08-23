@@ -17,10 +17,19 @@ export const queryKeys = {
     snapshot: (roomId: string) => ["rooms", "detail", roomId, "queue"] as const,
     settings: (roomId: string) => ["rooms", "detail", roomId, "queue", "settings"] as const,
   },
+  study: {
+    resources: (roomId: string) => ["rooms", "detail", roomId, "resources"] as const,
+    notes: (roomId: string) => ["rooms", "detail", roomId, "notes"] as const,
+    tasks: (roomId: string) => ["rooms", "detail", roomId, "tasks"] as const,
+    timer: (roomId: string) => ["rooms", "detail", roomId, "timer"] as const,
+    settings: (roomId: string) => ["rooms", "detail", roomId, "study-settings"] as const,
+    summary: (roomId: string) => ["rooms", "detail", roomId, "study-summary"] as const,
+  },
   playlists: {
     mine: () => ["playlists", "mine"] as const,
     items: (playlistId: string) => ["playlists", playlistId, "items"] as const,
   },
+
   account: {
     profile: (userId: string | undefined) => ["account", "profile", userId] as const,
     settings: (userId: string | undefined) => ["user_settings", userId] as const,

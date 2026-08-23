@@ -25,6 +25,9 @@ export const queryKeys = {
     settings: (roomId: string) => ["rooms", "detail", roomId, "study-settings"] as const,
     summary: (roomId: string) => ["rooms", "detail", roomId, "study-summary"] as const,
   },
+  localMedia: {
+    session: (roomId: string) => ["rooms", "detail", roomId, "local-media"] as const,
+  },
   playlists: {
     mine: () => ["playlists", "mine"] as const,
     items: (playlistId: string) => ["playlists", playlistId, "items"] as const,

@@ -25,6 +25,7 @@ import { RoomChat } from "@/components/room/room-chat";
 import { WatchTogether } from "@/components/room/watch-together";
 import { MusicRoom } from "@/components/room/music-room";
 import { StudyRoom } from "@/components/room/study-room";
+import { LocalMediaRoom } from "@/components/room/local-media-room";
 
 import { setMemberMute } from "@/lib/chat.functions";
 
@@ -358,6 +359,16 @@ function RoomPage() {
           roomActive={lifecycle === "ok"}
         />
       )}
+
+      {/* Phase 7: private, temporary device-media sharing for private rooms. */}
+      {room.privacy === "private" || room.privacy === "invite_only" ? (
+        <LocalMediaRoom
+          roomId={room.id}
+          userId={user?.id}
+          canShare={isHost || myMembership?.can_control_playback === true}
+          roomActive={lifecycle === "ok"}
+        />
+      ) : null}
 
       <RoomChat
         roomId={room.id}

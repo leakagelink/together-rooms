@@ -28,7 +28,12 @@ export type AnalyticsEventName =
   | "playback_media_selected"
   | "playback_started"
   | "playback_paused"
-  | "playback_seeked";
+  | "playback_seeked"
+  // Phase 7: operational only. Never carries filenames, paths, EXIF/GPS,
+  // media bytes or transport credentials (see local-media/analytics-safety).
+  | "local_media_session_started"
+  | "local_media_session_ended"
+  | "local_media_transport_failed";
 
 export type AnalyticsProperties = Record<string, string | number | boolean | null>;
 

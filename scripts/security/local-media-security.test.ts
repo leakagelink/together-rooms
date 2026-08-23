@@ -209,14 +209,22 @@ suite("phase 7 local media (security / playback / transport)", () => {
     expect(error).not.toBeNull();
   });
 
-  it("LM-T6 direct UPDATE of an active session is rejected", async () => {
+  it("LM-T6 direct UPDATE of an active session cannot change it", async () => {
     await clearSessions();
     const session = await startSession(member);
-    const { error } = await member.client
+    await member.client
       .from("room_local_media_sessions")
-      .update({ playback_status: "playing" } as never)
+      .update({ playback_status: "playing", position_seconds: 999 } as never)
       .eq("id", session.session_id!);
-    expect(error).not.toBeNull();
+    // The write is refused outright or silently matches no row; either way the
+    // authoritative state is untouched.
+    const { data } = await admin
+      .from("room_local_media_sessions")
+      .select("playback_status, position_seconds")
+      .eq("id", session.session_id!)
+      .single();
+    expect(data?.playback_status).toBe("idle");
+    expect(Number(data?.position_seconds)).toBe(0);
   });
 
   it("LM-T7 direct writes to transport grants and signals are rejected", async () => {

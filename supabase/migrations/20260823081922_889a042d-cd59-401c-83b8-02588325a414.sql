@@ -1,0 +1,37 @@
+
+REVOKE EXECUTE ON FUNCTION public.can_control_study(uuid, uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.set_study_settings(uuid, text, text, text, text, boolean) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.add_room_resource(uuid, text, text, text, text, text, text, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.update_room_resource(uuid, text, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.set_resource_status(uuid, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.set_resource_pinned(uuid, boolean) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.remove_room_resource(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.set_focused_resource(uuid, uuid, integer) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.create_room_note(uuid, text, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.update_room_note(uuid, integer, text, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.delete_room_note(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.create_room_task(uuid, text, text, uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.update_room_task(uuid, text, uuid, boolean) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.delete_room_task(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.control_focus_timer(uuid, text, text, integer, integer) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.study_session_summary(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.ensure_study_settings(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.study_precheck(uuid, text, integer, integer) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.guard_study_tables() FROM PUBLIC;
+
+GRANT EXECUTE ON FUNCTION public.can_control_study(uuid, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_study_settings(uuid, text, text, text, text, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.add_room_resource(uuid, text, text, text, text, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_room_resource(uuid, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_resource_status(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_resource_pinned(uuid, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.remove_room_resource(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_focused_resource(uuid, uuid, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_room_note(uuid, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_room_note(uuid, integer, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_room_note(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_room_task(uuid, text, text, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_room_task(uuid, text, uuid, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_room_task(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.control_focus_timer(uuid, text, text, integer, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.study_session_summary(uuid) TO authenticated;

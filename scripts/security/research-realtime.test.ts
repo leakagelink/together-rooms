@@ -163,7 +163,8 @@ suite("phase 6 study & research realtime (postgres_changes)", () => {
     });
 
     // Drive every surface once, then let realtime settle before asserting.
-    await addResource(host);
+    const seededResource = await addResource(host);
+    expect(seededResource.ok, JSON.stringify(seededResource)).toBe(true);
     const note = await rpc(host, "create_room_note", {
       _room_id: roomId,
       _title: "Realtime note",

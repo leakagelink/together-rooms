@@ -104,6 +104,111 @@ export type Database = {
         }
         Relationships: []
       }
+      call_signals: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          kind: string
+          payload: Json
+          recipient_id: string
+          room_id: string
+          sender_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind: string
+          payload?: Json
+          recipient_id: string
+          room_id: string
+          sender_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          recipient_id?: string
+          room_id?: string
+          sender_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_signals_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_signals_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "room_call_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_transport_grants: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          issued_at: string
+          relay_allowed: boolean
+          revoked_at: string | null
+          room_id: string
+          session_id: string
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          issued_at?: string
+          relay_allowed?: boolean
+          revoked_at?: string | null
+          room_id: string
+          session_id: string
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          issued_at?: string
+          relay_allowed?: boolean
+          revoked_at?: string | null
+          room_id?: string
+          session_id?: string
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_transport_grants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_transport_grants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "room_call_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_sessions: {
         Row: {
           created_at: string
@@ -695,6 +800,160 @@ export type Database = {
           window_start?: string
         }
         Relationships: []
+      }
+      room_call_participants: {
+        Row: {
+          camera_enabled: boolean
+          connection_state: Database["public"]["Enums"]["call_connection_state"]
+          created_at: string
+          id: string
+          joined_at: string
+          last_seen_at: string
+          left_at: string | null
+          mic_enabled: boolean
+          room_id: string
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          camera_enabled?: boolean
+          connection_state?: Database["public"]["Enums"]["call_connection_state"]
+          created_at?: string
+          id?: string
+          joined_at?: string
+          last_seen_at?: string
+          left_at?: string | null
+          mic_enabled?: boolean
+          room_id: string
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          camera_enabled?: boolean
+          connection_state?: Database["public"]["Enums"]["call_connection_state"]
+          created_at?: string
+          id?: string
+          joined_at?: string
+          last_seen_at?: string
+          left_at?: string | null
+          mic_enabled?: boolean
+          room_id?: string
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_call_participants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_call_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "room_call_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_call_sessions: {
+        Row: {
+          allow_relay: boolean
+          call_mode: Database["public"]["Enums"]["call_mode"]
+          created_at: string
+          ended_at: string | null
+          expires_at: string
+          id: string
+          max_participants: number
+          room_id: string
+          session_status: Database["public"]["Enums"]["call_session_status"]
+          started_by: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          allow_relay?: boolean
+          call_mode?: Database["public"]["Enums"]["call_mode"]
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          max_participants?: number
+          room_id: string
+          session_status?: Database["public"]["Enums"]["call_session_status"]
+          started_by?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          allow_relay?: boolean
+          call_mode?: Database["public"]["Enums"]["call_mode"]
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          max_participants?: number
+          room_id?: string
+          session_status?: Database["public"]["Enums"]["call_session_status"]
+          started_by?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_call_sessions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_call_settings: {
+        Row: {
+          admission: Database["public"]["Enums"]["call_admission"]
+          allow_relay: boolean
+          control_mode: Database["public"]["Enums"]["room_queue_mode"]
+          created_at: string
+          max_video_participants: number
+          max_voice_participants: number
+          room_id: string
+          updated_at: string
+        }
+        Insert: {
+          admission?: Database["public"]["Enums"]["call_admission"]
+          allow_relay?: boolean
+          control_mode?: Database["public"]["Enums"]["room_queue_mode"]
+          created_at?: string
+          max_video_participants?: number
+          max_voice_participants?: number
+          room_id: string
+          updated_at?: string
+        }
+        Update: {
+          admission?: Database["public"]["Enums"]["call_admission"]
+          allow_relay?: boolean
+          control_mode?: Database["public"]["Enums"]["room_queue_mode"]
+          created_at?: string
+          max_video_participants?: number
+          max_voice_participants?: number
+          room_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_call_settings_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_events: {
         Row: {
@@ -1790,6 +2049,21 @@ export type Database = {
       authorize_room_channel: { Args: { _room_id: string }; Returns: boolean }
       bootstrap_first_admin: { Args: { _email: string }; Returns: Json }
       bump_queue_version: { Args: { _room_id: string }; Returns: number }
+      call_block_conflict: {
+        Args: { _session_id: string; _user_id: string }
+        Returns: boolean
+      }
+      call_heartbeat: { Args: { _session_id: string }; Returns: Json }
+      call_precheck: {
+        Args: {
+          _action: string
+          _limit: number
+          _room_id: string
+          _window: number
+        }
+        Returns: Json
+      }
+      call_snapshot: { Args: { _room_id: string }; Returns: Json }
       can_control_playback: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
@@ -1890,8 +2164,31 @@ export type Database = {
         Args: { _code: string; _room_id: string; _text: string }
         Returns: undefined
       }
+      end_call_session: {
+        Args: { _expected_version?: number; _session_id: string }
+        Returns: Json
+      }
       end_local_media_session: { Args: { _session_id: string }; Returns: Json }
       end_room: { Args: { _room_id: string }; Returns: Json }
+      ensure_call_settings: {
+        Args: { _room_id: string }
+        Returns: {
+          admission: Database["public"]["Enums"]["call_admission"]
+          allow_relay: boolean
+          control_mode: Database["public"]["Enums"]["room_queue_mode"]
+          created_at: string
+          max_video_participants: number
+          max_voice_participants: number
+          room_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "room_call_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       ensure_local_media_settings: {
         Args: { _room_id: string }
         Returns: {
@@ -1930,6 +2227,10 @@ export type Database = {
         }
       }
       export_user_data: { Args: never; Returns: Json }
+      fetch_call_signals: {
+        Args: { _session_id: string; _token: string }
+        Returns: Json
+      }
       fetch_local_media_signals: {
         Args: { _session_id: string; _token: string }
         Returns: Json
@@ -1951,11 +2252,20 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      issue_call_transport_grant: {
+        Args: { _session_id: string }
+        Returns: Json
+      }
       issue_local_media_transport_grant: {
         Args: { _session_id: string }
         Returns: Json
       }
+      join_call_session: {
+        Args: { _camera?: boolean; _mic?: boolean; _session_id: string }
+        Returns: Json
+      }
       join_room_by_code: { Args: { _code: string }; Returns: Json }
+      leave_call_session: { Args: { _session_id: string }; Returns: Json }
       leave_room: { Args: { _room_id: string }; Returns: Json }
       local_media_owner_heartbeat: {
         Args: { _session_id: string }
@@ -2059,6 +2369,16 @@ export type Database = {
         }
         Returns: Json
       }
+      post_call_signal: {
+        Args: {
+          _kind: string
+          _payload: Json
+          _recipient_id: string
+          _session_id: string
+          _token: string
+        }
+        Returns: Json
+      }
       post_local_media_signal: {
         Args: {
           _kind: string
@@ -2088,6 +2408,10 @@ export type Database = {
       queue_snapshot: { Args: { _room_id: string }; Returns: Json }
       reap_local_media_owner_absence: {
         Args: { _session_id: string }
+        Returns: Json
+      }
+      redeem_call_transport_grant: {
+        Args: { _session_id: string; _token: string }
         Returns: Json
       }
       redeem_local_media_transport_grant: {
@@ -2145,6 +2469,25 @@ export type Database = {
         Args: {
           _content: string
           _parent_message_id?: string
+          _room_id: string
+        }
+        Returns: Json
+      }
+      set_call_media_state: {
+        Args: {
+          _camera?: boolean
+          _connection_state?: string
+          _mic?: boolean
+          _session_id: string
+        }
+        Returns: Json
+      }
+      set_call_settings: {
+        Args: {
+          _allow_relay?: boolean
+          _control_mode?: string
+          _max_video?: number
+          _max_voice?: number
           _room_id: string
         }
         Returns: Json
@@ -2232,6 +2575,10 @@ export type Database = {
         }
         Returns: Json
       }
+      start_call_session: {
+        Args: { _call_mode: string; _room_id: string }
+        Returns: Json
+      }
       start_local_media_session: {
         Args: {
           _duration_seconds?: number
@@ -2260,6 +2607,7 @@ export type Database = {
         Returns: Json
       }
       study_session_summary: { Args: { _room_id: string }; Returns: Json }
+      sweep_calls: { Args: never; Returns: undefined }
       sweep_local_media: { Args: never; Returns: undefined }
       toggle_message_reaction: {
         Args: { _message_id: string; _reaction: string }
@@ -2317,6 +2665,10 @@ export type Database = {
         Returns: string
       }
       verified_media_snapshot: { Args: { _media_id: string }; Returns: Json }
+      verify_call_grant: {
+        Args: { _session_id: string; _token: string }
+        Returns: string
+      }
       verify_local_media_grant: {
         Args: { _session_id: string; _token: string }
         Returns: string
@@ -2325,6 +2677,14 @@ export type Database = {
     Enums: {
       account_status: "active" | "suspended" | "deactivated" | "deleted"
       app_role: "user" | "moderator" | "admin"
+      call_admission: "open_to_room" | "host_approval"
+      call_connection_state:
+        | "connecting"
+        | "connected"
+        | "reconnecting"
+        | "failed"
+      call_mode: "voice" | "video"
+      call_session_status: "starting" | "active" | "ended" | "expired"
       chat_retention: "persistent" | "room_expiry" | "24h" | "7d"
       deletion_status:
         | "requested"
@@ -2529,6 +2889,15 @@ export const Constants = {
     Enums: {
       account_status: ["active", "suspended", "deactivated", "deleted"],
       app_role: ["user", "moderator", "admin"],
+      call_admission: ["open_to_room", "host_approval"],
+      call_connection_state: [
+        "connecting",
+        "connected",
+        "reconnecting",
+        "failed",
+      ],
+      call_mode: ["voice", "video"],
+      call_session_status: ["starting", "active", "ended", "expired"],
       chat_retention: ["persistent", "room_expiry", "24h", "7d"],
       deletion_status: [
         "requested",

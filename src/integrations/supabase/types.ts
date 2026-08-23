@@ -1523,6 +1523,19 @@ export type Database = {
         Args: { _media_id: string; _playlist_id: string; _provider: string }
         Returns: Json
       }
+      add_room_resource: {
+        Args: {
+          _description?: string
+          _host?: string
+          _normalized_url?: string
+          _provider_media_id?: string
+          _resource_type: string
+          _room_id: string
+          _title: string
+          _url?: string
+        }
+        Returns: Json
+      }
       add_to_queue: {
         Args: { _media_id: string; _provider: string; _room_id: string }
         Returns: Json
@@ -1564,6 +1577,10 @@ export type Database = {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
+      can_control_study: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_manage_queue: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
@@ -1583,6 +1600,16 @@ export type Database = {
       consume_rate_limit: {
         Args: { _action: string; _limit: number; _window_seconds: number }
         Returns: boolean
+      }
+      control_focus_timer: {
+        Args: {
+          _action: string
+          _duration_seconds?: number
+          _expected_version?: number
+          _phase?: string
+          _room_id: string
+        }
+        Returns: Json
       }
       create_moderation_action: {
         Args: {
@@ -1607,12 +1634,27 @@ export type Database = {
         }
         Returns: Json
       }
+      create_room_note: {
+        Args: { _content?: string; _room_id: string; _title: string }
+        Returns: Json
+      }
+      create_room_task: {
+        Args: {
+          _assigned_to?: string
+          _description?: string
+          _room_id: string
+          _title: string
+        }
+        Returns: Json
+      }
       current_plan: {
         Args: never
         Returns: Database["public"]["Enums"]["subscription_tier"]
       }
       delete_playlist: { Args: { _playlist_id: string }; Returns: Json }
       delete_room_message: { Args: { _message_id: string }; Returns: Json }
+      delete_room_note: { Args: { _note_id: string }; Returns: Json }
+      delete_room_task: { Args: { _task_id: string }; Returns: Json }
       edit_room_message: {
         Args: { _content: string; _message_id: string }
         Returns: Json
@@ -1622,6 +1664,27 @@ export type Database = {
         Returns: undefined
       }
       end_room: { Args: { _room_id: string }; Returns: Json }
+      ensure_study_settings: {
+        Args: { _room_id: string }
+        Returns: {
+          created_at: string
+          focus_mode: Database["public"]["Enums"]["research_focus_mode"]
+          focus_version: number
+          focused_resource_id: string | null
+          note_mode: Database["public"]["Enums"]["research_permission_mode"]
+          private_research_mode: boolean
+          resource_mode: Database["public"]["Enums"]["research_permission_mode"]
+          room_id: string
+          timer_mode: Database["public"]["Enums"]["research_permission_mode"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "room_study_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       export_user_data: { Args: never; Returns: Json }
       has_role: {
         Args: {
@@ -1751,6 +1814,7 @@ export type Database = {
       reject_queue_item: { Args: { _item_id: string }; Returns: Json }
       remove_from_queue: { Args: { _item_id: string }; Returns: Json }
       remove_playlist_item: { Args: { _item_id: string }; Returns: Json }
+      remove_room_resource: { Args: { _resource_id: string }; Returns: Json }
       report_message: {
         Args: { _category: string; _details?: string; _message_id: string }
         Returns: Json
@@ -1801,6 +1865,14 @@ export type Database = {
         }
         Returns: Json
       }
+      set_focused_resource: {
+        Args: {
+          _expected_version?: number
+          _resource_id: string
+          _room_id: string
+        }
+        Returns: Json
+      }
       set_member_mute: {
         Args: { _muted: boolean; _room_id: string; _user_id: string }
         Returns: Json
@@ -1821,6 +1893,14 @@ export type Database = {
         }
         Returns: Json
       }
+      set_resource_pinned: {
+        Args: { _pinned: boolean; _resource_id: string }
+        Returns: Json
+      }
+      set_resource_status: {
+        Args: { _resource_id: string; _status: string }
+        Returns: Json
+      }
       set_room_media: {
         Args: {
           _expected_version?: number
@@ -1832,6 +1912,17 @@ export type Database = {
       }
       set_shuffle_enabled: {
         Args: { _enabled: boolean; _room_id: string }
+        Returns: Json
+      }
+      set_study_settings: {
+        Args: {
+          _focus_mode?: string
+          _note_mode?: string
+          _private_research?: boolean
+          _resource_mode?: string
+          _room_id: string
+          _timer_mode?: string
+        }
         Returns: Json
       }
       shares_room_with: { Args: { _a: string; _b: string }; Returns: boolean }
@@ -1861,6 +1952,16 @@ export type Database = {
         Args: { _playlist_id: string; _room_id: string }
         Returns: Json
       }
+      study_precheck: {
+        Args: {
+          _action: string
+          _limit: number
+          _room_id: string
+          _window_seconds: number
+        }
+        Returns: Json
+      }
+      study_session_summary: { Args: { _room_id: string }; Returns: Json }
       toggle_message_reaction: {
         Args: { _message_id: string; _reaction: string }
         Returns: Json
@@ -1876,6 +1977,28 @@ export type Database = {
           _playlist_id: string
           _room_id?: string
           _visibility?: string
+        }
+        Returns: Json
+      }
+      update_room_note: {
+        Args: {
+          _content?: string
+          _expected_revision: number
+          _note_id: string
+          _title?: string
+        }
+        Returns: Json
+      }
+      update_room_resource: {
+        Args: { _description?: string; _resource_id: string; _title?: string }
+        Returns: Json
+      }
+      update_room_task: {
+        Args: {
+          _assigned_to?: string
+          _clear_assignee?: boolean
+          _status?: string
+          _task_id: string
         }
         Returns: Json
       }

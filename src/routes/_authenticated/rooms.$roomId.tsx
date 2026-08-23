@@ -26,6 +26,7 @@ import { WatchTogether } from "@/components/room/watch-together";
 import { MusicRoom } from "@/components/room/music-room";
 import { StudyRoom } from "@/components/room/study-room";
 import { LocalMediaRoom } from "@/components/room/local-media-room";
+import { RoomCall } from "@/components/room/room-call";
 
 import { setMemberMute } from "@/lib/chat.functions";
 

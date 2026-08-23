@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { normalizeRpc } from "@/lib/server/rpc.server";
+import { normalizeRpc, rpcArgs } from "@/lib/server/rpc.server";
 import { checkResourceUrl } from "@/lib/url-safety";
 import { parseYouTubeVideoId } from "@/lib/providers/youtube";
 import type { Json } from "@/lib/rpc-types";
@@ -104,11 +104,13 @@ export const updateRoomResource = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("update_room_resource", {
-      _resource_id: data.resource_id,
-      _title: data.title ?? undefined,
-      _description: data.description ?? undefined,
-    });
+    const { data: result, error } = await context.supabase.rpc(
+      "update_room_resource",
+      rpcArgs(
+        { _resource_id: data.resource_id },
+        { _title: data.title, _description: data.description },
+      ),
+    );
     return normalizeRpc<StudyResult>("update_room_resource", result, error);
   });
 
@@ -160,11 +162,13 @@ export const setFocusedResource = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("set_focused_resource", {
-      _room_id: data.room_id,
-      _resource_id: data.resource_id,
-      ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
-    });
+    const { data: result, error } = await context.supabase.rpc(
+      "set_focused_resource",
+      rpcArgs(
+        { _room_id: data.room_id },
+        { _resource_id: data.resource_id, _expected_version: data.expected_version },
+      ),
+    );
     return normalizeRpc<StudyResult>("set_focused_resource", result, error);
   });
 
@@ -185,14 +189,19 @@ export const setStudySettings = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("set_study_settings", {
-      _room_id: data.room_id,
-      _resource_mode: data.resource_mode ?? undefined,
-      _note_mode: data.note_mode ?? undefined,
-      _timer_mode: data.timer_mode ?? undefined,
-      _focus_mode: data.focus_mode ?? undefined,
-      _private_research: data.private_research ?? undefined,
-    });
+    const { data: result, error } = await context.supabase.rpc(
+      "set_study_settings",
+      rpcArgs(
+        { _room_id: data.room_id },
+        {
+          _resource_mode: data.resource_mode,
+          _note_mode: data.note_mode,
+          _timer_mode: data.timer_mode,
+          _focus_mode: data.focus_mode,
+          _private_research: data.private_research,
+        },
+      ),
+    );
     return normalizeRpc<StudyResult>("set_study_settings", result, error);
   });
 
@@ -227,12 +236,13 @@ export const updateRoomNote = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("update_room_note", {
-      _note_id: data.note_id,
-      _expected_revision: data.expected_revision,
-      _title: data.title ?? undefined,
-      _content: data.content ?? undefined,
-    });
+    const { data: result, error } = await context.supabase.rpc(
+      "update_room_note",
+      rpcArgs(
+        { _note_id: data.note_id, _expected_revision: data.expected_revision },
+        { _title: data.title, _content: data.content },
+      ),
+    );
     return normalizeRpc<StudyResult>("update_room_note", result, error);
   });
 
@@ -256,12 +266,13 @@ export const createRoomTask = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("create_room_task", {
-      _room_id: data.room_id,
-      _title: data.title,
-      _description: data.description ?? undefined,
-      _assigned_to: data.assigned_to ?? undefined,
-    });
+    const { data: result, error } = await context.supabase.rpc(
+      "create_room_task",
+      rpcArgs(
+        { _room_id: data.room_id, _title: data.title },
+        { _description: data.description, _assigned_to: data.assigned_to },
+      ),
+    );
     return normalizeRpc<StudyResult>("create_room_task", result, error);
   });
 
@@ -278,12 +289,13 @@ export const updateRoomTask = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("update_room_task", {
-      _task_id: data.task_id,
-      _status: data.status ?? undefined,
-      _assigned_to: data.assigned_to ?? undefined,
-      _clear_assignee: data.clear_assignee ?? false,
-    });
+    const { data: result, error } = await context.supabase.rpc(
+      "update_room_task",
+      rpcArgs(
+        { _task_id: data.task_id, _clear_assignee: data.clear_assignee ?? false },
+        { _status: data.status, _assigned_to: data.assigned_to },
+      ),
+    );
     return normalizeRpc<StudyResult>("update_room_task", result, error);
   });
 
@@ -313,13 +325,17 @@ export const controlFocusTimer = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("control_focus_timer", {
-      _room_id: data.room_id,
-      _action: data.action,
-      _phase: data.phase ?? undefined,
-      _duration_seconds: data.duration_seconds ?? undefined,
-      ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
-    });
+    const { data: result, error } = await context.supabase.rpc(
+      "control_focus_timer",
+      rpcArgs(
+        { _room_id: data.room_id, _action: data.action },
+        {
+          _phase: data.phase,
+          _duration_seconds: data.duration_seconds,
+          _expected_version: data.expected_version,
+        },
+      ),
+    );
     return normalizeRpc<StudyResult>("control_focus_timer", result, error);
   });
 

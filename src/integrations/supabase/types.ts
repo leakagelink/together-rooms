@@ -170,6 +170,114 @@ export type Database = {
         }
         Relationships: []
       }
+      local_media_signals: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          kind: string
+          payload: Json
+          recipient_id: string
+          room_id: string
+          sender_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind: string
+          payload?: Json
+          recipient_id: string
+          room_id: string
+          sender_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          recipient_id?: string
+          room_id?: string
+          sender_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_media_signals_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_media_signals_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "room_local_media_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      local_media_transport_grants: {
+        Row: {
+          created_at: string
+          expires_at: string
+          grant_role: string
+          id: string
+          issued_at: string
+          relay_allowed: boolean
+          revoked_at: string | null
+          room_id: string
+          session_id: string
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          grant_role: string
+          id?: string
+          issued_at?: string
+          relay_allowed?: boolean
+          revoked_at?: string | null
+          room_id: string
+          session_id: string
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          grant_role?: string
+          id?: string
+          issued_at?: string
+          relay_allowed?: boolean
+          revoked_at?: string | null
+          room_id?: string
+          session_id?: string
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_media_transport_grants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_media_transport_grants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "room_local_media_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media_metadata_cache: {
         Row: {
           embeddable: boolean
@@ -725,6 +833,115 @@ export type Database = {
             foreignKeyName: "room_invites_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_local_media_sessions: {
+        Row: {
+          controller_id: string | null
+          created_at: string
+          current_index: number
+          duration_seconds: number | null
+          ended_at: string | null
+          expires_at: string
+          id: string
+          item_count: number
+          media_kind: Database["public"]["Enums"]["local_media_kind"]
+          mime_type: string | null
+          owner_id: string
+          owner_seen_at: string
+          playback_started_at: string | null
+          playback_status: Database["public"]["Enums"]["playback_status"]
+          position_seconds: number
+          room_id: string
+          status: Database["public"]["Enums"]["local_media_session_status"]
+          transport_state: Database["public"]["Enums"]["local_media_transport_state"]
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          controller_id?: string | null
+          created_at?: string
+          current_index?: number
+          duration_seconds?: number | null
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          item_count?: number
+          media_kind: Database["public"]["Enums"]["local_media_kind"]
+          mime_type?: string | null
+          owner_id: string
+          owner_seen_at?: string
+          playback_started_at?: string | null
+          playback_status?: Database["public"]["Enums"]["playback_status"]
+          position_seconds?: number
+          room_id: string
+          status?: Database["public"]["Enums"]["local_media_session_status"]
+          transport_state?: Database["public"]["Enums"]["local_media_transport_state"]
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          controller_id?: string | null
+          created_at?: string
+          current_index?: number
+          duration_seconds?: number | null
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          item_count?: number
+          media_kind?: Database["public"]["Enums"]["local_media_kind"]
+          mime_type?: string | null
+          owner_id?: string
+          owner_seen_at?: string
+          playback_started_at?: string | null
+          playback_status?: Database["public"]["Enums"]["playback_status"]
+          position_seconds?: number
+          room_id?: string
+          status?: Database["public"]["Enums"]["local_media_session_status"]
+          transport_state?: Database["public"]["Enums"]["local_media_transport_state"]
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_local_media_sessions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_local_media_settings: {
+        Row: {
+          allow_relay: boolean
+          created_at: string
+          room_id: string
+          share_mode: Database["public"]["Enums"]["room_queue_mode"]
+          updated_at: string
+        }
+        Insert: {
+          allow_relay?: boolean
+          created_at?: string
+          room_id: string
+          share_mode?: Database["public"]["Enums"]["room_queue_mode"]
+          updated_at?: string
+        }
+        Update: {
+          allow_relay?: boolean
+          created_at?: string
+          room_id?: string
+          share_mode?: Database["public"]["Enums"]["room_queue_mode"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_local_media_settings_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
@@ -1611,6 +1828,16 @@ export type Database = {
         }
         Returns: Json
       }
+      control_local_media_playback: {
+        Args: {
+          _action: string
+          _expected_version?: number
+          _index?: number
+          _position_seconds?: number
+          _session_id: string
+        }
+        Returns: Json
+      }
       create_moderation_action: {
         Args: {
           _action: Database["public"]["Enums"]["moderation_action_type"]
@@ -1663,7 +1890,24 @@ export type Database = {
         Args: { _code: string; _room_id: string; _text: string }
         Returns: undefined
       }
+      end_local_media_session: { Args: { _session_id: string }; Returns: Json }
       end_room: { Args: { _room_id: string }; Returns: Json }
+      ensure_local_media_settings: {
+        Args: { _room_id: string }
+        Returns: {
+          allow_relay: boolean
+          created_at: string
+          room_id: string
+          share_mode: Database["public"]["Enums"]["room_queue_mode"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "room_local_media_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       ensure_study_settings: {
         Args: { _room_id: string }
         Returns: {
@@ -1686,6 +1930,10 @@ export type Database = {
         }
       }
       export_user_data: { Args: never; Returns: Json }
+      fetch_local_media_signals: {
+        Args: { _session_id: string; _token: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1703,8 +1951,26 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      issue_local_media_transport_grant: {
+        Args: { _session_id: string }
+        Returns: Json
+      }
       join_room_by_code: { Args: { _code: string }; Returns: Json }
       leave_room: { Args: { _room_id: string }; Returns: Json }
+      local_media_owner_heartbeat: {
+        Args: { _session_id: string }
+        Returns: Json
+      }
+      local_media_precheck: {
+        Args: {
+          _action: string
+          _limit: number
+          _room_id: string
+          _window: number
+        }
+        Returns: Json
+      }
+      local_media_snapshot: { Args: { _room_id: string }; Returns: Json }
       lock_queue_settings: {
         Args: { _room_id: string }
         Returns: {
@@ -1793,6 +2059,16 @@ export type Database = {
         }
         Returns: Json
       }
+      post_local_media_signal: {
+        Args: {
+          _kind: string
+          _payload: Json
+          _recipient_id: string
+          _session_id: string
+          _token: string
+        }
+        Returns: Json
+      }
       previous_queue_item: {
         Args: { _expected_version?: number; _room_id: string }
         Returns: Json
@@ -1810,6 +2086,14 @@ export type Database = {
         Returns: Json
       }
       queue_snapshot: { Args: { _room_id: string }; Returns: Json }
+      reap_local_media_owner_absence: {
+        Args: { _session_id: string }
+        Returns: Json
+      }
+      redeem_local_media_transport_grant: {
+        Args: { _session_id: string; _token: string }
+        Returns: Json
+      }
       redeem_room_invite: { Args: { _token_hash: string }; Returns: Json }
       reject_queue_item: { Args: { _item_id: string }; Returns: Json }
       remove_from_queue: { Args: { _item_id: string }; Returns: Json }
@@ -1871,6 +2155,10 @@ export type Database = {
           _resource_id: string
           _room_id: string
         }
+        Returns: Json
+      }
+      set_local_media_settings: {
+        Args: { _allow_relay?: boolean; _room_id: string; _share_mode?: string }
         Returns: Json
       }
       set_member_mute: {
@@ -1944,6 +2232,16 @@ export type Database = {
         }
         Returns: Json
       }
+      start_local_media_session: {
+        Args: {
+          _duration_seconds?: number
+          _item_count?: number
+          _media_kind: string
+          _mime_type?: string
+          _room_id: string
+        }
+        Returns: Json
+      }
       start_queue: {
         Args: { _expected_version?: number; _room_id: string }
         Returns: Json
@@ -1962,6 +2260,7 @@ export type Database = {
         Returns: Json
       }
       study_session_summary: { Args: { _room_id: string }; Returns: Json }
+      sweep_local_media: { Args: never; Returns: undefined }
       toggle_message_reaction: {
         Args: { _message_id: string; _reaction: string }
         Returns: Json
@@ -2018,6 +2317,10 @@ export type Database = {
         Returns: string
       }
       verified_media_snapshot: { Args: { _media_id: string }; Returns: Json }
+      verify_local_media_grant: {
+        Args: { _session_id: string; _token: string }
+        Returns: string
+      }
     }
     Enums: {
       account_status: "active" | "suspended" | "deactivated" | "deleted"
@@ -2033,6 +2336,9 @@ export type Database = {
       entitlement_status: "active" | "expired" | "revoked" | "pending"
       focus_timer_phase: "focus" | "short_break" | "long_break" | "custom"
       focus_timer_status: "idle" | "running" | "paused" | "completed"
+      local_media_kind: "image" | "video" | "audio"
+      local_media_session_status: "active" | "ended" | "expired"
+      local_media_transport_state: "direct" | "relay" | "unavailable"
       message_content_type: "text" | "system"
       message_reaction: "thumbs_up" | "heart" | "joy" | "wow" | "sad" | "fire"
       message_status: "active" | "deleted" | "moderated"
@@ -2235,6 +2541,9 @@ export const Constants = {
       entitlement_status: ["active", "expired", "revoked", "pending"],
       focus_timer_phase: ["focus", "short_break", "long_break", "custom"],
       focus_timer_status: ["idle", "running", "paused", "completed"],
+      local_media_kind: ["image", "video", "audio"],
+      local_media_session_status: ["active", "ended", "expired"],
+      local_media_transport_state: ["direct", "relay", "unavailable"],
       message_content_type: ["text", "system"],
       message_reaction: ["thumbs_up", "heart", "joy", "wow", "sad", "fire"],
       message_status: ["active", "deleted", "moderated"],

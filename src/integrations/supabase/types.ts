@@ -633,6 +633,59 @@ export type Database = {
           },
         ]
       }
+      room_focus_timer: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          ends_at: string | null
+          phase: Database["public"]["Enums"]["focus_timer_phase"]
+          remaining_seconds: number | null
+          room_id: string
+          sessions_completed: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["focus_timer_status"]
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number
+          ends_at?: string | null
+          phase?: Database["public"]["Enums"]["focus_timer_phase"]
+          remaining_seconds?: number | null
+          room_id: string
+          sessions_completed?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["focus_timer_status"]
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          ends_at?: string | null
+          phase?: Database["public"]["Enums"]["focus_timer_phase"]
+          remaining_seconds?: number | null
+          room_id?: string
+          sessions_completed?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["focus_timer_status"]
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_focus_timer_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_invites: {
         Row: {
           created_at: string
@@ -855,6 +908,95 @@ export type Database = {
           },
         ]
       }
+      room_note_revisions: {
+        Row: {
+          content_length: number
+          created_at: string
+          id: string
+          note_id: string
+          revision: number
+          room_id: string
+          updated_by: string | null
+        }
+        Insert: {
+          content_length?: number
+          created_at?: string
+          id?: string
+          note_id: string
+          revision: number
+          room_id: string
+          updated_by?: string | null
+        }
+        Update: {
+          content_length?: number
+          created_at?: string
+          id?: string
+          note_id?: string
+          revision?: number
+          room_id?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_note_revisions_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "room_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_note_revisions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_notes: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          revision: number
+          room_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          revision?: number
+          room_id: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          revision?: number
+          room_id?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_notes_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_playback_state: {
         Row: {
           controlled_by: string | null
@@ -952,6 +1094,68 @@ export type Database = {
           },
         ]
       }
+      room_resources: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          description: string | null
+          favicon_url: string | null
+          host: string | null
+          id: string
+          normalized_url: string | null
+          pinned: boolean
+          provider_media_id: string | null
+          resource_type: Database["public"]["Enums"]["resource_kind"]
+          room_id: string
+          status: Database["public"]["Enums"]["resource_status"]
+          title: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          description?: string | null
+          favicon_url?: string | null
+          host?: string | null
+          id?: string
+          normalized_url?: string | null
+          pinned?: boolean
+          provider_media_id?: string | null
+          resource_type?: Database["public"]["Enums"]["resource_kind"]
+          room_id: string
+          status?: Database["public"]["Enums"]["resource_status"]
+          title: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          description?: string | null
+          favicon_url?: string | null
+          host?: string | null
+          id?: string
+          normalized_url?: string | null
+          pinned?: boolean
+          provider_media_id?: string | null
+          resource_type?: Database["public"]["Enums"]["resource_kind"]
+          room_id?: string
+          status?: Database["public"]["Enums"]["resource_status"]
+          title?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_resources_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_sessions: {
         Row: {
           created_at: string
@@ -989,6 +1193,110 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "room_sessions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_study_settings: {
+        Row: {
+          created_at: string
+          focus_mode: Database["public"]["Enums"]["research_focus_mode"]
+          focus_version: number
+          focused_resource_id: string | null
+          note_mode: Database["public"]["Enums"]["research_permission_mode"]
+          private_research_mode: boolean
+          resource_mode: Database["public"]["Enums"]["research_permission_mode"]
+          room_id: string
+          timer_mode: Database["public"]["Enums"]["research_permission_mode"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          focus_mode?: Database["public"]["Enums"]["research_focus_mode"]
+          focus_version?: number
+          focused_resource_id?: string | null
+          note_mode?: Database["public"]["Enums"]["research_permission_mode"]
+          private_research_mode?: boolean
+          resource_mode?: Database["public"]["Enums"]["research_permission_mode"]
+          room_id: string
+          timer_mode?: Database["public"]["Enums"]["research_permission_mode"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          focus_mode?: Database["public"]["Enums"]["research_focus_mode"]
+          focus_version?: number
+          focused_resource_id?: string | null
+          note_mode?: Database["public"]["Enums"]["research_permission_mode"]
+          private_research_mode?: boolean
+          resource_mode?: Database["public"]["Enums"]["research_permission_mode"]
+          room_id?: string
+          timer_mode?: Database["public"]["Enums"]["research_permission_mode"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_study_settings_focus_fk"
+            columns: ["focused_resource_id"]
+            isOneToOne: false
+            referencedRelation: "room_resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_study_settings_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_tasks: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          room_id: string
+          status: Database["public"]["Enums"]["study_task_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          room_id: string
+          status?: Database["public"]["Enums"]["study_task_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          room_id?: string
+          status?: Database["public"]["Enums"]["study_task_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_tasks_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
@@ -1600,6 +1908,8 @@ export type Database = {
         | "cancelled"
       entitlement_source: "system" | "grant" | "promo" | "billing"
       entitlement_status: "active" | "expired" | "revoked" | "pending"
+      focus_timer_phase: "focus" | "short_break" | "long_break" | "custom"
+      focus_timer_status: "idle" | "running" | "paused" | "completed"
       message_content_type: "text" | "system"
       message_reaction: "thumbs_up" | "heart" | "joy" | "wow" | "sad" | "fire"
       message_status: "active" | "deleted" | "moderated"
@@ -1623,6 +1933,10 @@ export type Database = {
         | "rejected"
       report_status: "open" | "reviewing" | "actioned" | "dismissed"
       report_target: "user" | "room" | "message" | "other"
+      research_focus_mode: "host_sync" | "free_navigation"
+      research_permission_mode: "host_only" | "collaborative" | "host_approval"
+      resource_kind: "web_link" | "youtube" | "document_reference" | "note"
+      resource_status: "pending" | "active" | "archived" | "rejected"
       room_event_type:
         | "ROOM_CREATED"
         | "ROOM_UPDATED"
@@ -1654,6 +1968,7 @@ export type Database = {
         | "watch"
         | "game"
         | "private"
+      study_task_status: "todo" | "in_progress" | "completed"
       subscription_tier: "free" | "pro" | "pro_plus"
       visibility_level: "public" | "members" | "contacts" | "private"
     }
@@ -1795,6 +2110,8 @@ export const Constants = {
       ],
       entitlement_source: ["system", "grant", "promo", "billing"],
       entitlement_status: ["active", "expired", "revoked", "pending"],
+      focus_timer_phase: ["focus", "short_break", "long_break", "custom"],
+      focus_timer_status: ["idle", "running", "paused", "completed"],
       message_content_type: ["text", "system"],
       message_reaction: ["thumbs_up", "heart", "joy", "wow", "sad", "fire"],
       message_status: ["active", "deleted", "moderated"],
@@ -1820,6 +2137,10 @@ export const Constants = {
       ],
       report_status: ["open", "reviewing", "actioned", "dismissed"],
       report_target: ["user", "room", "message", "other"],
+      research_focus_mode: ["host_sync", "free_navigation"],
+      research_permission_mode: ["host_only", "collaborative", "host_approval"],
+      resource_kind: ["web_link", "youtube", "document_reference", "note"],
+      resource_status: ["pending", "active", "archived", "rejected"],
       room_event_type: [
         "ROOM_CREATED",
         "ROOM_UPDATED",
@@ -1853,6 +2174,7 @@ export const Constants = {
         "game",
         "private",
       ],
+      study_task_status: ["todo", "in_progress", "completed"],
       subscription_tier: ["free", "pro", "pro_plus"],
       visibility_level: ["public", "members", "contacts", "private"],
     },

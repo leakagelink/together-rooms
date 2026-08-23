@@ -75,16 +75,24 @@ export const addRoomResource = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: result, error } = await context.supabase.rpc("add_room_resource", {
-      _room_id: data.room_id,
-      _resource_type: resourceType,
-      _title: data.title,
-      _url: url,
-      _normalized_url: normalized,
-      _host: host,
-      _description: data.description ?? undefined,
-      _provider_media_id: providerMediaId,
-    });
+    const { data: result, error } = await context.supabase.rpc(
+      "add_room_resource",
+      rpcArgs(
+        {
+          _room_id: data.room_id,
+          _resource_type: resourceType,
+          _title: data.title,
+        },
+        {
+          _url: url,
+          _normalized_url: normalized,
+          _host: host,
+          _description: data.description,
+          _provider_media_id: providerMediaId,
+        },
+      ),
+    );
+
     return normalizeRpc<StudyResult>("add_room_resource", result, error);
   });
 

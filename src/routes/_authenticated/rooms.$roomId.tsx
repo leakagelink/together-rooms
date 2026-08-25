@@ -12,6 +12,7 @@ import { RoomMembersPanel } from "@/components/room/room-members-panel";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { useAuth } from "@/hooks/useAuth";
 import { useRoomRealtime } from "@/hooks/useRoomRealtime";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +64,10 @@ function RoomPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Android/browser lifecycle: on foreground or reconnect every authoritative
+  // query is refetched instead of trusting the suspended snapshot.
+  useAppLifecycle({ inRoom: true, inCall: false });
 
   const fetchMembers = useServerFn(listRoomMembers);
   const leave = useServerFn(leaveRoom);

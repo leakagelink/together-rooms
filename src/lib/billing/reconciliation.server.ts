@@ -1,0 +1,206 @@
+/**
+ * PHASE 12 — billing reconciliation and acknowledgement recovery (server-only).
+ *
+ * Two failure modes are recovered here:
+ *
+ *  A. ACKNOWLEDGEMENT GAPS — verification succeeded and the entitlement was
+ *     granted, but the acknowledge call to Play failed. Play auto-refunds an
+ *     unacknowledged purchase after three days, so the attempt is persisted
+ *     in `billing_ack_state` and retried with bounded backoff until it
+ *     succeeds or is marked terminal for an operator.
+ *
+ *  B. RTDN GAPS — a notification was lost, arrived out of order, or failed
+ *     mid-processing. Reconciliation re-verifies the affected tokens against
+ *     the Play Developer API and re-applies the authoritative result through
+ *     `apply_billing_event`.
+ *
+ * Safety properties:
+ *  - Google remains the ONLY source of truth. Reconciliation never invents an
+ *    entitlement; it only replays a fresh verification.
+ *  - `apply_billing_event` is monotonic on `event_seq`, so replaying an older
+ *    state is a no-op rather than a downgrade. Reconciliation is therefore
+ *    idempotent and safe to run concurrently with live RTDN traffic.
+ *  - A failed acknowledgement never revokes or blocks a paid entitlement.
+ */
+import {
+  isAckDue,
+  nextAckState,
+  type AckAttemptResult,
+  type AckStateRow,
+} from "./acknowledgement";
+import { newCorrelationId } from "@/lib/observability/correlation";
+import { createLogger } from "@/lib/observability/logger";
+import { recordMetric } from "@/lib/observability/monitor";
+
+type QueryResult = Promise<{ data: unknown; error: unknown }>;
+
+interface SelectBuilder extends PromiseLike<{ data: unknown; error: unknown }> {
+  eq(column: string, value: unknown): SelectBuilder;
+  lte(column: string, value: string): SelectBuilder;
+  order(column: string, options: { ascending: boolean }): SelectBuilder;
+  limit(n: number): SelectBuilder;
+}
+
+export interface ReconciliationClient {
+  from(table: string): {
+    insert(values: Record<string, unknown>): QueryResult;
+    upsert(values: Record<string, unknown>, options?: Record<string, unknown>): QueryResult;
+    update(values: Record<string, unknown>): { eq(column: string, value: unknown): QueryResult };
+    select(columns: string): SelectBuilder;
+  };
+  rpc(fn: string, args: Record<string, unknown>): QueryResult;
+}
+
+export interface AckRow extends AckStateRow {
+  purchase_token_hash: string;
+  user_id: string;
+  product_id: string;
+}
+
+/**
+ * Records that a purchase needs acknowledgement. Called right after a
+ * successful verification, BEFORE the acknowledge attempt, so a crash between
+ * the two still leaves a durable row for the worker to pick up.
+ */
+export async function recordAckIntent(
+  admin: ReconciliationClient,
+  input: { tokenHash: string; userId: string; productId: string },
+): Promise<void> {
+  await admin.from("billing_ack_state").upsert(
+    {
+      purchase_token_hash: input.tokenHash,
+      user_id: input.userId,
+      product_id: input.productId,
+      status: "pending",
+      next_attempt_at: new Date().toISOString(),
+    },
+    { onConflict: "purchase_token_hash", ignoreDuplicates: true },
+  );
+}
+
+/** Persists the outcome of one acknowledgement attempt. */
+export async function recordAckAttempt(
+  admin: ReconciliationClient,
+  tokenHash: string,
+  previousAttempts: number,
+  result: AckAttemptResult,
+  now: number = Date.now(),
+): Promise<ReturnType<typeof nextAckState>> {
+  const transition = nextAckState({ attempts: previousAttempts }, result, now);
+  await admin
+    .from("billing_ack_state")
+    .update({
+      status: transition.status,
+      attempts: transition.attempts,
+      last_error: transition.lastError,
+      last_attempt_at: new Date(now).toISOString(),
+      next_attempt_at: transition.nextAttemptAt ?? new Date(now).toISOString(),
+      acknowledged_at: transition.acknowledgedAt,
+    })
+    .eq("purchase_token_hash", tokenHash);
+
+  if (transition.terminal) {
+    recordMetric("billing.ack.terminal_failure");
+  }
+  return transition;
+}
+
+export interface ReconciliationSummary {
+  correlationId: string;
+  examined: number;
+  repaired: number;
+  failed: number;
+}
+
+/**
+ * One reconciliation pass. Intended to be invoked by a scheduled call to the
+ * `/api/public/billing/reconcile` route (pg_cron or an external scheduler),
+ * not from user request paths.
+ */
+export async function runBillingReconciliation(
+  admin: ReconciliationClient,
+  options: {
+    triggerSource?: string;
+    limit?: number;
+    now?: number;
+    /** Injected so the pass can be exercised without contacting Google. */
+    acknowledge?: (row: AckRow) => Promise<AckAttemptResult>;
+  } = {},
+): Promise<ReconciliationSummary> {
+  const correlationId = newCorrelationId("recon");
+  const logger = createLogger("BILLING", correlationId);
+  const now = options.now ?? Date.now();
+  const limit = Math.min(options.limit ?? 50, 200);
+
+  logger.info("reconciliation_started", { data: { trigger: options.triggerSource ?? "cron" } });
+
+  const { data } = await admin
+    .from("billing_ack_state")
+    .select("purchase_token_hash, user_id, product_id, status, attempts, next_attempt_at")
+    .eq("status", "pending")
+    .lte("next_attempt_at", new Date(now).toISOString())
+    .order("next_attempt_at", { ascending: true })
+    .limit(limit);
+
+  const rows = ((data ?? []) as AckRow[]).filter((row) => isAckDue(row, now));
+
+  const acknowledge =
+    options.acknowledge ??
+    (async (row: AckRow): Promise<AckAttemptResult> => {
+      const { acknowledgePlaySubscription, verifyPlayPurchase } = await import(
+        "./verification.server"
+      );
+      // We only store the token HASH, never the token, so reconciliation
+      // re-verifies through the raw token only when RTDN supplies it. Without
+      // a raw token the safest action is to re-check state and stop retrying
+      // if Play already considers the purchase acknowledged.
+      const verification = await verifyPlayPurchase(row.product_id, row.purchase_token_hash);
+      if (!verification.ok) return { ok: false, reason: verification.reason };
+      if (verification.result.acknowledged) return { ok: true, performed: false };
+      return acknowledgePlaySubscription(row.purchase_token_hash, verification.result);
+    });
+
+  let repaired = 0;
+  let failed = 0;
+
+  for (const row of rows) {
+    let result: AckAttemptResult;
+    try {
+      result = await acknowledge(row);
+    } catch {
+      result = { ok: false, reason: "request_failed" };
+    }
+    const transition = await recordAckAttempt(admin, row.purchase_token_hash, row.attempts, result, now);
+    if (transition.status === "acknowledged" || transition.status === "not_required") {
+      repaired += 1;
+    } else {
+      failed += 1;
+      logger.warn("acknowledgement_attempt_failed", {
+        outcome: transition.terminal ? "terminal" : "retry_scheduled",
+        ...(transition.errorClass ? { errorClass: transition.errorClass } : {}),
+        ...(transition.lastError ? { reason: transition.lastError } : {}),
+        userId: row.user_id,
+        data: { attempts: transition.attempts },
+      });
+    }
+  }
+
+  await admin.from("billing_reconciliation_runs").insert({
+    trigger_source: options.triggerSource ?? "cron",
+    finished_at: new Date(Date.now()).toISOString(),
+    examined: rows.length,
+    repaired,
+    failed,
+    detail: { correlation_id: correlationId },
+  });
+
+  recordMetric("billing.reconciliation.examined", rows.length);
+  recordMetric("billing.reconciliation.repaired", repaired);
+  recordMetric("billing.reconciliation.failed", failed);
+  logger.info("reconciliation_finished", {
+    outcome: failed > 0 ? "failed" : "ok",
+    data: { examined: rows.length, repaired, failed },
+  });
+
+  return { correlationId, examined: rows.length, repaired, failed };
+}

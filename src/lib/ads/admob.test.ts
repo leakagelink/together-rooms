@@ -29,7 +29,10 @@ const context = (patch: Partial<AdPlacementContext> = {}): AdPlacementContext =>
 
 const units = { banner: "ca-app-pub-1/banner", interstitial: "ca-app-pub-1/int", appOpen: "ca-app-pub-1/open" };
 
+let clock = 0;
+
 function makeProvider(overrides: Partial<ConstructorParameters<typeof AdProvider>[0]> = {}) {
+  clock = 0;
   const shown: { unit: string; npa: boolean }[] = [];
   const sdk = {
     showBanner: (unit: string, npa: boolean) => shown.push({ unit, npa }),
@@ -41,7 +44,7 @@ function makeProvider(overrides: Partial<ConstructorParameters<typeof AdProvider
     testMode: false,
     config: DEFAULT_AD_FREQUENCY,
     sdk,
-    now: () => 0,
+    now: () => clock,
     ...overrides,
   });
   return { provider, shown };
@@ -119,7 +122,11 @@ describe("ADMOB", () => {
 
   it("ADMOB-T9: full-screen formats respect the frequency cap", async () => {
     const { provider, shown } = makeProvider();
+    // The first full-screen ad only becomes eligible after the session warmup.
+    expect(await provider.request({ format: "interstitial", placement: "a" }, context())).toBe(false);
+    clock = 10 * 60_000;
     expect(await provider.request({ format: "interstitial", placement: "a" }, context())).toBe(true);
+    // A second one immediately afterwards is refused by the interval cap.
     expect(await provider.request({ format: "interstitial", placement: "b" }, context())).toBe(false);
     expect(shown).toHaveLength(1);
   });

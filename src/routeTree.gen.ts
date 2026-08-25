@@ -32,6 +32,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_authenticated/settings.privacy'
 import { Route as AuthenticatedSettingsSubscriptionRouteImport } from './routes/_authenticated/settings.subscription'
 import { Route as AuthenticatedAdminReportsReportIdRouteImport } from './routes/_authenticated/admin.reports.$reportId'
+import { Route as ApiPublicBillingRtdnRouteImport } from './routes/api.public.billing.rtdn'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -152,6 +153,11 @@ const AuthenticatedAdminReportsReportIdRoute =
     path: '/admin/reports/$reportId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicBillingRtdnRoute = ApiPublicBillingRtdnRouteImport.update({
+  id: '/api/public/billing/rtdn',
+  path: '/api/public/billing/rtdn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
+  '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -200,6 +207,7 @@ export interface FileRoutesByTo {
   '/rooms': typeof AuthenticatedRoomsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
+  '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/_authenticated/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
+  '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/rooms/'
     | '/settings/'
     | '/admin/reports/$reportId'
+    | '/api/public/billing/rtdn'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/settings'
     | '/admin/reports/$reportId'
+    | '/api/public/billing/rtdn'
   id:
     | '__root__'
     | '/'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rooms/'
     | '/_authenticated/settings/'
     | '/_authenticated/admin/reports/$reportId'
+    | '/api/public/billing/rtdn'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -315,6 +327,7 @@ export interface RootRouteChildren {
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthSignupRoute: typeof AuthSignupRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiPublicBillingRtdnRoute: typeof ApiPublicBillingRtdnRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -480,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReportsReportIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/billing/rtdn': {
+      id: '/api/public/billing/rtdn'
+      path: '/api/public/billing/rtdn'
+      fullPath: '/api/public/billing/rtdn'
+      preLoaderRoute: typeof ApiPublicBillingRtdnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -530,6 +550,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignupRoute: AuthSignupRoute,
   InviteTokenRoute: InviteTokenRoute,
+  ApiPublicBillingRtdnRoute: ApiPublicBillingRtdnRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

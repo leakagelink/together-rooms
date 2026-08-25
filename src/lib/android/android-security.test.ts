@@ -43,11 +43,20 @@ const PROD = {
 
 describe("Phase 10 — Android production hardening", () => {
   beforeEach(() => {
-    try {
-      window.sessionStorage.clear();
-    } catch {
-      // jsdom-less environment; the storage-backed tests guard themselves.
-    }
+    // The suite runs in Node: provide the minimal session storage surface the
+    // pending-destination store uses, so the security rules are exercised.
+    const map = new Map<string, string>();
+    const store = {
+      getItem: (key: string) => map.get(key) ?? null,
+      setItem: (key: string, value: string) => void map.set(key, value),
+      removeItem: (key: string) => void map.delete(key),
+      clear: () => map.clear(),
+      key: (index: number) => [...map.keys()][index] ?? null,
+      get length() {
+        return map.size;
+      },
+    } as unknown as Storage;
+    (globalThis as { window?: unknown }).window = { sessionStorage: store };
   });
 
   it("ANDROID-T1 release configuration cannot silently use a development backend", () => {

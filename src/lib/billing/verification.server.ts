@@ -240,3 +240,107 @@ export async function verifyPlayPurchase(
     return { ok: false, reason: "verification_failed" };
   }
 }
+
+/* ------------------------------------------------------------------------ */
+/* PHASE 11 — acknowledgement (server-side)                                   */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * Acknowledgement is performed SERVER-SIDE, deliberately.
+ *
+ * The client acknowledging would mean the security-critical "this purchase is
+ * settled" signal depends on a device that may be offline, killed or hostile,
+ * and Play auto-refunds an unacknowledged purchase after three days. Doing it
+ * on the server means acknowledgement happens exactly when our authoritative
+ * verification succeeded and the entitlement was actually granted.
+ *
+ * Rules encoded here:
+ *  - a PENDING purchase is never acknowledged (and never grants entitlement),
+ *  - an already-acknowledged purchase is not acknowledged again,
+ *  - a failed acknowledgement never rolls back or blocks the entitlement; it
+ *    is retried by the next verification or RTDN for the same token.
+ */
+export type AcknowledgeOutcome =
+  | { ok: true; performed: boolean }
+  | { ok: false; reason: "not_configured" | "not_acknowledgeable" | "request_failed" };
+
+export function shouldAcknowledge(result: VerifiedPurchase): boolean {
+  if (result.acknowledged) return false;
+  return (
+    result.state === "active" ||
+    result.state === "cancelled_active" ||
+    result.state === "grace_period"
+  );
+}
+
+export async function acknowledgePlaySubscription(
+  purchaseToken: string,
+  result: VerifiedPurchase,
+): Promise<AcknowledgeOutcome> {
+  if (!shouldAcknowledge(result)) return { ok: false, reason: "not_acknowledgeable" };
+
+  const packageName = process.env["GOOGLE_PLAY_PACKAGE_NAME"];
+  const rawAccount = process.env["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"];
+  if (!packageName || !rawAccount) return { ok: false, reason: "not_configured" };
+
+  let account: ServiceAccount;
+  try {
+    account = JSON.parse(rawAccount) as ServiceAccount;
+  } catch {
+    return { ok: false, reason: "not_configured" };
+  }
+  const token = await getAccessToken(account);
+  if (!token) return { ok: false, reason: "not_configured" };
+
+  try {
+    const url =
+      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/` +
+      `${encodeURIComponent(packageName)}/purchases/subscriptions/` +
+      `${encodeURIComponent(result.productId)}/tokens/` +
+      `${encodeURIComponent(purchaseToken)}:acknowledge`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    // 410 means Play already considers it handled; treat as success.
+    if (!response.ok && response.status !== 410) return { ok: false, reason: "request_failed" };
+    return { ok: true, performed: true };
+  } catch {
+    return { ok: false, reason: "request_failed" };
+  }
+}
+
+/**
+ * Confirms whether a purchase token appears in Play's voided-purchases list.
+ * Used by voided-purchase RTDNs: revocation is only applied when Google itself
+ * reports the purchase as voided, never because a message said so.
+ */
+export async function isVoidedPurchase(purchaseToken: string): Promise<boolean | null> {
+  const packageName = process.env["GOOGLE_PLAY_PACKAGE_NAME"];
+  const rawAccount = process.env["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"];
+  if (!packageName || !rawAccount) return null;
+  let account: ServiceAccount;
+  try {
+    account = JSON.parse(rawAccount) as ServiceAccount;
+  } catch {
+    return null;
+  }
+  const token = await getAccessToken(account);
+  if (!token) return null;
+
+  try {
+    const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const url =
+      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/` +
+      `${encodeURIComponent(packageName)}/purchases/voidedpurchases` +
+      `?startTime=${since}&type=1`;
+    const response = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+    if (!response.ok) return null;
+    const json = (await response.json()) as { voidedPurchases?: { purchaseToken?: string }[] };
+    const list = json.voidedPurchases ?? [];
+    return list.some((entry) => entry.purchaseToken === purchaseToken);
+  } catch {
+    return null;
+  }
+}

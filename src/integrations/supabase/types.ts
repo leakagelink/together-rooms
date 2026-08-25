@@ -122,6 +122,84 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_ack_state: {
+        Row: {
+          acknowledged_at: string | null
+          attempts: number
+          created_at: string
+          last_attempt_at: string | null
+          last_error: string | null
+          next_attempt_at: string
+          product_id: string
+          purchase_token_hash: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          attempts?: number
+          created_at?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          next_attempt_at?: string
+          product_id: string
+          purchase_token_hash: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          attempts?: number
+          created_at?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          next_attempt_at?: string
+          product_id?: string
+          purchase_token_hash?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      billing_reconciliation_runs: {
+        Row: {
+          created_at: string
+          detail: Json
+          examined: number
+          failed: number
+          finished_at: string | null
+          id: string
+          repaired: number
+          started_at: string
+          trigger_source: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: Json
+          examined?: number
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          repaired?: number
+          started_at?: string
+          trigger_source?: string
+        }
+        Update: {
+          created_at?: string
+          detail?: Json
+          examined?: number
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          repaired?: number
+          started_at?: string
+          trigger_source?: string
+        }
+        Relationships: []
+      }
       call_signals: {
         Row: {
           created_at: string

@@ -161,8 +161,23 @@ async function verifyAndApply(
     console.error("[apply_billing_event]", error.message);
     return { ok: false, reason: "server_error" };
   }
+
+  // Acknowledge only AFTER the entitlement was actually granted. Play refunds
+  // an unacknowledged purchase after three days, so acknowledgement is the
+  // server's confirmation that the user really received what they paid for.
+  // A failed acknowledgement never affects the entitlement; the next
+  // verification or renewal notification retries it.
+  const { acknowledgePlaySubscription, shouldAcknowledge } = await import(
+    "@/lib/billing/verification.server"
+  );
+  if (shouldAcknowledge(verified)) {
+    const ack = await acknowledgePlaySubscription(claim.purchase_token, verified);
+    if (!ack.ok) console.warn("[acknowledge_purchase] failed:", ack.reason);
+  }
+
   return (data ?? { ok: false, reason: "server_error" }) as unknown as ApplyOutcome;
 }
+
 
 export const verifyPurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

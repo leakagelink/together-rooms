@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useAdContextFlag } from "@/hooks/useAds";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { setAnalyticsConsent } from "@/lib/analytics";
@@ -48,6 +49,8 @@ const VISIBILITY = [
 function PrivacySettingsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  // Consent and account-deletion surfaces never carry ads.
+  useAdContextFlag({ sensitiveFlow: "privacy_settings" });
   const [form, setForm] = useState({
     profile_visibility: "members",
     room_visibility: "private",

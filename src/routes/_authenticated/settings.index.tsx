@@ -18,6 +18,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { describeStatus } from "@/lib/entitlements";
 import { errorMessage } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/settings/")({
@@ -200,8 +201,7 @@ function ToggleRow({
 
 const PLAN_LABEL: Record<string, string> = {
   free: "Free",
-  pro: "Pro",
-  pro_plus: "Pro Plus",
+  premium: "Premium",
 };
 
 /**
@@ -209,7 +209,7 @@ const PLAN_LABEL: Record<string, string> = {
  * write path to it, so this is a display of an entitlement, never a grant.
  */
 function PlanSummary() {
-  const { plan, isLoading } = useEntitlement();
+  const { plan, snapshot, isLoading } = useEntitlement();
   return (
     <section className="surface-panel mt-6 max-w-xl p-5" aria-labelledby="plan-heading">
       <h2 id="plan-heading" className="text-sm font-semibold">
@@ -219,8 +219,11 @@ function PlanSummary() {
         {isLoading ? "Checking your plan…" : PLAN_LABEL[plan]}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Plans are granted server-side. Paid upgrades are not available in this release.
+        {isLoading ? "" : describeStatus(snapshot)}
       </p>
+      <Button asChild variant="outline" size="sm" className="mt-3">
+        <Link to="/settings/subscription">Manage subscription</Link>
+      </Button>
     </section>
   );
 }

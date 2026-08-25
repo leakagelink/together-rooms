@@ -344,3 +344,22 @@ export async function isVoidedPurchase(purchaseToken: string): Promise<boolean |
     return null;
   }
 }
+
+/** Full event payload derived from a verified purchase (used by RTDN + restore). */
+export interface BillingEventInput {
+  eventType: string;
+  expiresAt: string | null;
+  graceUntil: string | null;
+  cancelAtPeriodEnd: boolean;
+  eventSeq: number;
+}
+
+export function mapVerificationToEvent(result: VerifiedPurchase): BillingEventInput {
+  return {
+    eventType: eventTypeFor(result),
+    expiresAt: result.expiresAt,
+    graceUntil: result.graceUntil,
+    cancelAtPeriodEnd: !result.autoRenewing,
+    eventSeq: result.eventSeq,
+  };
+}

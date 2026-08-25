@@ -156,7 +156,8 @@ export function debugCapabilities(environment: AppEnvironment): DebugCapabilitie
 export function currentRuntimeConfig(env: Record<string, unknown>, mode: string): ConfigResult {
   return validateRuntimeConfig({
     mode,
-    supabaseUrl: typeof env["VITE_SUPABASE_URL"] === "string" ? env["VITE_SUPABASE_URL"] : undefined,
+    supabaseUrl:
+      typeof env["VITE_SUPABASE_URL"] === "string" ? env["VITE_SUPABASE_URL"] : undefined,
     supabasePublishableKey:
       typeof env["VITE_SUPABASE_PUBLISHABLE_KEY"] === "string"
         ? env["VITE_SUPABASE_PUBLISHABLE_KEY"]

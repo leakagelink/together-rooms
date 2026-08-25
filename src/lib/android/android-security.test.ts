@@ -165,7 +165,9 @@ describe("Phase 10 — Android production hardening", () => {
     expect(plan.membership).toBe(true);
     expect(plan.roomState).toBe(true);
     expect(plan.playback).toBe(true);
-    expect(revalidationPlan("process_start", { inRoom: true, inCall: true }).entitlement).toBe(true);
+    expect(revalidationPlan("process_start", { inRoom: true, inCall: true }).entitlement).toBe(
+      true,
+    );
   });
 
   it("ANDROID-T9 stale call authorization cannot survive beyond its rules", () => {

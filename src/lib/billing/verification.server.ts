@@ -15,7 +15,12 @@ export type VerificationOutcome =
   { ok: true; result: VerifiedPurchase } | { ok: false; reason: VerificationFailure };
 
 export type VerificationFailure =
-  "verification_unavailable" | "verification_failed" | "purchase_not_found" | "purchase_pending";
+  | "verification_unavailable"
+  | "verification_failed"
+  | "purchase_not_found"
+  | "purchase_pending"
+  | "product_mismatch"
+  | "package_mismatch";
 
 export interface VerifiedPurchase {
   productId: string;
@@ -53,7 +58,7 @@ function pemToPkcs8(pem: string): ArrayBuffer {
   return buffer.buffer;
 }
 
-async function getAccessToken(account: ServiceAccount): Promise<string | null> {
+export async function getAccessToken(account: ServiceAccount): Promise<string | null> {
   try {
     const now = Math.floor(Date.now() / 1000);
     const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
@@ -184,6 +189,15 @@ export async function verifyPlayPurchase(
   productId: string,
   purchaseToken: string,
 ): Promise<VerificationOutcome> {
+  // PHASE 11: the claimed product must be one this build is configured for.
+  // A claim naming any other product is rejected before a Play call is made.
+  const { serverProductConfig, isAllowedProduct } = await import("@/lib/billing/products");
+  const productConfig = serverProductConfig(process.env as Record<string, string | undefined>);
+  if (!productConfig.ok) return { ok: false, reason: "verification_unavailable" };
+  if (!isAllowedProduct(productConfig, productId)) {
+    return { ok: false, reason: "product_mismatch" };
+  }
+
   const packageName = process.env["GOOGLE_PLAY_PACKAGE_NAME"];
   const rawAccount = process.env["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"];
   if (!packageName || !rawAccount) {
@@ -216,6 +230,11 @@ export async function verifyPlayPurchase(
     const payload = (await response.json()) as Record<string, unknown>;
     const mapped = mapPlaySubscription(payload, productId);
     if (!mapped) return { ok: false, reason: "verification_failed" };
+    // Google's own answer decides the product; if it is not a product we sell,
+    // no entitlement is derived from it.
+    if (!isAllowedProduct(productConfig, mapped.productId)) {
+      return { ok: false, reason: "product_mismatch" };
+    }
     return { ok: true, result: mapped };
   } catch {
     return { ok: false, reason: "verification_failed" };

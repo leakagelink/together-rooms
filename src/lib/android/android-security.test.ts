@@ -121,7 +121,7 @@ describe("Phase 10 — Android production hardening", () => {
   it("ANDROID-T6 an expired invite deep link does not bypass server validation", () => {
     // A well-formed token resolves only to the *route*; nothing about
     // membership is decided on the device.
-    const token = "a".repeat(43);
+    const token = "a1b2".repeat(12);
     const result = resolveDeepLink(`https://together-rooms.lovable.app/invite/${token}`);
     expect(result).toMatchObject({ ok: true, kind: "invite", path: `/invite/${token}` });
     if (result.ok) {

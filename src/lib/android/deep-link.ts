@@ -23,7 +23,7 @@ export const APP_ORIGIN_HOSTS = ["together-rooms.lovable.app"] as const;
 
 /** Paths that may be resumed after sign-in. Deliberately narrow. */
 const RESUMABLE_PATH_PATTERNS: RegExp[] = [
-  /^\/invite\/[A-Za-z0-9_-]{16,128}$/,
+  /^\/invite\/[a-f0-9]{48}$/,
   /^\/rooms$/,
   /^\/rooms\/[0-9a-fA-F-]{36}$/,
   /^\/playlists$/,

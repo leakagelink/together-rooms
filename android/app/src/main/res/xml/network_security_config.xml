@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  PHASE 10 — transport hardening.
+  Cleartext is refused everywhere. Release builds trust only the system CA
+  store, so a user-installed CA cannot silently intercept SyncTogether traffic.
+  Debug builds additionally trust the debug CA store so a developer can inspect
+  traffic locally; this file is the only place that difference exists.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

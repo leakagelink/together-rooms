@@ -37,9 +37,27 @@ export function hashPurchaseToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
+/**
+ * Minimal structural view of the admin client. Kept deliberately narrow so the
+ * processing rules can be reasoned about (and tested) without the full
+ * PostgREST type surface.
+ */
+type QueryResult = Promise<{ data: unknown; error: unknown }>;
+interface AdminTable {
+  insert(values: Record<string, unknown>): QueryResult;
+  update(values: Record<string, unknown>): { eq(column: string, value: string): QueryResult };
+  select(columns: string): {
+    eq(
+      column: string,
+      value: string,
+    ): {
+      order(column: string, options: { ascending: boolean }): { limit(n: number): QueryResult };
+    };
+  };
+}
 type AdminClient = {
-  from: (table: string) => any;
-  rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+  from: (table: string) => AdminTable;
+  rpc: (fn: string, args: Record<string, unknown>) => QueryResult;
 };
 
 /**

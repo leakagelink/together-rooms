@@ -19,11 +19,7 @@ export type RtdnDecodeFailure =
   | "unknown_payload"
   | "package_mismatch";
 
-export type RtdnKind =
-  | "subscription"
-  | "voided_purchase"
-  | "one_time_product"
-  | "test";
+export type RtdnKind = "subscription" | "voided_purchase" | "one_time_product" | "test";
 
 export interface RtdnMessage {
   messageId: string;
@@ -39,8 +35,7 @@ export interface RtdnMessage {
 }
 
 export type RtdnDecodeResult =
-  | { ok: true; message: RtdnMessage }
-  | { ok: false; reason: RtdnDecodeFailure };
+  { ok: true; message: RtdnMessage } | { ok: false; reason: RtdnDecodeFailure };
 
 /** Subscription notification types (developer.android.com/google/play/billing). */
 export const SUBSCRIPTION_NOTIFICATION = {
@@ -133,7 +128,8 @@ export function decodeRtdnEnvelope(body: unknown, expectedPackage: string): Rtdn
 
   if (sub && typeof sub === "object") {
     const s = sub as Record<string, unknown>;
-    const type = typeof s["notificationType"] === "number" ? (s["notificationType"] as number) : null;
+    const type =
+      typeof s["notificationType"] === "number" ? (s["notificationType"] as number) : null;
     const token = str(s, "purchaseToken");
     if (type === null || !token) return { ok: false, reason: "unknown_payload" };
     return {

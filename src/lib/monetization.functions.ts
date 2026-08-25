@@ -167,9 +167,8 @@ async function verifyAndApply(
   // server's confirmation that the user really received what they paid for.
   // A failed acknowledgement never affects the entitlement; the next
   // verification or renewal notification retries it.
-  const { acknowledgePlaySubscription, shouldAcknowledge } = await import(
-    "@/lib/billing/verification.server"
-  );
+  const { acknowledgePlaySubscription, shouldAcknowledge } =
+    await import("@/lib/billing/verification.server");
   if (shouldAcknowledge(verified)) {
     const ack = await acknowledgePlaySubscription(claim.purchase_token, verified);
     if (!ack.ok) console.warn("[acknowledge_purchase] failed:", ack.reason);
@@ -177,7 +176,6 @@ async function verifyAndApply(
 
   return (data ?? { ok: false, reason: "server_error" }) as unknown as ApplyOutcome;
 }
-
 
 export const verifyPurchase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

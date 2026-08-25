@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+
+import { AdPrivacyOptions } from "@/components/ads/AdPrivacyOptions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -209,9 +211,10 @@ function PrivacySettingsPage() {
               </div>
               <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
                 <div>
-                  <Label htmlFor="ads">Personalized ads</Label>
+                  <Label htmlFor="ads">Show ads in the free plan</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    No ads SDK is integrated in this release.
+                    Turning this off keeps SyncTogether ad-free for you. Premium removes ads
+                    regardless of this setting.
                   </p>
                 </div>
                 <Switch
@@ -220,6 +223,7 @@ function PrivacySettingsPage() {
                   onCheckedChange={(v) => setForm({ ...form, ads_consent: v })}
                 />
               </div>
+              <AdPrivacyOptions />
             </section>
 
             <section className="surface-panel space-y-4 p-6">

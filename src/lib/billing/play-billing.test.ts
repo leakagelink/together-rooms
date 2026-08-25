@@ -98,7 +98,9 @@ describe("PLAY-BILLING", () => {
   });
 
   it("PLAY-BILLING-T10: cancelled-but-active keeps access until period end", () => {
-    const event = mapVerificationToEvent(purchase({ state: "cancelled_active", autoRenewing: false }));
+    const event = mapVerificationToEvent(
+      purchase({ state: "cancelled_active", autoRenewing: false }),
+    );
     expect(event.eventType).toBe("cancelled");
     expect(event.cancelAtPeriodEnd).toBe(true);
     expect(event.expiresAt).toBe("2030-01-01T00:00:00.000Z");

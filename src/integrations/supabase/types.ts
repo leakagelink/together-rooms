@@ -659,6 +659,48 @@ export type Database = {
         }
         Relationships: []
       }
+      play_rtdn_messages: {
+        Row: {
+          attempts: number
+          detail: Json
+          event_seq: number
+          kind: string
+          message_id: string
+          notification_type: number | null
+          outcome: string
+          processed_at: string | null
+          publish_time: string | null
+          purchase_token_hash: string | null
+          received_at: string
+        }
+        Insert: {
+          attempts?: number
+          detail?: Json
+          event_seq?: number
+          kind: string
+          message_id: string
+          notification_type?: number | null
+          outcome?: string
+          processed_at?: string | null
+          publish_time?: string | null
+          purchase_token_hash?: string | null
+          received_at?: string
+        }
+        Update: {
+          attempts?: number
+          detail?: Json
+          event_seq?: number
+          kind?: string
+          message_id?: string
+          notification_type?: number | null
+          outcome?: string
+          processed_at?: string | null
+          publish_time?: string | null
+          purchase_token_hash?: string | null
+          received_at?: string
+        }
+        Relationships: []
+      }
       playlist_items: {
         Row: {
           created_at: string

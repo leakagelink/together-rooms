@@ -2,11 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/AppTheme">
 
         <activity
@@ -15,6 +19,7 @@
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize"
             android:exported="true">
 
             <intent-filter>
@@ -22,6 +27,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Verified App Links. Only the app's own origin is accepted, and
+                 only the invite/auth paths are claimed: no other host can hand
+                 this app a destination. Redemption still happens server-side. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="together-rooms.lovable.app" android:pathPrefix="/invite/" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="together-rooms.lovable.app" android:pathPrefix="/auth/" />
+            </intent-filter>
         </activity>
 
         <provider
@@ -35,7 +55,23 @@
         </provider>
     </application>
 
-    <!-- Permissions -->
-
+    <!-- Permissions.
+         INTERNET      : required, the entire product is networked.
+         CAMERA        : requested at runtime only when a member enables video.
+         RECORD_AUDIO  : requested at runtime only when a member joins a call
+                         with the microphone.
+         No storage/media permissions are declared: local media sharing uses the
+         system file picker (SAF), which grants per-file access without any
+         permission. No POST_NOTIFICATIONS: the app sends no notifications yet. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- Devices without a camera or microphone must still install and use every
+         non-call feature. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 </manifest>

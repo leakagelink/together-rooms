@@ -57,6 +57,14 @@ export class AdProvider {
     this.frequency = newFrequencyState(this.now());
   }
 
+  /**
+   * Attaches the SDK. Deliberately a separate step from construction: the SDK
+   * is only ever attached after consent resolution permits ad requests.
+   */
+  attachSdk(sdk: AdSdk | null) {
+    this.options = { ...this.options, sdk };
+  }
+
   updateConfig(config: AdFrequencyConfig) {
     this.options = { ...this.options, config };
   }

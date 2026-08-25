@@ -28,7 +28,8 @@ export const Route = createFileRoute("/_authenticated/settings/subscription")({
       { title: "Subscription — SyncTogether" },
       {
         name: "description",
-        content: "Manage your SyncTogether Premium subscription, billing history and restore purchases.",
+        content:
+          "Manage your SyncTogether Premium subscription, billing history and restore purchases.",
       },
       { property: "og:title", content: "Subscription — SyncTogether" },
       {
@@ -154,7 +155,10 @@ function SubscriptionPage() {
         {isLoading ? (
           <LoadingState label="Checking your plan" rows={2} />
         ) : isError ? (
-          <ErrorState message="We couldn't load your plan just now." onRetry={() => void refresh()} />
+          <ErrorState
+            message="We couldn't load your plan just now."
+            onRetry={() => void refresh()}
+          />
         ) : (
           <section className="surface-panel p-5" aria-labelledby="plan-state">
             <h2 id="plan-state" className="text-sm font-semibold">
@@ -204,13 +208,15 @@ function SubscriptionPage() {
               <ul className="mt-3 space-y-3">
                 {productsQuery.data.map((product) => (
                   <li
-                    key={product.product_id}
+                    key={product.id}
                     className="flex items-center justify-between gap-4 rounded-lg border border-border p-4"
                   >
                     <div>
-                      <p className="text-sm font-medium">{product.name}</p>
+                      <p className="text-sm font-medium">
+                        {product.period === "P1Y" ? "Premium, yearly" : "Premium, monthly"}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {product.description ?? "Billed through Google Play."}
+                        Billed through Google Play. Cancel any time in Play.
                       </p>
                       <p className="mt-1 text-[11px] text-muted-foreground">
                         Price is shown by Google Play in your local currency.
@@ -219,9 +225,9 @@ function SubscriptionPage() {
                     <Button
                       size="sm"
                       disabled={busy !== null}
-                      onClick={() => void purchase(product.product_id, product.base_plan_id)}
+                      onClick={() => void purchase(product.id, product.base_plan_id)}
                     >
-                      {busy === product.product_id ? "Opening…" : "Subscribe"}
+                      {busy === product.id ? "Opening…" : "Subscribe"}
                     </Button>
                   </li>
                 ))}

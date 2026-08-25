@@ -22,13 +22,7 @@ export function PremiumBadge() {
   );
 }
 
-export function PremiumNotice({
-  title,
-  children,
-}: {
-  title: string;
-  children?: ReactNode;
-}) {
+export function PremiumNotice({ title, children }: { title: string; children?: ReactNode }) {
   const { premium } = useEntitlement();
   if (premium) return null;
   return (

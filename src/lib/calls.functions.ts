@@ -147,9 +147,7 @@ export const setCallMediaState = createServerFn({ method: "POST" })
         session_id: uuid,
         mic: z.boolean().optional(),
         camera: z.boolean().optional(),
-        connection_state: z
-          .enum(["connecting", "connected", "reconnecting", "failed"])
-          .optional(),
+        connection_state: z.enum(["connecting", "connected", "reconnecting", "failed"]).optional(),
       })
       .parse(input),
   )

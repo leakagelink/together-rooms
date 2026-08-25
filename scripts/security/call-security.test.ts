@@ -166,10 +166,13 @@ suite("phase 8 calls (security / lifecycle)", () => {
   it("CALL-T1 an anonymous client cannot read or start a call", async () => {
     const { data: rows } = await anon.from("room_call_sessions").select("id").limit(1);
     expect(rows ?? []).toHaveLength(0);
-    const { data } = await anon.rpc("start_call_session" as never, {
-      _room_id: roomId,
-      _call_mode: "voice",
-    } as never);
+    const { data } = await anon.rpc(
+      "start_call_session" as never,
+      {
+        _room_id: roomId,
+        _call_mode: "voice",
+      } as never,
+    );
     expect((data as Rpc | null)?.ok ?? false).toBe(false);
   });
 
@@ -227,9 +230,11 @@ suite("phase 8 calls (security / lifecycle)", () => {
       .in("session_status", ["starting", "active"])
       .maybeSingle();
     const inserts = await Promise.all([
-      member.client
-        .from("room_call_sessions")
-        .insert({ room_id: roomId, call_mode: "voice", expires_at: new Date().toISOString() } as never),
+      member.client.from("room_call_sessions").insert({
+        room_id: roomId,
+        call_mode: "voice",
+        expires_at: new Date().toISOString(),
+      } as never),
       member.client.from("room_call_participants").insert({
         session_id: session.data?.id ?? roomId,
         room_id: roomId,
@@ -278,7 +283,6 @@ suite("phase 8 calls (security / lifecycle)", () => {
     expect(data?.session_status).toBe("active");
   });
 
-
   it("CALL-T8 a member cannot forge another member's mic/camera state", async () => {
     await clearSessions();
     const sessionId = await liveSession(host);
@@ -294,9 +298,9 @@ suite("phase 8 calls (security / lifecycle)", () => {
     expect(forged.data ?? []).toHaveLength(0);
 
     // The RPC only ever touches the caller's own row.
-    expect((await rpc(member, "set_call_media_state", { _session_id: sessionId, _mic: false })).ok).toBe(
-      true,
-    );
+    expect(
+      (await rpc(member, "set_call_media_state", { _session_id: sessionId, _mic: false })).ok,
+    ).toBe(true);
     const { data } = await admin
       .from("room_call_participants")
       .select("user_id, mic_enabled")

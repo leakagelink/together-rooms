@@ -406,24 +406,21 @@ export function useRoomCall(
     [],
   );
 
-  const acquireMedia = useCallback(
-    async (mode: CallMode, wantCamera: boolean) => {
-      const { stream, failure } = await requestCallMedia({
-        audio: true,
-        video: mode === "video" && wantCamera,
+  const acquireMedia = useCallback(async (mode: CallMode, wantCamera: boolean) => {
+    const { stream, failure } = await requestCallMedia({
+      audio: true,
+      video: mode === "video" && wantCamera,
+    });
+    setDeviceFailure(failure);
+    if (stream) {
+      setLocalStream((prev) => {
+        releaseStream(prev);
+        return stream;
       });
-      setDeviceFailure(failure);
-      if (stream) {
-        setLocalStream((prev) => {
-          releaseStream(prev);
-          return stream;
-        });
-        meshRef.current?.setLocalStream(stream);
-      }
-      return stream;
-    },
-    [],
-  );
+      meshRef.current?.setLocalStream(stream);
+    }
+    return stream;
+  }, []);
 
   const join = useCallback(async () => {
     if (!session) return;

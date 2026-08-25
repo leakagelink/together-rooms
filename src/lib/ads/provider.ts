@@ -7,7 +7,12 @@
  * network is a change to this file alone.
  */
 import type { AdFrequencyConfig, AdUnits } from "./config";
-import { checkFrequency, newFrequencyState, recordFullscreenShown, type FrequencyState } from "./frequency";
+import {
+  checkFrequency,
+  newFrequencyState,
+  recordFullscreenShown,
+  type FrequencyState,
+} from "./frequency";
 import {
   evaluateAdPlacement,
   type AdFormat,
@@ -63,7 +68,12 @@ export class AdProvider {
       return { ...decision, unitId: null, testMode: this.options.testMode };
     }
     if (request.format !== "banner") {
-      const verdict = checkFrequency(request.format, this.frequency, this.options.config, this.now());
+      const verdict = checkFrequency(
+        request.format,
+        this.frequency,
+        this.options.config,
+        this.now(),
+      );
       if (!verdict.allowed) {
         return {
           eligible: false,

@@ -6,12 +6,7 @@
  * nothing here is called during module evaluation or render.
  */
 export type CallDeviceFailure =
-  | "unsupported"
-  | "insecure_context"
-  | "permission_denied"
-  | "not_found"
-  | "in_use"
-  | "unknown";
+  "unsupported" | "insecure_context" | "permission_denied" | "not_found" | "in_use" | "unknown";
 
 export interface CallDeviceResult {
   stream: MediaStream | null;

@@ -31,10 +31,12 @@ describe("ad placement policy (ADS-T1..T12)", () => {
   });
 
   it("T2: unresolved consent blocks all ads (no request leaves the device)", () => {
-    expect(evaluateAdPlacement("banner", { ...BASE, consent: "unresolved" }, CONFIG)).toMatchObject({
-      eligible: false,
-      reason: "NO_AD_CONSENT_UNRESOLVED",
-    });
+    expect(evaluateAdPlacement("banner", { ...BASE, consent: "unresolved" }, CONFIG)).toMatchObject(
+      {
+        eligible: false,
+        reason: "NO_AD_CONSENT_UNRESOLVED",
+      },
+    );
   });
 
   it("T3: denied consent blocks all ads", () => {
@@ -98,9 +100,9 @@ describe("ad placement policy (ADS-T1..T12)", () => {
     expect(
       evaluateAdPlacement("interstitial", { ...BASE, criticalNavigation: true }, CONFIG).reason,
     ).toBe("NO_AD_CRITICAL_NAVIGATION");
-    expect(evaluateAdPlacement("banner", { ...BASE, criticalNavigation: true }, CONFIG).eligible).toBe(
-      true,
-    );
+    expect(
+      evaluateAdPlacement("banner", { ...BASE, criticalNavigation: true }, CONFIG).eligible,
+    ).toBe(true);
   });
 
   it("T10: a missing ad configuration disables ads instead of falling back", () => {
@@ -110,9 +112,9 @@ describe("ad placement policy (ADS-T1..T12)", () => {
   });
 
   it("T11: a remote kill switch disables every format", () => {
-    expect(
-      evaluateAdPlacement("banner", BASE, { ...CONFIG, ads_enabled: false }).reason,
-    ).toBe("NO_AD_DISABLED_REMOTELY");
+    expect(evaluateAdPlacement("banner", BASE, { ...CONFIG, ads_enabled: false }).reason).toBe(
+      "NO_AD_DISABLED_REMOTELY",
+    );
   });
 
   it("T12: disabled formats are individually blocked", () => {
@@ -170,9 +172,9 @@ describe("ad frequency caps (ADS-T16..T19)", () => {
     expect(checkFrequency("interstitial", state, CONFIG, shownAt + 30_000)).toMatchObject({
       allowed: false,
     });
-    expect(
-      checkFrequency("interstitial", state, CONFIG, shownAt + 200_000 + 120_000).allowed,
-    ).toBe(true);
+    expect(checkFrequency("interstitial", state, CONFIG, shownAt + 200_000 + 120_000).allowed).toBe(
+      true,
+    );
   });
 
   it("T18: the per-session cap is respected", () => {

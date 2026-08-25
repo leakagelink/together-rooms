@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeRpc } from "@/lib/server/rpc.server";
+import type { Json } from "@/lib/rpc-types";
 import type { EntitlementSnapshot } from "@/lib/entitlements";
 
 /**
@@ -68,9 +69,10 @@ export const listSubscriptionProducts = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("subscription_products")
-      .select("product_id, base_plan_id, name, description, billing_period, active")
-      .eq("active", true)
-      .order("billing_period", { ascending: true });
+      .select("id, base_plan_id, offer_id, period, entitlement_key, sort_order")
+      .eq("is_active", true)
+      .eq("platform", "google_play")
+      .order("sort_order", { ascending: true });
     if (error) {
       console.error("[list_subscription_products]", error.message);
       return { ok: false as const, reason: "server_error" as const };
@@ -82,10 +84,7 @@ export const listSubscriptionProducts = createServerFn({ method: "GET" })
 export const getAdRuntimeConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("ad_config")
-      .select("config")
-      .maybeSingle();
+    const { data, error } = await context.supabase.from("ad_config").select("config").maybeSingle();
     if (error) {
       console.error("[ad_config]", error.message);
       // Fail-safe: caller falls back to conservative defaults.
@@ -98,7 +97,9 @@ export const getAdRuntimeConfig = createServerFn({ method: "GET" })
 export const setRoomCapacity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ room_id: z.string().uuid(), max_members: z.number().int().min(2).max(50) }).parse(input),
+    z
+      .object({ room_id: z.string().uuid(), max_members: z.number().int().min(2).max(50) })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("set_room_capacity", {
@@ -160,7 +161,7 @@ async function verifyAndApply(
     console.error("[apply_billing_event]", error.message);
     return { ok: false, reason: "server_error" };
   }
-  return (data ?? { ok: false, reason: "server_error" }) as ApplyOutcome;
+  return (data ?? { ok: false, reason: "server_error" }) as unknown as ApplyOutcome;
 }
 
 export const verifyPurchase = createServerFn({ method: "POST" })
@@ -223,7 +224,7 @@ export const adminSubscriptionOverview = createServerFn({ method: "POST" })
     const { data: result, error } = await context.supabase.rpc("admin_subscription_overview", {
       _user_id: data.user_id,
     });
-    return normalizeRpc<{ entitlement: EntitlementSnapshot; events: unknown[] }>(
+    return normalizeRpc<{ entitlement: EntitlementSnapshot; events: Json[] }>(
       "admin_subscription_overview",
       result,
       error,

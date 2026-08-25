@@ -13,14 +13,10 @@ export type PlanKey = "free" | "premium";
 
 /** Lifecycle states mirrored from public.entitlement_status. */
 export type EntitlementStatus =
-  | "active"
-  | "grace_period"
-  | "paused"
-  | "expired"
-  | "revoked"
-  | "pending";
+  "active" | "grace_period" | "paused" | "expired" | "revoked" | "pending";
 
-export type EntitlementSource = "system" | "grant" | "promo" | "billing" | "admin_grant" | "play_billing";
+export type EntitlementSource =
+  "system" | "grant" | "promo" | "billing" | "admin_grant" | "play_billing";
 
 export interface PlanLimits {
   max_active_rooms: number;
@@ -133,9 +129,19 @@ export interface FeatureRow {
  * Premium buys capacity, control and an ad-free experience.
  */
 export const FEATURE_MATRIX: readonly FeatureRow[] = [
-  { key: "core", label: "Rooms, chat, sync playback, study & music", free: "Included", premium: "Included" },
+  {
+    key: "core",
+    label: "Rooms, chat, sync playback, study & music",
+    free: "Included",
+    premium: "Included",
+  },
   { key: "rooms", label: "Active rooms you host", free: "Standard limit", premium: "Higher limit" },
-  { key: "capacity", label: "Room capacity", free: "Up to the free cap", premium: "Up to 50 people" },
+  {
+    key: "capacity",
+    label: "Room capacity",
+    free: "Up to the free cap",
+    premium: "Up to 50 people",
+  },
   { key: "calls", label: "Voice & video session length", free: "Standard", premium: "Extended" },
   { key: "media", label: "Local media session length", free: "Standard", premium: "Extended" },
   { key: "playlists", label: "Saved playlists", free: "Standard limit", premium: "Higher limit" },
@@ -144,7 +150,4 @@ export const FEATURE_MATRIX: readonly FeatureRow[] = [
 
 /** Feature keys accepted by the server-side `entitlement_precheck` RPC. */
 export type PremiumFeature =
-  | "ad_free"
-  | "premium_capacity"
-  | "extended_call"
-  | "extended_local_media";
+  "ad_free" | "premium_capacity" | "extended_call" | "extended_local_media";

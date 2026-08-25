@@ -302,13 +302,19 @@ suite("phase 8 calls (transport / signaling / realtime)", () => {
   // ---------------------------------------------------------------- realtime
 
   it("CALL-RT1 a member is authorized on the room channel; an outsider is not", async () => {
-    const memberAuth = await member.client.rpc("authorize_room_channel" as never, {
-      _room_id: roomId,
-    } as never);
+    const memberAuth = await member.client.rpc(
+      "authorize_room_channel" as never,
+      {
+        _room_id: roomId,
+      } as never,
+    );
     expect(memberAuth.data).toBe(true);
-    const outsiderAuth = await outsider.client.rpc("authorize_room_channel" as never, {
-      _room_id: roomId,
-    } as never);
+    const outsiderAuth = await outsider.client.rpc(
+      "authorize_room_channel" as never,
+      {
+        _room_id: roomId,
+      } as never,
+    );
     expect(outsiderAuth.data ?? false).toBe(false);
   });
 
@@ -362,16 +368,16 @@ suite("phase 8 calls (transport / signaling / realtime)", () => {
         .eq("user_id", member.id);
     }
 
-    const visible = await member.client
-      .from("room_call_sessions")
-      .select("id")
-      .eq("id", sessionId);
+    const visible = await member.client.from("room_call_sessions").select("id").eq("id", sessionId);
     expect(visible.data ?? []).toHaveLength(0);
     const grant = await rpc(member, "issue_call_transport_grant", { _session_id: sessionId });
     expect(grant.ok).toBe(false);
-    const channel = await member.client.rpc("authorize_room_channel" as never, {
-      _room_id: roomId,
-    } as never);
+    const channel = await member.client.rpc(
+      "authorize_room_channel" as never,
+      {
+        _room_id: roomId,
+      } as never,
+    );
     expect(channel.data ?? false).toBe(false);
 
     // Restore membership for any later test in this file.

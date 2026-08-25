@@ -239,11 +239,7 @@ export function RoomCall({ roomId, userId, canModerate, roomActive }: RoomCallPr
               </>
             )}
             {canEndCall(session, userId, canModerate) ? (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => void call.endForEveryone()}
-              >
+              <Button variant="destructive" size="sm" onClick={() => void call.endForEveryone()}>
                 <PhoneOff className="mr-2 h-4 w-4" /> End for everyone
               </Button>
             ) : null}
@@ -257,9 +253,7 @@ export function RoomCall({ roomId, userId, canModerate, roomActive }: RoomCallPr
       )}
 
       {call.deviceFailure ? (
-        <p className="mt-3 text-sm text-destructive">
-          {deviceFailureMessage(call.deviceFailure)}
-        </p>
+        <p className="mt-3 text-sm text-destructive">{deviceFailureMessage(call.deviceFailure)}</p>
       ) : null}
       {call.error ? (
         <p className="mt-2 text-sm text-destructive">We couldn&apos;t do that: {call.error}</p>

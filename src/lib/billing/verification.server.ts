@@ -12,19 +12,16 @@
  */
 
 export type VerificationOutcome =
-  | { ok: true; result: VerifiedPurchase }
-  | { ok: false; reason: VerificationFailure };
+  { ok: true; result: VerifiedPurchase } | { ok: false; reason: VerificationFailure };
 
 export type VerificationFailure =
-  | "verification_unavailable"
-  | "verification_failed"
-  | "purchase_not_found"
-  | "purchase_pending";
+  "verification_unavailable" | "verification_failed" | "purchase_not_found" | "purchase_pending";
 
 export interface VerifiedPurchase {
   productId: string;
   /** Normalized lifecycle state. */
-  state: "active" | "cancelled_active" | "grace_period" | "paused" | "expired" | "revoked" | "pending";
+  state:
+    "active" | "cancelled_active" | "grace_period" | "paused" | "expired" | "revoked" | "pending";
   expiresAt: string | null;
   graceUntil: string | null;
   autoRenewing: boolean;
@@ -39,8 +36,7 @@ interface ServiceAccount {
 }
 
 function base64url(input: ArrayBuffer | string): string {
-  const bytes =
-    typeof input === "string" ? new TextEncoder().encode(input) : new Uint8Array(input);
+  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : new Uint8Array(input);
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -105,7 +101,8 @@ export function mapPlaySubscription(
   payload: Record<string, unknown>,
   fallbackProductId: string,
 ): VerifiedPurchase | null {
-  const state = typeof payload["subscriptionState"] === "string" ? payload["subscriptionState"] : "";
+  const state =
+    typeof payload["subscriptionState"] === "string" ? payload["subscriptionState"] : "";
   const lineItems = Array.isArray(payload["lineItems"])
     ? (payload["lineItems"] as Record<string, unknown>[])
     : [];
@@ -144,7 +141,8 @@ export function mapPlaySubscription(
       return null;
   }
 
-  const seqSource = expiresAt ?? (typeof payload["startTime"] === "string" ? payload["startTime"] : null);
+  const seqSource =
+    expiresAt ?? (typeof payload["startTime"] === "string" ? payload["startTime"] : null);
   const eventSeq = seqSource ? Math.floor(Date.parse(seqSource) / 1000) : 0;
   if (Number.isNaN(eventSeq)) return null;
 

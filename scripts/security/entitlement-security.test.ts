@@ -245,7 +245,9 @@ suite("phase 9 entitlements & billing", () => {
   /* ---------------------------- premium gating ---------------------------- */
 
   it("GATE-T1: precheck denies premium features to free users", async () => {
-    const { data } = await free.client.rpc("entitlement_precheck", { _feature: "premium_capacity" });
+    const { data } = await free.client.rpc("entitlement_precheck", {
+      _feature: "premium_capacity",
+    });
     expect(data).toMatchObject({ ok: false, reason: "premium_required" });
   });
 
@@ -276,7 +278,10 @@ suite("phase 9 entitlements & billing", () => {
 
   it("GATE-T5: capacity cannot be raised by writing the rooms table directly", async () => {
     const { data: room } = await makeRoom(free, "cap-direct");
-    await free.client.from("rooms").update({ max_members: 50 }).eq("id", room!.id as string);
+    await free.client
+      .from("rooms")
+      .update({ max_members: 50 })
+      .eq("id", room!.id as string);
     const { data: after } = await admin
       .from("rooms")
       .select("max_members")

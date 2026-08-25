@@ -16,7 +16,12 @@ import { useEntitlement } from "@/hooks/useEntitlement";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeAdEvent } from "@/lib/ads/analytics-safety";
 import { DEFAULT_AD_FREQUENCY, mergeAdFrequency, resolveAdUnits } from "@/lib/ads/config";
-import type { AdFormat, AdPlacementContext, ConsentState, SensitiveFlow } from "@/lib/ads/placement";
+import type {
+  AdFormat,
+  AdPlacementContext,
+  ConsentState,
+  SensitiveFlow,
+} from "@/lib/ads/placement";
 import { AdProvider, type AdOutcome } from "@/lib/ads/provider";
 import { track } from "@/lib/analytics";
 import { getAdRuntimeConfig } from "@/lib/monetization.functions";

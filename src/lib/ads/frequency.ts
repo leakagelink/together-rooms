@@ -43,18 +43,19 @@ export function checkFrequency(
   if (state.fullscreenCount >= config.max_fullscreen_per_session) {
     return { allowed: false, reason: "session_cap" };
   }
-  if (
-    state.lastFullscreenAt !== null &&
-    (now - state.lastFullscreenAt) / 1000 < config.min_seconds_between_fullscreen
-  ) {
-    return { allowed: false, reason: "interval" };
-  }
-  // An app-open ad must never be stacked with another full-screen ad.
+  // An app-open ad must never be stacked with another full-screen ad. This is
+  // checked before the generic interval so the specific reason is reported.
   if (
     state.lastAppOpenAt !== null &&
     (now - state.lastAppOpenAt) / 1000 < config.min_seconds_after_app_open_ad
   ) {
     return { allowed: false, reason: "app_open_stacking" };
+  }
+  if (
+    state.lastFullscreenAt !== null &&
+    (now - state.lastFullscreenAt) / 1000 < config.min_seconds_between_fullscreen
+  ) {
+    return { allowed: false, reason: "interval" };
   }
   if (format === "app_open" && state.lastFullscreenAt !== null) {
     const since = (now - state.lastFullscreenAt) / 1000;

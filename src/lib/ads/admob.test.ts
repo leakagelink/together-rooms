@@ -27,7 +27,11 @@ const context = (patch: Partial<AdPlacementContext> = {}): AdPlacementContext =>
   ...patch,
 });
 
-const units = { banner: "ca-app-pub-1/banner", interstitial: "ca-app-pub-1/int", appOpen: "ca-app-pub-1/open" };
+const units = {
+  banner: "ca-app-pub-1/banner",
+  interstitial: "ca-app-pub-1/int",
+  appOpen: "ca-app-pub-1/open",
+};
 
 let clock = 0;
 
@@ -66,14 +70,18 @@ describe("ADMOB", () => {
   it("ADMOB-T3: Premium accounts are never eligible for any format", () => {
     const { provider } = makeProvider();
     for (const format of ["banner", "interstitial", "app_open"] as const) {
-      expect(provider.evaluate({ format, placement: "home" }, context({ premium: true })).eligible)
-        .toBe(false);
+      expect(
+        provider.evaluate({ format, placement: "home" }, context({ premium: true })).eligible,
+      ).toBe(false);
     }
   });
 
   it("ADMOB-T4: unresolved consent blocks every ad request", () => {
     const { provider } = makeProvider();
-    const outcome = provider.evaluate({ format: "banner", placement: "home" }, context({ consent: "unresolved" }));
+    const outcome = provider.evaluate(
+      { format: "banner", placement: "home" },
+      context({ consent: "unresolved" }),
+    );
     expect(outcome.eligible).toBe(false);
   });
 
@@ -123,11 +131,17 @@ describe("ADMOB", () => {
   it("ADMOB-T9: full-screen formats respect the frequency cap", async () => {
     const { provider, shown } = makeProvider();
     // The first full-screen ad only becomes eligible after the session warmup.
-    expect(await provider.request({ format: "interstitial", placement: "a" }, context())).toBe(false);
+    expect(await provider.request({ format: "interstitial", placement: "a" }, context())).toBe(
+      false,
+    );
     clock = 10 * 60_000;
-    expect(await provider.request({ format: "interstitial", placement: "a" }, context())).toBe(true);
+    expect(await provider.request({ format: "interstitial", placement: "a" }, context())).toBe(
+      true,
+    );
     // A second one immediately afterwards is refused by the interval cap.
-    expect(await provider.request({ format: "interstitial", placement: "b" }, context())).toBe(false);
+    expect(await provider.request({ format: "interstitial", placement: "b" }, context())).toBe(
+      false,
+    );
     expect(shown).toHaveLength(1);
   });
 

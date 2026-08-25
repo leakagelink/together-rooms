@@ -66,7 +66,11 @@ describe("UMP", () => {
     expect(resolveAdConsent(obtained, false)).toBe("denied");
     expect(resolveAdConsent(obtained, true)).toBe("granted_personalized");
     // The app switch cannot override a platform denial.
-    const platformDenied = state({ status: "obtained", formStatus: "available", canRequestAds: false });
+    const platformDenied = state({
+      status: "obtained",
+      formStatus: "available",
+      canRequestAds: false,
+    });
     expect(resolveAdConsent(platformDenied, true)).toBe("denied");
     // And no app setting rescues an unresolved platform state.
     expect(resolveAdConsent(UNRESOLVED_UMP, true)).toBe("unresolved");

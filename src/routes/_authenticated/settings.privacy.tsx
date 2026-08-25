@@ -226,7 +226,6 @@ function PrivacySettingsPage() {
               <AdPrivacyOptions />
             </section>
 
-
             <section className="surface-panel space-y-4 p-6">
               <h2 className="text-sm font-semibold">Retention</h2>
               <div className="space-y-2">

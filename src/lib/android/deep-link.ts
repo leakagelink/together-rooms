@@ -23,7 +23,7 @@ export const APP_ORIGIN_HOSTS = ["together-rooms.lovable.app"] as const;
 
 /** Paths that may be resumed after sign-in. Deliberately narrow. */
 const RESUMABLE_PATH_PATTERNS: RegExp[] = [
-  /^\/invite\/[A-Za-z0-9_-]{16,128}$/,
+  /^\/invite\/[a-f0-9]{48}$/,
   /^\/rooms$/,
   /^\/rooms\/[0-9a-fA-F-]{36}$/,
   /^\/playlists$/,
@@ -61,7 +61,10 @@ function isAppHost(host: string): boolean {
  * Resolves an incoming deep link (absolute URL, or an in-app path) to a safe
  * internal destination.
  */
-export function resolveDeepLink(raw: string, allowedHosts: readonly string[] = APP_ORIGIN_HOSTS): DeepLinkResult {
+export function resolveDeepLink(
+  raw: string,
+  allowedHosts: readonly string[] = APP_ORIGIN_HOSTS,
+): DeepLinkResult {
   const value = (raw ?? "").trim();
   if (!value || value.length > 2048) return { ok: false, reason: "malformed" };
 

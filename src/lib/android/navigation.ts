@@ -60,11 +60,7 @@ export interface BackContext {
   confirmedLeave: boolean;
 }
 
-export type BackAction =
-  | "close_modal"
-  | "confirm_leave_call"
-  | "navigate_back"
-  | "exit_app";
+export type BackAction = "close_modal" | "confirm_leave_call" | "navigate_back" | "exit_app";
 
 /**
  * Back never destroys a room and never mutates another member's state: at most

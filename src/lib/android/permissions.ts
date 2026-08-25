@@ -16,10 +16,7 @@ export interface PermissionTrigger {
   permission: AndroidPermission;
   /** The explicit user action that may request it. */
   trigger:
-    | "enable_camera"
-    | "join_call_with_microphone"
-    | "pick_local_media"
-    | "enable_notifications";
+    "enable_camera" | "join_call_with_microphone" | "pick_local_media" | "enable_notifications";
   /** Runtime (dangerous) permission on modern Android? */
   runtime: boolean;
   requiredAtStartup: false;
@@ -35,7 +32,12 @@ export const PERMISSION_TRIGGERS: readonly PermissionTrigger[] = [
     requiredAtStartup: false,
   },
   // The system picker (SAF) grants per-file access; no permission is requested.
-  { permission: "media_picker", trigger: "pick_local_media", runtime: false, requiredAtStartup: false },
+  {
+    permission: "media_picker",
+    trigger: "pick_local_media",
+    runtime: false,
+    requiredAtStartup: false,
+  },
   {
     permission: "notifications",
     trigger: "enable_notifications",
@@ -82,7 +84,8 @@ export function permissionRecovery(
   permission: AndroidPermission,
   state: PermissionState,
 ): PermissionRecovery {
-  const noun = permission === "camera" ? "Camera" : permission === "microphone" ? "Microphone" : "Media";
+  const noun =
+    permission === "camera" ? "Camera" : permission === "microphone" ? "Microphone" : "Media";
   switch (state) {
     case "granted":
       return { state, message: "", openSettings: false, canRetry: false };

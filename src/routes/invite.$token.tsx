@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { track } from "@/lib/analytics";
 import { redeemRoomInvite } from "@/lib/invites.functions";
 import { queryKeys } from "@/lib/query-keys";
+import { rememberPendingDestination } from "@/lib/android/deep-link";
 import { isValidInviteToken } from "@/lib/room-rules";
 import { rpcMessage } from "@/lib/rpc-types";
 
@@ -79,6 +80,9 @@ function InvitePage() {
   }
 
   if (!user) {
+    // Preserve the (validated, same-origin) invite destination across sign-in.
+    // Redemption still happens server-side against the token hash.
+    rememberPendingDestination(`/invite/${token}`);
     return (
       <AppShell>
         <EmptyState

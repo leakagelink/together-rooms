@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { takePendingDestination } from "@/lib/android/deep-link";
 import { track } from "@/lib/analytics";
 import { errorMessage } from "@/lib/errors";
 import { signInSchema } from "@/lib/validation";
@@ -38,7 +39,10 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/rooms", replace: true });
+    if (loading || !user) return;
+    // Only a revalidated, same-origin path is ever resumed (no open redirect).
+    const pending = takePendingDestination();
+    navigate({ to: pending ?? "/rooms", replace: true });
   }, [loading, user, navigate]);
 
   async function onSubmit(event: React.FormEvent) {
@@ -57,7 +61,7 @@ function LoginPage() {
       return;
     }
     void track("login_completed");
-    navigate({ to: "/rooms" });
+    navigate({ to: takePendingDestination() ?? "/rooms" });
   }
 
   return (

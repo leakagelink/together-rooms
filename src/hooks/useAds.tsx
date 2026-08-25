@@ -23,6 +23,15 @@ import type {
   SensitiveFlow,
 } from "@/lib/ads/placement";
 import { AdProvider, type AdOutcome } from "@/lib/ads/provider";
+import { createNativeAdSdk, getAdsBridge, getUmpBridge } from "@/lib/ads/admob-bridge";
+import {
+  mayInitializeAds,
+  nextUmpAction,
+  resolveAdConsent,
+  shouldOfferPrivacyOptions,
+  UNRESOLVED_UMP,
+  type UmpState,
+} from "@/lib/ads/consent";
 import { track } from "@/lib/analytics";
 import { getAdRuntimeConfig } from "@/lib/monetization.functions";
 import { queryKeys } from "@/lib/query-keys";
@@ -64,6 +73,11 @@ interface AdContextValue {
   setActivity: (patch: Partial<ActivityFlags>) => void;
   adsPossible: boolean;
   consent: ConsentState;
+  /** Raw platform consent state, for the privacy settings surface. */
+  umpState: UmpState;
+  /** True when Google requires a always-reachable privacy options entry point. */
+  privacyOptionsAvailable: boolean;
+  showPrivacyOptions: () => Promise<void>;
 }
 
 const AdRuntimeContext = createContext<AdContextValue | null>(null);
@@ -77,31 +91,57 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
   const { premium } = useEntitlement();
   const fetchAdConfig = useServerFn(getAdRuntimeConfig);
   const [activity, setActivityState] = useState<ActivityFlags>(EMPTY_ACTIVITY);
-  const [consent, setConsent] = useState<ConsentState>("unresolved");
+  const [appAdsConsent, setAppAdsConsent] = useState<boolean | null>(null);
+  const [ump, setUmp] = useState<UmpState>(UNRESOLVED_UMP);
 
-  // Ads consent is a privacy setting, not an analytics setting: personalized
-  // ads additionally require the personalization consent flag.
+  // The in-app ads switch. It can only ever make the platform decision
+  // stricter — it is never a substitute for the CMP.
   useEffect(() => {
     if (!user) {
-      setConsent("unresolved");
+      setAppAdsConsent(null);
       return;
     }
     let cancelled = false;
     void supabase
       .from("privacy_settings")
-      .select("ads_consent, personalization_consent")
+      .select("ads_consent")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
-        if (!data) return setConsent("unresolved");
-        if (!data.ads_consent) return setConsent("denied");
-        setConsent(data.personalization_consent ? "granted_personalized" : "granted_limited");
+        setAppAdsConsent(data ? Boolean(data.ads_consent) : null);
       });
     return () => {
       cancelled = true;
     };
   }, [user]);
+
+  // UMP consent gathering. Runs once at startup, BEFORE the ads SDK is
+  // initialized, so no ad request can leave the device while consent is
+  // unresolved. Failures leave consent unresolved (fail-closed).
+  useEffect(() => {
+    let cancelled = false;
+    const bridge = getUmpBridge();
+    void (async () => {
+      try {
+        let next = await bridge.requestConsentInfoUpdate();
+        if (nextUmpAction(next).action === "show_form") {
+          next = await bridge.showConsentFormIfRequired();
+        }
+        if (!cancelled) setUmp(next);
+      } catch {
+        if (!cancelled) setUmp({ ...UNRESOLVED_UMP, error: "gathering_failed" });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const consent: ConsentState = useMemo(
+    () => resolveAdConsent(ump, appAdsConsent),
+    [ump, appAdsConsent],
+  );
 
   const configQuery = useQuery({
     enabled: Boolean(user) && !premium,
@@ -137,8 +177,8 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       units: resolution.units,
       testMode: resolution.testMode,
       config,
-      // No SDK is bundled in the web build: decisions are made and recorded,
-      // and the native wrapper supplies the SDK when present.
+      // No SDK is bundled in the web build; the Android shell injects one and
+      // it is attached only after consent permits ad requests.
       sdk: null,
       onDecision: (request, outcome) => {
         void track(outcome.eligible ? "ad_requested" : "ad_blocked", {
@@ -157,6 +197,36 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     providerRef.current?.updateConfig(config);
   }, [config]);
+
+  // Initialize the Mobile Ads SDK only once consent allows an ad request at
+  // all, and never for Premium accounts (they see no ads, so no SDK is needed).
+  const sdkReady = useRef(false);
+  useEffect(() => {
+    if (sdkReady.current || premium) return;
+    if (!mayInitializeAds(ump)) return;
+    const bridge = getAdsBridge();
+    if (!bridge) return;
+    sdkReady.current = true;
+    void bridge
+      .initialize({
+        testMode: resolution.testMode,
+        nonPersonalized: consent !== "granted_personalized",
+      })
+      .then(() => {
+        providerRef.current?.attachSdk(createNativeAdSdk(bridge));
+      })
+      .catch(() => {
+        sdkReady.current = false;
+      });
+  }, [ump, premium, consent, resolution.testMode]);
+
+  const showPrivacyOptions = useCallback(async () => {
+    try {
+      setUmp(await getUmpBridge().showPrivacyOptionsForm());
+    } catch {
+      /* Leaving the form open-failed keeps the previous state; never blocks. */
+    }
+  }, []);
 
   const context: AdPlacementContext = useMemo(
     () => ({
@@ -191,8 +261,20 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       setActivity,
       adsPossible: !premium && resolution.units !== null,
       consent,
+      umpState: ump,
+      privacyOptionsAvailable: shouldOfferPrivacyOptions(ump),
+      showPrivacyOptions,
     }),
-    [evaluate, requestFullscreen, setActivity, premium, resolution.units, consent],
+    [
+      evaluate,
+      requestFullscreen,
+      setActivity,
+      premium,
+      resolution.units,
+      consent,
+      ump,
+      showPrivacyOptions,
+    ],
   );
 
   return <AdRuntimeContext.Provider value={value}>{children}</AdRuntimeContext.Provider>;
@@ -214,6 +296,9 @@ export function useAds(): AdContextValue {
     setActivity: () => {},
     adsPossible: false,
     consent: "unresolved",
+    umpState: UNRESOLVED_UMP,
+    privacyOptionsAvailable: false,
+    showPrivacyOptions: async () => {},
   };
 }
 

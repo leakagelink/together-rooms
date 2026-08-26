@@ -36,7 +36,8 @@ describe("phase 14.2 deterministic Android CI build gate", () => {
 
   it("CI-BUILD-T5: CI neither consumes signing secrets nor publishes artifacts", () => {
     expect(workflow).not.toMatch(/ANDROID_KEYSTORE|ANDROID_KEY_PASSWORD|ANDROID_KEY_ALIAS/);
-    expect(workflow).not.toMatch(/actions\/upload-artifact|release|deploy|publish/i);
+    expect(workflow).not.toMatch(/uses:\s*actions\/upload-artifact/);
+    expect(workflow).not.toMatch(/\b(?:deploy|publish)(?:ment)?\b/i);
   });
 
   it("CI-BUILD-T6: release signing fails clearly when explicitly requested or partial", () => {

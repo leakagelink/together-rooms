@@ -129,9 +129,14 @@ export type Database = {
           created_at: string
           last_attempt_at: string | null
           last_error: string | null
+          lease_owner: string | null
+          lease_until: string | null
           next_attempt_at: string
           product_id: string
           purchase_token_hash: string
+          recovery_ciphertext: string | null
+          recovery_expires_at: string | null
+          recovery_key_version: number | null
           status: string
           updated_at: string
           user_id: string
@@ -142,9 +147,14 @@ export type Database = {
           created_at?: string
           last_attempt_at?: string | null
           last_error?: string | null
+          lease_owner?: string | null
+          lease_until?: string | null
           next_attempt_at?: string
           product_id: string
           purchase_token_hash: string
+          recovery_ciphertext?: string | null
+          recovery_expires_at?: string | null
+          recovery_key_version?: number | null
           status?: string
           updated_at?: string
           user_id: string
@@ -155,9 +165,14 @@ export type Database = {
           created_at?: string
           last_attempt_at?: string | null
           last_error?: string | null
+          lease_owner?: string | null
+          lease_until?: string | null
           next_attempt_at?: string
           product_id?: string
           purchase_token_hash?: string
+          recovery_ciphertext?: string | null
+          recovery_expires_at?: string | null
+          recovery_key_version?: number | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -2373,6 +2388,19 @@ export type Database = {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
+      claim_billing_ack_work: {
+        Args: { _lease_seconds?: number; _limit?: number; _owner: string }
+        Returns: {
+          attempts: number
+          next_attempt_at: string
+          product_id: string
+          purchase_token_hash: string
+          recovery_ciphertext: string
+          recovery_key_version: number
+          status: string
+          user_id: string
+        }[]
+      }
       clear_queue: {
         Args: { _expected_queue_version?: number; _room_id: string }
         Returns: Json
@@ -2380,6 +2408,19 @@ export type Database = {
       clear_room_media: {
         Args: { _expected_version?: number; _room_id: string }
         Returns: Json
+      }
+      complete_billing_ack: {
+        Args: {
+          _acknowledged_at: string
+          _attempts: number
+          _clear_recovery?: boolean
+          _hash: string
+          _last_error: string
+          _next_attempt_at: string
+          _owner: string
+          _status: string
+        }
+        Returns: boolean
       }
       consume_rate_limit: {
         Args: { _action: string; _limit: number; _window_seconds: number }
@@ -2691,6 +2732,7 @@ export type Database = {
         Args: { _expected_version?: number; _room_id: string }
         Returns: Json
       }
+      purge_expired_ack_recovery: { Args: never; Returns: number }
       purge_expired_chat: { Args: never; Returns: number }
       purge_user_data: { Args: { _user_id: string }; Returns: Json }
       queue_precheck: {

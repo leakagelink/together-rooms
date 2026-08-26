@@ -193,3 +193,87 @@
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-soft);
 }
+
+@utility text-sunset {
+  background-image: linear-gradient(
+    100deg,
+    var(--sunset-from),
+    var(--accent-pink) 55%,
+    var(--accent-violet)
+  );
+  background-clip: text;
+  color: transparent;
+}
+
+@utility bg-sunset {
+  background-image: linear-gradient(135deg, var(--sunset-from), var(--sunset-to));
+}
+
+@utility tile {
+  border-radius: 2rem;
+  padding: 2rem;
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease;
+  will-change: transform;
+}
+
+@utility tile-lift {
+  &:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-elevated);
+  }
+}
+
+@keyframes st-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes st-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes st-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, -4%, 0) scale(1.1);
+  }
+}
+
+@utility animate-rise {
+  animation: st-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-float {
+  animation: st-float 6s ease-in-out infinite;
+}
+
+@utility animate-drift {
+  animation: st-drift 18s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

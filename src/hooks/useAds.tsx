@@ -206,6 +206,8 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
 
   // Initialize the Mobile Ads SDK only once consent allows an ad request at
   // all, and never for Premium accounts (they see no ads, so no SDK is needed).
+  // PHASE 14 — the once-only guard lives in the bridge module, so a remount or
+  // an activity recreation replaying this effect cannot initialize twice.
   const sdkReady = useRef(false);
   useEffect(() => {
     if (sdkReady.current || premium) return;
@@ -213,18 +215,23 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     const bridge = getAdsBridge();
     if (!bridge) return;
     sdkReady.current = true;
-    void bridge
-      .initialize({
-        testMode: resolution.testMode,
-        nonPersonalized: consent !== "granted_personalized",
-      })
-      .then(() => {
-        providerRef.current?.attachSdk(createNativeAdSdk(bridge));
-      })
-      .catch(() => {
-        sdkReady.current = false;
-      });
-  }, [ump, premium, consent, resolution.testMode]);
+    void initializeNativeAds(bridge, {
+      testMode: resolution.testMode,
+      nonPersonalized: consent !== "granted_personalized",
+      testDeviceIds: testMode.testDeviceIds,
+    }).then((ok) => {
+      if (ok) providerRef.current?.attachSdk(createNativeAdSdk(bridge));
+      else sdkReady.current = false;
+    });
+  }, [ump, premium, consent, resolution.testMode, testMode.testDeviceIds]);
+
+  // Premium (or a consent withdrawal) must remove any live banner immediately.
+  useEffect(() => {
+    if (premium || consent === "denied" || consent === "unresolved") {
+      providerRef.current?.hideBanner();
+    }
+  }, [premium, consent]);
+
 
   const showPrivacyOptions = useCallback(async () => {
     try {

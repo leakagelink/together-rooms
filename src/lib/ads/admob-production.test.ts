@@ -95,7 +95,12 @@ describe("PHASE 13.1 — AdMob production configuration", () => {
   });
 
   it("ADMOB-PROD-T5: a development build cannot silently use production inventory", () => {
-    expect(resolveConfiguredAdUnits("development", PRODUCTION_AD_UNITS)).toEqual({});
+    expect(
+      resolveConfiguredAdUnits("development", {
+        banner: PRODUCTION_AD_UNITS.banner!,
+        interstitial: PRODUCTION_AD_UNITS.interstitial!,
+      }),
+    ).toEqual({});
     const dev = resolveAdUnits("development", PRODUCTION_AD_UNITS);
     expect(dev.testMode).toBe(true);
     expect(dev.units).toEqual(TEST_AD_UNITS);
@@ -205,10 +210,7 @@ describe("PHASE 13.1 — AdMob production configuration", () => {
     const provider = productionProvider();
     expect(isApprovedInterstitialTransition("room_session_ended")).toBe(true);
     for (const surface of ["app_launch", "room_active", "chat", "voice_call", "unknown_screen"]) {
-      const outcome = provider.evaluate(
-        { format: "interstitial", placement: surface },
-        context(),
-      );
+      const outcome = provider.evaluate({ format: "interstitial", placement: surface }, context());
       expect(outcome.eligible).toBe(false);
       expect(outcome.reason).toBe("NO_AD_TRANSITION_NOT_APPROVED");
       expect(outcome.unitId).toBeNull();

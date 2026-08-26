@@ -60,8 +60,6 @@ function isTestUnit(value: string | undefined | null): boolean {
   return Boolean(value && value.startsWith("ca-app-pub-3940256099942544/"));
 }
 
-
-
 /**
  * Resolves which ad units (if any) this build may request.
  *
@@ -91,9 +89,7 @@ export function resolveAdUnits(
       configError: `missing production ad unit(s): ${missing.join(", ")}`,
     };
   }
-  const present = [...REQUIRED_UNITS, ...OPTIONAL_UNITS].filter((key) =>
-    Boolean(configured[key]),
-  );
+  const present = [...REQUIRED_UNITS, ...OPTIONAL_UNITS].filter((key) => Boolean(configured[key]));
   const testLeak = present.filter((key) => isTestUnit(configured[key]));
   if (testLeak.length > 0) {
     return {
@@ -144,7 +140,6 @@ export interface AdFrequencyConfig {
  *  decision defines an explicit, user-visible reward. */
 export const REWARDED_ADS_ENABLED = false;
 
-
 /** Conservative defaults, documented in the Phase 9 report. Server-overridable. */
 export const DEFAULT_AD_FREQUENCY: AdFrequencyConfig = {
   ads_enabled: true,
@@ -157,7 +152,6 @@ export const DEFAULT_AD_FREQUENCY: AdFrequencyConfig = {
   interstitial_enabled: true,
   rewarded_enabled: false,
 };
-
 
 /** Merges a remote config row over the conservative defaults. */
 export function mergeAdFrequency(remote: unknown): AdFrequencyConfig {
@@ -196,4 +190,3 @@ export function mergeAdFrequency(remote: unknown): AdFrequencyConfig {
     rewarded_enabled: REWARDED_ADS_ENABLED && bool("rewarded_enabled", false),
   };
 }
-

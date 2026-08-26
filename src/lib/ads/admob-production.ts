@@ -14,12 +14,7 @@
  * (useful for a staging AdMob account); when unset, the constants below are
  * the production configuration.
  */
-import {
-  isValidAdMobAppId,
-  TEST_ADMOB_APP_ID,
-  type AdEnvironment,
-  type AdUnits,
-} from "./config";
+import { isValidAdMobAppId, TEST_ADMOB_APP_ID, type AdEnvironment, type AdUnits } from "./config";
 
 /** Real SyncTogether AdMob application id (Android). The "~" is significant. */
 export const PRODUCTION_ADMOB_APP_ID = "ca-app-pub-1475323931624357~5237247287";

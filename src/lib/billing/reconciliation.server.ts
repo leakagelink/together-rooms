@@ -186,7 +186,10 @@ export async function acknowledgeWithRecovery(
     tokenHash,
     userId: input.userId,
     productId: input.productId,
+    purchaseToken: input.purchaseToken,
+    now,
   });
+
 
   const { data } = await admin
     .from("billing_ack_state")

@@ -194,7 +194,7 @@ describe("phase 14.1 android build blockers", () => {
       for (const line of source.split("\n")) {
         const match = /^import\s+(?:static\s+)?([\w.]+);/.exec(line.trim());
         if (!match) continue;
-        const imported = match[1];
+        const imported = match[1] ?? "";
         expect(
           allowedPrefixes.some((prefix) => imported.startsWith(prefix)),
           `${file}: unexpected import ${imported}`,

@@ -20,6 +20,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { decodeRtdnEnvelope } from "@/lib/billing/rtdn";
 import { verifyPubSubOidcToken } from "@/lib/billing/google-oidc.server";
 import { EXPECTED_PACKAGE_NAME } from "@/lib/billing/products";
+import { correlationFromHeaders } from "@/lib/observability/correlation";
+import { createLogger } from "@/lib/observability/logger";
+import { classifyReason } from "@/lib/observability/errors";
 
 const ACK = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), {

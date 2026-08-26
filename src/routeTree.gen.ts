@@ -33,6 +33,7 @@ import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsSubscriptionRouteImport } from './routes/_authenticated/settings.subscription'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as AuthenticatedAdminReportsReportIdRouteImport } from './routes/_authenticated/admin.reports.$reportId'
+import { Route as ApiPublicBillingReconcileRouteImport } from './routes/api.public.billing.reconcile'
 import { Route as ApiPublicBillingRtdnRouteImport } from './routes/api.public.billing.rtdn'
 
 const IndexRoute = IndexRouteImport.update({
@@ -159,6 +160,12 @@ const AuthenticatedAdminReportsReportIdRoute =
     path: '/admin/reports/$reportId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicBillingReconcileRoute =
+  ApiPublicBillingReconcileRouteImport.update({
+    id: '/api/public/billing/reconcile',
+    path: '/api/public/billing/reconcile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBillingRtdnRoute = ApiPublicBillingRtdnRouteImport.update({
   id: '/api/public/billing/rtdn',
   path: '/api/public/billing/rtdn',
@@ -189,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
+  '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
   '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
 }
 export interface FileRoutesByTo {
@@ -215,6 +223,7 @@ export interface FileRoutesByTo {
   '/rooms': typeof AuthenticatedRoomsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
+  '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
   '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
 }
 export interface FileRoutesById {
@@ -243,6 +252,7 @@ export interface FileRoutesById {
   '/_authenticated/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
+  '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
   '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
 }
 export interface FileRouteTypes {
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/rooms/'
     | '/settings/'
     | '/admin/reports/$reportId'
+    | '/api/public/billing/reconcile'
     | '/api/public/billing/rtdn'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -297,6 +308,7 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/settings'
     | '/admin/reports/$reportId'
+    | '/api/public/billing/reconcile'
     | '/api/public/billing/rtdn'
   id:
     | '__root__'
@@ -324,6 +336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rooms/'
     | '/_authenticated/settings/'
     | '/_authenticated/admin/reports/$reportId'
+    | '/api/public/billing/reconcile'
     | '/api/public/billing/rtdn'
   fileRoutesById: FileRoutesById
 }
@@ -340,6 +353,7 @@ export interface RootRouteChildren {
   AuthSignupRoute: typeof AuthSignupRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
+  ApiPublicBillingReconcileRoute: typeof ApiPublicBillingReconcileRoute
   ApiPublicBillingRtdnRoute: typeof ApiPublicBillingRtdnRoute
 }
 
@@ -513,6 +527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReportsReportIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/billing/reconcile': {
+      id: '/api/public/billing/reconcile'
+      path: '/api/public/billing/reconcile'
+      fullPath: '/api/public/billing/reconcile'
+      preLoaderRoute: typeof ApiPublicBillingReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/billing/rtdn': {
       id: '/api/public/billing/rtdn'
       path: '/api/public/billing/rtdn'
@@ -571,6 +592,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignupRoute: AuthSignupRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
+  ApiPublicBillingReconcileRoute: ApiPublicBillingReconcileRoute,
   ApiPublicBillingRtdnRoute: ApiPublicBillingRtdnRoute,
 }
 export const routeTree = rootRouteImport

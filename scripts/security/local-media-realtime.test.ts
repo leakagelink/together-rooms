@@ -65,14 +65,82 @@ suite("phase 7 local media realtime", () => {
     return (data ?? { ok: false, reason: "server_error" }) as Rpc;
   };
 
-  /** Subscribes and resolves with the rows received within the window. */
-  async function collect(
+  /**
+   * Subscribe before mutating, then complete on an observable row rather than
+   * assuming replication finished within an arbitrary sleep. The deadline is
+   * only a failure bound; it does not delay a successful assertion.
+   */
+  async function collectUntil(
     user: TestUser,
     action: () => Promise<void>,
-    ms = 6000,
+    matches: (row: Record<string, unknown>) => boolean,
+    deadlineMs = 20_000,
   ): Promise<Record<string, unknown>[]> {
     const received: Record<string, unknown>[] = [];
+    let resolveMatch: (() => void) | undefined;
+    const matched = new Promise<void>((resolve) => {
+      resolveMatch = resolve;
+    });
     const channel = user.client.channel(`lm-rt-${Math.random().toString(36).slice(2)}`).on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "room_local_media_sessions",
+        filter: `room_id=eq.${roomId}`,
+      },
+      (payload) => {
+        const row = payload.new as Record<string, unknown>;
+        received.push(row);
+        if (matches(row)) resolveMatch?.();
+      },
+    );
+    // postgres_changes only delivers what happens AFTER the subscription is
+    // live, so the action must not start until the socket confirms SUBSCRIBED.
+    // Resolving on a short timer instead makes the assertion race the network
+    // and report a delivery failure that never happened.
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(
+          () => reject(new Error("realtime channel never reached SUBSCRIBED")),
+          deadlineMs,
+        );
+        channel.subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            clearTimeout(timer);
+            resolve();
+          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            clearTimeout(timer);
+            reject(new Error(`realtime subscription failed: ${status}`));
+          }
+        });
+      });
+
+      await action();
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(
+          () => reject(new Error("expected realtime row was not delivered before the deadline")),
+          deadlineMs,
+        );
+        void matched.then(() => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
+      return received;
+    } finally {
+      await user.client.removeChannel(channel);
+    }
+  }
+
+  /** A negative-delivery assertion necessarily observes a bounded quiet period. */
+  async function collectDuring(
+    user: TestUser,
+    action: () => Promise<void>,
+    quietMs = 6000,
+  ): Promise<Record<string, unknown>[]> {
+    const received: Record<string, unknown>[] = [];
+    const channel = user.client.channel(`lm-rt-negative-${crypto.randomUUID()}`).on(
       "postgres_changes",
       {
         event: "*",
@@ -82,24 +150,25 @@ suite("phase 7 local media realtime", () => {
       },
       (payload) => received.push(payload.new as Record<string, unknown>),
     );
-    // postgres_changes only delivers what happens AFTER the subscription is
-    // live, so the action must not start until the socket confirms SUBSCRIBED.
-    // Resolving on a short timer instead makes the assertion race the network
-    // and report a delivery failure that never happened.
-    const subscribed = await new Promise<boolean>((resolve) => {
-      const timer = setTimeout(() => resolve(false), 20_000);
-      channel.subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          clearTimeout(timer);
-          resolve(true);
-        }
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("realtime subscription timed out")), 20_000);
+        channel.subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            clearTimeout(timer);
+            resolve();
+          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            clearTimeout(timer);
+            reject(new Error(`realtime subscription failed: ${status}`));
+          }
+        });
       });
-    });
-    if (!subscribed) throw new Error("realtime channel never reached SUBSCRIBED");
-    await action();
-    await new Promise((resolve) => setTimeout(resolve, ms));
-    await user.client.removeChannel(channel);
-    return received;
+      await action();
+      await new Promise((resolve) => setTimeout(resolve, quietMs));
+      return received;
+    } finally {
+      await user.client.removeChannel(channel);
+    }
   }
 
   beforeAll(async () => {
@@ -146,7 +215,7 @@ suite("phase 7 local media realtime", () => {
   });
 
   it("LM-RT2 a member receives the session start as a database change", async () => {
-    const rows = await collect(member, async () => {
+    const rows = await collectUntil(member, async () => {
       const started = await rpc(host, "start_local_media_session", {
         _room_id: roomId,
         _media_kind: "video",
@@ -154,7 +223,7 @@ suite("phase 7 local media realtime", () => {
         _item_count: 1,
       });
       expect(started.ok).toBe(true);
-    });
+    }, (row) => typeof row["id"] === "string");
     expect(rows.length).toBeGreaterThan(0);
   }, 60_000);
 
@@ -167,7 +236,7 @@ suite("phase 7 local media realtime", () => {
         .eq("status", "active")
         .single()
     ).data!;
-    const rows = await collect(member, async () => {
+    const rows = await collectUntil(member, async () => {
       const played = await rpc(host, "control_local_media_playback", {
         _session_id: before.id,
         _action: "play",
@@ -175,7 +244,7 @@ suite("phase 7 local media realtime", () => {
         _expected_version: before.version,
       });
       expect(played.ok).toBe(true);
-    });
+    }, (row) => Number(row["version"] ?? 0) > Number(before.version));
     const versions = rows.map((row) => Number(row["version"] ?? 0));
     expect(Math.max(0, ...versions)).toBeGreaterThan(Number(before.version));
   }, 60_000);
@@ -189,7 +258,7 @@ suite("phase 7 local media realtime", () => {
         .eq("status", "active")
         .single()
     ).data!;
-    const rows = await collect(outsider, async () => {
+    const rows = await collectDuring(outsider, async () => {
       await rpc(host, "control_local_media_playback", {
         _session_id: session.id,
         _action: "pause",
@@ -209,10 +278,10 @@ suite("phase 7 local media realtime", () => {
         .eq("status", "active")
         .single()
     ).data!;
-    const rows = await collect(member, async () => {
+    const rows = await collectUntil(member, async () => {
       const ended = await rpc(host, "end_local_media_session", { _session_id: session.id });
       expect(ended.ok).toBe(true);
-    });
+    }, (row) => row["status"] !== "active");
     expect(rows.some((row) => row["status"] !== "active")).toBe(true);
     const { data: active } = await member.client
       .from("room_local_media_sessions")

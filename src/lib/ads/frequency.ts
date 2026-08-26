@@ -31,7 +31,7 @@ export type FrequencyVerdict = { allowed: true } | { allowed: false; reason: str
 
 /** Full-screen formats only; banners are not frequency-capped. */
 export function checkFrequency(
-  format: "interstitial" | "app_open",
+  format: "interstitial" | "app_open" | "rewarded",
   state: FrequencyState,
   config: AdFrequencyConfig,
   now: number = Date.now(),
@@ -68,7 +68,7 @@ export function checkFrequency(
 
 /** Records a shown full-screen ad. Returns a new state (never mutates). */
 export function recordFullscreenShown(
-  format: "interstitial" | "app_open",
+  format: "interstitial" | "app_open" | "rewarded",
   state: FrequencyState,
   now: number = Date.now(),
 ): FrequencyState {

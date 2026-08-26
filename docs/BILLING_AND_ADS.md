@@ -96,6 +96,10 @@ Placement policy (Phase 9, unchanged) still applies on top: no ads during
 calls, playback, local media, typing, or sensitive flows, plus frequency caps
 on full-screen formats.
 
+Production identifiers were wired in Phase 13.1 — see **docs/ADMOB_PRODUCTION.md**
+for the app id, the banner/interstitial units, the disabled rewarded unit and the
+approved placement map.
+
 Unit ids come from `VITE_ADMOB_BANNER_UNIT`, `VITE_ADMOB_INTERSTITIAL_UNIT`,
 `VITE_ADMOB_APP_OPEN_UNIT`. Development builds may only use Google's official
 test units; production builds with no configured units disable ads rather than

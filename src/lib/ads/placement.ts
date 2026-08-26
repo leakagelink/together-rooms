@@ -8,9 +8,9 @@
  * Nothing here is "hide the container": an ineligible placement never reaches
  * the SDK, so no ad is requested, loaded or billed.
  */
-import type { AdFrequencyConfig } from "./config";
+import { REWARDED_ADS_ENABLED, type AdFrequencyConfig } from "./config";
 
-export type AdFormat = "banner" | "interstitial" | "app_open";
+export type AdFormat = "banner" | "interstitial" | "app_open" | "rewarded";
 
 /** Consent is deliberately tri-state: "unresolved" is NOT "denied by user". */
 export type ConsentState = "unresolved" | "granted_personalized" | "granted_limited" | "denied";
@@ -69,7 +69,10 @@ export type AdBlockReason =
   | "NO_AD_PAYMENT_FLOW"
   | "NO_AD_REPORT_FLOW"
   | "NO_AD_SENSITIVE_FLOW"
-  | "NO_AD_FREQUENCY_CAP";
+  | "NO_AD_FREQUENCY_CAP"
+  | "NO_AD_PLACEMENT_NOT_APPROVED"
+  | "NO_AD_TRANSITION_NOT_APPROVED"
+  | "NO_AD_REWARDED_DISABLED";
 
 export interface AdPlacementDecision {
   eligible: boolean;
@@ -107,6 +110,11 @@ export function evaluateAdPlacement(
   if (format === "interstitial" && !config.interstitial_enabled)
     return deny("NO_AD_FORMAT_DISABLED");
   if (format === "app_open" && !config.app_open_enabled) return deny("NO_AD_FORMAT_DISABLED");
+  // PHASE 13.1 — rewarded is configured but never activated: it is refused
+  // before consent, frequency or anything else can make it eligible.
+  if (format === "rewarded" && (!REWARDED_ADS_ENABLED || !config.rewarded_enabled)) {
+    return deny("NO_AD_REWARDED_DISABLED");
+  }
 
   // 2. Consent must be resolved before any SDK request leaves the device.
   if (context.consent === "unresolved") return deny("NO_AD_CONSENT_UNRESOLVED");

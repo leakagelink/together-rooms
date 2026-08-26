@@ -11,6 +11,7 @@
  */
 
 import { resolveAdUnits, type AdUnits } from "@/lib/ads/config";
+import { resolveAdMobAppId } from "@/lib/ads/admob-production";
 import { resolveProductConfig, EXPECTED_PACKAGE_NAME } from "@/lib/billing/products";
 import { validateRuntimeConfig, type RuntimeConfigInput } from "@/lib/android/environment";
 
@@ -55,6 +56,8 @@ export interface ReleaseAuditInput {
   runtime: RuntimeConfigInput;
   billing: { premiumProductId?: string | undefined; packageName?: string | undefined };
   ads: Partial<AdUnits>;
+  /** Optional override; defaults to the authoritative production app id. */
+  adMobAppId?: string | undefined;
   scheduler: SchedulerConfigInput;
   recoveryKey: RecoveryKeyInput;
 }
@@ -99,6 +102,8 @@ export function auditReleaseCandidate(input: ReleaseAuditInput): ReleaseAuditRes
 
   const ads = resolveAdUnits("production", input.ads);
   if (ads.configError) problems.push(`ads:${ads.configError}` as ReleaseProblem);
+  const appId = resolveAdMobAppId("production", { appId: input.adMobAppId });
+  if (appId.configError) problems.push(`ads:${appId.configError}` as ReleaseProblem);
 
   const scheduler = validateSchedulerConfig(input.scheduler);
   for (const problem of scheduler.problems) {

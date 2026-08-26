@@ -17,7 +17,25 @@ export type AdEnvironment = "development" | "production";
 export interface AdUnits {
   banner: string;
   interstitial: string;
-  appOpen: string;
+  /** Optional formats. Null means "configured off"; never a fallback unit. */
+  appOpen: string | null;
+  rewarded?: string | null;
+}
+
+/**
+ * PHASE 13.1 — id shapes. AdMob app ids use "~", unit ids use "/". Enforcing
+ * the shape here means a typo (or an escaped "~") disables advertising instead
+ * of producing silent no-fill against a malformed id.
+ */
+export const ADMOB_APP_ID_PATTERN = /^ca-app-pub-\d{16}~\d{10}$/;
+export const ADMOB_UNIT_ID_PATTERN = /^ca-app-pub-\d{16}\/\d{10}$/;
+
+export function isValidAdMobAppId(value: string | undefined | null): boolean {
+  return typeof value === "string" && ADMOB_APP_ID_PATTERN.test(value);
+}
+
+export function isValidAdUnitId(value: string | undefined | null): boolean {
+  return typeof value === "string" && ADMOB_UNIT_ID_PATTERN.test(value);
 }
 
 /** Official Google-published AdMob test unit ids (Android). */
@@ -25,7 +43,11 @@ export const TEST_AD_UNITS: AdUnits = {
   banner: "ca-app-pub-3940256099942544/6300978111",
   interstitial: "ca-app-pub-3940256099942544/1033173712",
   appOpen: "ca-app-pub-3940256099942544/3419835294",
+  rewarded: "ca-app-pub-3940256099942544/5224354917",
 };
+
+/** Google's published sample application id. Development builds only. */
+export const TEST_ADMOB_APP_ID = "ca-app-pub-3940256099942544~3347511713";
 
 export interface AdUnitResolution {
   units: AdUnits | null;
@@ -34,25 +56,32 @@ export interface AdUnitResolution {
   configError: string | null;
 }
 
-function isTestUnit(value: string | undefined): boolean {
+function isTestUnit(value: string | undefined | null): boolean {
   return Boolean(value && value.startsWith("ca-app-pub-3940256099942544/"));
 }
 
 /**
  * Resolves which ad units (if any) this build may request.
- * `production` requires every unit to be present AND to not be a test unit.
+ *
+ * `production` requires every REQUIRED unit (banner, interstitial) to be
+ * present, correctly shaped, and not a Google test unit. Optional formats
+ * (app-open, rewarded) may be absent — absent means the format is off, never
+ * that a fallback unit is used.
  */
+const REQUIRED_UNITS = ["banner", "interstitial"] as const;
+const OPTIONAL_UNITS = ["appOpen", "rewarded"] as const;
+
 export function resolveAdUnits(
   environment: AdEnvironment,
   configured: Partial<AdUnits> = {},
 ): AdUnitResolution {
   if (environment === "development") {
+    // A development build may ONLY ever use Google's official test inventory:
+    // configured production ids are ignored here, not merged.
     return { units: TEST_AD_UNITS, testMode: true, configError: null };
   }
 
-  const missing = (["banner", "interstitial", "appOpen"] as const).filter(
-    (key) => !configured[key],
-  );
+  const missing = REQUIRED_UNITS.filter((key) => !configured[key]);
   if (missing.length > 0) {
     return {
       units: null,
@@ -60,9 +89,8 @@ export function resolveAdUnits(
       configError: `missing production ad unit(s): ${missing.join(", ")}`,
     };
   }
-  const testLeak = (["banner", "interstitial", "appOpen"] as const).filter((key) =>
-    isTestUnit(configured[key]),
-  );
+  const present = [...REQUIRED_UNITS, ...OPTIONAL_UNITS].filter((key) => Boolean(configured[key]));
+  const testLeak = present.filter((key) => isTestUnit(configured[key]));
   if (testLeak.length > 0) {
     return {
       units: null,
@@ -70,12 +98,21 @@ export function resolveAdUnits(
       configError: `test ad unit(s) configured in production: ${testLeak.join(", ")}`,
     };
   }
+  const malformed = present.filter((key) => !isValidAdUnitId(configured[key]));
+  if (malformed.length > 0) {
+    return {
+      units: null,
+      testMode: false,
+      configError: `malformed production ad unit(s): ${malformed.join(", ")}`,
+    };
+  }
 
   return {
     units: {
       banner: configured.banner!,
       interstitial: configured.interstitial!,
-      appOpen: configured.appOpen!,
+      appOpen: configured.appOpen ?? null,
+      rewarded: configured.rewarded ?? null,
     },
     testMode: false,
     configError: null,
@@ -91,7 +128,17 @@ export interface AdFrequencyConfig {
   banner_enabled: boolean;
   app_open_enabled: boolean;
   interstitial_enabled: boolean;
+  /**
+   * PHASE 13.1 — rewarded ads are CONFIGURED but not activated. There is no
+   * legitimate, user-visible reward defined yet, so the format stays off and
+   * cannot be enabled by remote config alone (see REWARDED_ADS_ENABLED).
+   */
+  rewarded_enabled: boolean;
 }
+
+/** Build-level kill switch for rewarded ads. Must stay false until a product
+ *  decision defines an explicit, user-visible reward. */
+export const REWARDED_ADS_ENABLED = false;
 
 /** Conservative defaults, documented in the Phase 9 report. Server-overridable. */
 export const DEFAULT_AD_FREQUENCY: AdFrequencyConfig = {
@@ -103,6 +150,7 @@ export const DEFAULT_AD_FREQUENCY: AdFrequencyConfig = {
   banner_enabled: true,
   app_open_enabled: false,
   interstitial_enabled: true,
+  rewarded_enabled: false,
 };
 
 /** Merges a remote config row over the conservative defaults. */
@@ -137,5 +185,8 @@ export function mergeAdFrequency(remote: unknown): AdFrequencyConfig {
     banner_enabled: bool("banner_enabled", DEFAULT_AD_FREQUENCY.banner_enabled),
     app_open_enabled: bool("app_open_enabled", DEFAULT_AD_FREQUENCY.app_open_enabled),
     interstitial_enabled: bool("interstitial_enabled", DEFAULT_AD_FREQUENCY.interstitial_enabled),
+    // Remote config can only ever turn rewarded ads further OFF: the build
+    // flag is authoritative while no reward exists.
+    rewarded_enabled: REWARDED_ADS_ENABLED && bool("rewarded_enabled", false),
   };
 }

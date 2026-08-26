@@ -13,6 +13,7 @@ import {
   recordFullscreenShown,
   type FrequencyState,
 } from "./frequency";
+import { isApprovedBannerPlacement, isApprovedInterstitialTransition } from "./placement-map";
 import {
   evaluateAdPlacement,
   type AdFormat,
@@ -71,6 +72,29 @@ export class AdProvider {
 
   /** Pure decision, exposed so UI can reserve or release layout space. */
   evaluate(request: AdRequest, context: AdPlacementContext): AdOutcome {
+    // PHASE 13.1 — surface allow-list first. A screen that is not on the
+    // reviewed placement map can never reach the SDK, whatever else is true.
+    if (request.format === "banner" && !isApprovedBannerPlacement(request.placement)) {
+      return {
+        eligible: false,
+        reason: "NO_AD_PLACEMENT_NOT_APPROVED",
+        nonPersonalized: false,
+        unitId: null,
+        testMode: this.options.testMode,
+      };
+    }
+    if (
+      (request.format === "interstitial" || request.format === "app_open") &&
+      !isApprovedInterstitialTransition(request.placement)
+    ) {
+      return {
+        eligible: false,
+        reason: "NO_AD_TRANSITION_NOT_APPROVED",
+        nonPersonalized: false,
+        unitId: null,
+        testMode: this.options.testMode,
+      };
+    }
     const decision = evaluateAdPlacement(request.format, context, this.options.config);
     if (!decision.eligible) {
       return { ...decision, unitId: null, testMode: this.options.testMode };
@@ -99,7 +123,9 @@ export class AdProvider {
         ? units.banner
         : request.format === "interstitial"
           ? units.interstitial
-          : units.appOpen;
+          : request.format === "rewarded"
+            ? (units.rewarded ?? null)
+            : (units.appOpen ?? null);
     return { ...decision, unitId, testMode: this.options.testMode };
   }
 

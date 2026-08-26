@@ -201,7 +201,7 @@ describe("ad analytics safety (ADS-T20)", () => {
   it("T20: only allow-listed operational fields survive sanitization", () => {
     const payload = sanitizeAdEvent({
       format: "banner",
-      placement: "rooms_list",
+      placement: "rooms_list_footer",
       eligible: false,
       reason: "NO_AD_PREMIUM",
       room_id: "11111111-1111-1111-1111-111111111111",
@@ -211,7 +211,7 @@ describe("ad analytics safety (ADS-T20)", () => {
     });
     expect(payload).toEqual({
       format: "banner",
-      placement: "rooms_list",
+      placement: "rooms_list_footer",
       eligible: false,
       reason: "NO_AD_PREMIUM",
     });

@@ -44,6 +44,8 @@ const DENY_KEY_PATTERNS: RegExp[] = [
   /\bemail\b/i,
   /\bphone\b/i,
   /avatar/i,
+  /^bio$/i,
+  /\bbio\b/i,
   /display[-_]?name/i,
   /username/i,
   /\burl\b/i,
@@ -98,13 +100,15 @@ const MAX_DEPTH = 4;
 const MAX_KEYS = 32;
 
 function redactValue(value: unknown, depth: number): unknown {
+  // Depth is enforced for every value, not just objects: a sensitive string
+  // buried deep in a nested payload must not slip out under the limit.
+  if (depth >= MAX_DEPTH) return "[depth]";
   if (value === null || value === undefined) return value;
   if (typeof value === "number" || typeof value === "boolean") return value;
   if (typeof value === "string") {
     if (looksSensitive(value)) return REDACTED;
     return value.length > MAX_STRING ? `${value.slice(0, MAX_STRING)}…` : value;
   }
-  if (depth >= MAX_DEPTH) return "[depth]";
   if (Array.isArray(value)) {
     return value.slice(0, 10).map((entry) => redactValue(entry, depth + 1));
   }

@@ -6,7 +6,11 @@
  */
 import { describe, expect, it, vi } from "vitest";
 
-import { runBillingReconciliation, type AckRow, type ReconciliationClient } from "./reconciliation.server";
+import {
+  runBillingReconciliation,
+  type AckRow,
+  type ReconciliationClient,
+} from "./reconciliation.server";
 import { setLogSink } from "@/lib/observability/logger";
 
 setLogSink(() => undefined);
@@ -57,7 +61,6 @@ function fakeAdmin(rows: AckRow[]) {
       return { data: null, error: null };
     },
   } as unknown as ReconciliationClient;
-
 
   return { client, updates, runs };
 }

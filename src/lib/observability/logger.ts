@@ -91,6 +91,12 @@ export function createLogger(category: LogCategory, correlationId?: string) {
     warn: (event: string, rest: Omit<LogInput, "category" | "event" | "level"> = {}) =>
       log({ category, event, level: "warn", ...(correlationId ? { correlationId } : {}), ...rest }),
     error: (event: string, rest: Omit<LogInput, "category" | "event" | "level"> = {}) =>
-      log({ category, event, level: "error", ...(correlationId ? { correlationId } : {}), ...rest }),
+      log({
+        category,
+        event,
+        level: "error",
+        ...(correlationId ? { correlationId } : {}),
+        ...rest,
+      }),
   };
 }

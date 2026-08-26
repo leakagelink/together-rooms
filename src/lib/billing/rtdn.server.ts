@@ -219,4 +219,3 @@ export async function processRtdnMessage(
 
   return finish(admin, message.messageId, { outcome: error ? "error" : "applied" });
 }
-

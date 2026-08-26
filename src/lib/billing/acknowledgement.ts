@@ -48,9 +48,7 @@ export interface AckTransition {
   terminal: boolean;
 }
 
-export type AckAttemptResult =
-  | { ok: true; performed: boolean }
-  | { ok: false; reason: string };
+export type AckAttemptResult = { ok: true; performed: boolean } | { ok: false; reason: string };
 
 /**
  * Decides the next persisted state after one acknowledgement attempt.

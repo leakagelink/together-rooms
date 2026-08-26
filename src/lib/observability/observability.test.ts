@@ -213,7 +213,10 @@ describe("RELIABILITY — acknowledgement retry state machine", () => {
       ),
     ).toBe(false);
     expect(
-      isAckDue({ status: "acknowledged", attempts: 1, next_attempt_at: new Date(0).toISOString() }, now),
+      isAckDue(
+        { status: "acknowledged", attempts: 1, next_attempt_at: new Date(0).toISOString() },
+        now,
+      ),
     ).toBe(false);
   });
 });

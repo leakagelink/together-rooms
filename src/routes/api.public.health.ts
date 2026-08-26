@@ -59,7 +59,7 @@ export const Route = createFileRoute("/api/public/health")({
           supabase: Boolean(process.env["SUPABASE_URL"]),
           billing: Boolean(
             process.env["GOOGLE_PLAY_PACKAGE_NAME"] &&
-              process.env["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"],
+            process.env["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"],
           ),
           rtdn: Boolean(
             process.env["PLAY_RTDN_AUDIENCE"] && process.env["PLAY_RTDN_SERVICE_ACCOUNT_EMAIL"],

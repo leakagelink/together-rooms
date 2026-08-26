@@ -1,11 +1,12 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
+  DoorOpen,
   Gavel,
   ListMusic,
+  PlusCircle,
   LogOut,
   Settings,
   ShieldCheck,
-  Sparkles,
   User as UserIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -114,8 +115,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 const TABS = [
-  { to: "/rooms", label: "Rooms", icon: Sparkles },
-  { to: "/rooms/new", label: "Create", icon: Sparkles },
+  { to: "/rooms", label: "Rooms", icon: DoorOpen },
+  { to: "/rooms/new", label: "Create", icon: PlusCircle },
   { to: "/playlists", label: "Playlists", icon: ListMusic },
   { to: "/profile", label: "Profile", icon: UserIcon },
 ] as const;
@@ -147,7 +148,7 @@ function MobileTabBar() {
 export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-card">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 pt-6 pb-24 sm:pb-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p>© {new Date().getFullYear()} SyncTogether</p>
         <nav aria-label="Legal" className="flex flex-wrap gap-x-4 gap-y-2">
           <Link to="/privacy" className="hover:text-foreground">

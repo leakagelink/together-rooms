@@ -33,7 +33,20 @@
  */
 
 export const RECOVERY_ENVELOPE_VERSION = "v1";
+/** Default key version when the deployment does not pin one. */
 export const CURRENT_KEY_VERSION = 1;
+
+/**
+ * PHASE 13 — rotation without a code change. The deployment pins which key
+ * version NEW envelopes are sealed with; decryption always uses the version
+ * recorded inside the envelope, so previous versions stay readable as long as
+ * their secret remains configured.
+ */
+export function currentKeyVersion(): number {
+  const raw = process.env["BILLING_TOKEN_RECOVERY_KEY_VERSION"];
+  const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+  return Number.isInteger(parsed) && parsed >= 1 ? parsed : CURRENT_KEY_VERSION;
+}
 
 /** Retention: Play's auto-refund window is 3 days; keep a small operator margin. */
 export const RECOVERY_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -41,6 +54,7 @@ export const RECOVERY_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 function envKeyName(version: number): string {
   return `BILLING_TOKEN_RECOVERY_KEY_V${version}`;
 }
+
 
 function b64url(bytes: Uint8Array): string {
   let binary = "";

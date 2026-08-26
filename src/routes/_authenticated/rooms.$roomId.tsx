@@ -243,9 +243,9 @@ function RoomPage() {
 
   return (
     <AppShell>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">{room.name}</h1>
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold break-words sm:text-2xl">{room.name}</h1>
           <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="secondary">{room.type}</Badge>
             <span>{room.privacy}</span>
@@ -259,7 +259,7 @@ function RoomPage() {
             </span>
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <ReportDialog targetType="room" targetRoomId={room.id} />
           {isHost && lifecycle === "ok" ? (
             <Button
@@ -295,7 +295,7 @@ function RoomPage() {
       ) : null}
 
       {isHost && room.join_code ? (
-        <section className="surface-panel mt-6 flex flex-wrap items-center justify-between gap-3 p-5">
+        <section className="surface-panel mt-6 flex flex-col items-start justify-between gap-3 p-4 sm:flex-row sm:items-center sm:p-5">
           <div>
             <h2 className="text-sm font-semibold">Join code</h2>
             <p className="mt-1 font-mono text-lg tracking-widest">{room.join_code}</p>

@@ -107,7 +107,7 @@ function Index() {
       </div>
 
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-2 px-3 sm:px-4">
           <BrandLogo />
           <div className="flex items-center gap-2">
             {loading ? null : user ? (
@@ -129,15 +129,15 @@ function Index() {
       </header>
 
       <main className="flex-1">
-        <section className="mx-auto w-full max-w-6xl px-4 pt-16 pb-8 text-center sm:pt-24">
+        <section className="mx-auto w-full max-w-6xl px-4 pt-12 pb-8 text-center sm:pt-24">
           <span className="animate-rise inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary uppercase">
             <Sparkles className="size-3.5" aria-hidden="true" />
             Invite-only private rooms
           </span>
-          <h1 className="animate-rise mx-auto mt-7 max-w-4xl text-4xl leading-[1.05] font-extrabold text-balance sm:text-6xl lg:text-7xl [animation-delay:80ms]">
+          <h1 className="animate-rise mx-auto mt-7 max-w-4xl text-[2rem] leading-[1.05] font-extrabold text-balance sm:text-6xl lg:text-7xl [animation-delay:80ms]">
             Sync life with <span className="text-sunset">SyncTogether</span>
           </h1>
-          <p className="animate-rise mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl [animation-delay:160ms]">
+          <p className="animate-rise mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground sm:text-xl [animation-delay:160ms]">
             The private space for couples, friends, families and students to watch, listen, study
             and talk together in real time. Secure, simple and shared. 💛
           </p>
@@ -170,8 +170,8 @@ function Index() {
           <h2 id="pillars" className="sr-only">
             What you can do together
           </h2>
-          <div className="grid auto-rows-[13rem] grid-cols-1 gap-5 md:grid-cols-3">
-            <article className="tile tile-lift bg-sunset animate-rise relative col-span-1 flex flex-col justify-end overflow-hidden p-8 text-primary-foreground shadow-elevated md:col-span-2 md:row-span-2 md:p-10">
+          <div className="grid grid-cols-1 gap-4 sm:gap-5 md:auto-rows-[13rem] md:grid-cols-3">
+            <article className="tile tile-lift bg-sunset animate-rise relative col-span-1 flex flex-col justify-end overflow-hidden p-6 text-primary-foreground sm:p-8 shadow-elevated md:col-span-2 md:row-span-2 md:p-10">
               <span
                 aria-hidden="true"
                 className="animate-float absolute -top-10 -right-10 size-52 rounded-full bg-background/25 blur-2xl"
@@ -183,7 +183,7 @@ function Index() {
                 <MonitorPlay className="size-12" aria-hidden="true" />
               </span>
               <p className="relative text-3xl">🍿</p>
-              <h3 className="relative mt-3 text-3xl font-extrabold sm:text-4xl">Watch together</h3>
+              <h3 className="relative mt-3 text-2xl font-extrabold sm:text-4xl">Watch together</h3>
               <p className="relative mt-3 max-w-md text-base text-primary-foreground/90 sm:text-lg">
                 Synchronized playback in officially embedded players, so movie nights land frame for
                 frame — never pirated streams.

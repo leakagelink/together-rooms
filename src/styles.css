@@ -64,6 +64,10 @@
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-soft: var(--brand-soft);
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-violet: var(--accent-violet);
+  --color-sunset-from: var(--sunset-from);
+  --color-sunset-to: var(--sunset-to);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);

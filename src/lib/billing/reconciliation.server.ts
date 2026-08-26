@@ -55,7 +55,40 @@ export interface AckRow extends AckStateRow {
   purchase_token_hash: string;
   user_id: string;
   product_id: string;
+  /** AES-GCM envelope of the raw purchase token; server-decryptable only. */
+  recovery_ciphertext?: string | null;
+  recovery_key_version?: number | null;
 }
+
+/** Decrypts the row's recovery envelope. Returns null when absent or unusable. */
+async function resolveRecoveryToken(row: AckRow): Promise<string | null> {
+  if (!row.recovery_ciphertext) return null;
+  const { openRecoveryToken } = await import("./token-crypto.server");
+  return openRecoveryToken(row.recovery_ciphertext);
+}
+
+/**
+ * Performs a real Play acknowledgement for a recovered token. The purchase is
+ * re-verified first: Google stays authoritative, and a purchase that has since
+ * been acknowledged or expired resolves to `not_acknowledgeable` instead of a
+ * pointless retry.
+ */
+async function acknowledgeFromRecovery(
+  row: AckRow,
+  rawToken: string,
+): Promise<AckAttemptResult> {
+  try {
+    const { verifyPlayPurchase, acknowledgePlaySubscription } = await import(
+      "./verification.server"
+    );
+    const verification = await verifyPlayPurchase(row.product_id, rawToken);
+    if (!verification.ok) return { ok: false, reason: verification.reason };
+    return await acknowledgePlaySubscription(rawToken, verification.result);
+  } catch {
+    return { ok: false, reason: "request_failed" };
+  }
+}
+
 
 /**
  * Records that a purchase needs acknowledgement. Called right after a

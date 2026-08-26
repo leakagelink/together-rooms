@@ -111,7 +111,8 @@ export const DATA_SAFETY_INVENTORY: readonly DataSafetyEntry[] = [
     retention:
       "Entitlement and subscription events retained for the life of the account; purchase-token recovery material at most 7 days.",
     purpose: "Subscription entitlement, verification and acknowledgement recovery.",
-    protection: "Service-role-only tables; token hashed for identity; AES-256-GCM recovery envelope.",
+    protection:
+      "Service-role-only tables; token hashed for identity; AES-256-GCM recovery envelope.",
     requiresOwnerReview: false,
   },
   {

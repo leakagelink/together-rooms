@@ -55,7 +55,6 @@ function envKeyName(version: number): string {
   return `BILLING_TOKEN_RECOVERY_KEY_V${version}`;
 }
 
-
 function b64url(bytes: Uint8Array): string {
   let binary = "";
   for (const b of bytes) binary += String.fromCharCode(b);

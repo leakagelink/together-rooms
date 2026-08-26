@@ -127,9 +127,9 @@ describe("PHASE 13 — release readiness", () => {
     expect(none.enabled).toBe(false);
     expect(none.problems).toContain("missing_secret");
 
-    expect(validateSchedulerConfig({ ...healthyInput().scheduler, secret: "short" }).problems).toContain(
-      "weak_secret",
-    );
+    expect(
+      validateSchedulerConfig({ ...healthyInput().scheduler, secret: "short" }).problems,
+    ).toContain("weak_secret");
     expect(
       validateSchedulerConfig({
         ...healthyInput().scheduler,

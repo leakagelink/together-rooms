@@ -117,15 +117,16 @@ suite("phase 7 local media realtime", () => {
       });
 
       await action();
-      await Promise.race([
-        matched,
-        new Promise<never>((_, reject) => {
-          setTimeout(
-            () => reject(new Error("expected realtime row was not delivered before the deadline")),
-            deadlineMs,
-          );
-        }),
-      ]);
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(
+          () => reject(new Error("expected realtime row was not delivered before the deadline")),
+          deadlineMs,
+        );
+        void matched.then(() => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
       return received;
     } finally {
       await user.client.removeChannel(channel);

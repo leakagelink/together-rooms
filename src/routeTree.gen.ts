@@ -31,6 +31,7 @@ import { Route as AuthenticatedRoomsNewRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_authenticated/settings.privacy'
 import { Route as AuthenticatedSettingsSubscriptionRouteImport } from './routes/_authenticated/settings.subscription'
+import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as AuthenticatedAdminReportsReportIdRouteImport } from './routes/_authenticated/admin.reports.$reportId'
 import { Route as ApiPublicBillingRtdnRouteImport } from './routes/api.public.billing.rtdn'
 
@@ -147,6 +148,11 @@ const AuthenticatedSettingsSubscriptionRoute =
     path: '/settings/subscription',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminReportsReportIdRoute =
   AuthenticatedAdminReportsReportIdRouteImport.update({
     id: '/admin/reports/$reportId',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/rooms': typeof AuthenticatedRoomsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/_authenticated/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/_authenticated/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/_authenticated/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/rooms/new'
     | '/settings/privacy'
     | '/settings/subscription'
+    | '/api/public/health'
     | '/admin/'
     | '/rooms/'
     | '/settings/'
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/rooms/new'
     | '/settings/privacy'
     | '/settings/subscription'
+    | '/api/public/health'
     | '/admin'
     | '/rooms'
     | '/settings'
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rooms/new'
     | '/_authenticated/settings/privacy'
     | '/_authenticated/settings/subscription'
+    | '/api/public/health'
     | '/_authenticated/admin/'
     | '/_authenticated/rooms/'
     | '/_authenticated/settings/'
@@ -327,6 +339,7 @@ export interface RootRouteChildren {
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthSignupRoute: typeof AuthSignupRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicBillingRtdnRoute: typeof ApiPublicBillingRtdnRoute
 }
 
@@ -486,6 +499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsSubscriptionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/reports/$reportId': {
       id: '/_authenticated/admin/reports/$reportId'
       path: '/admin/reports/$reportId'
@@ -550,6 +570,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignupRoute: AuthSignupRoute,
   InviteTokenRoute: InviteTokenRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicBillingRtdnRoute: ApiPublicBillingRtdnRoute,
 }
 export const routeTree = rootRouteImport

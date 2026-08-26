@@ -194,5 +194,29 @@ export async function processRtdnMessage(
     _cancel_at_period_end: event.cancelAtPeriodEnd,
     _metadata: { source: "rtdn", message_id: message.messageId },
   });
+
+  // PHASE 12.1: an RTDN is a second chance to settle acknowledgement. It carries
+  // the raw token, so a purchase Play still reports as unacknowledged is repaired
+  // here (and its recovery envelope refreshed) — idempotently: a row that already
+  // reached `acknowledged` is never touched again.
+  if (!verification.result.acknowledged) {
+    try {
+      const { acknowledgeWithRecovery } = await import("./reconciliation.server");
+      await acknowledgeWithRecovery(
+        admin as unknown as Parameters<typeof acknowledgeWithRecovery>[0],
+        {
+          userId,
+          productId: verification.result.productId,
+          purchaseToken: message.purchaseToken,
+        },
+        verification.result,
+      );
+    } catch {
+      // Acknowledgement recovery must never fail RTDN processing; the durable
+      // ack row is what guarantees a later retry.
+    }
+  }
+
   return finish(admin, message.messageId, { outcome: error ? "error" : "applied" });
 }
+

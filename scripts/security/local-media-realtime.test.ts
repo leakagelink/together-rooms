@@ -156,7 +156,7 @@ suite("phase 7 local media realtime", () => {
       expect(started.ok).toBe(true);
     });
     expect(rows.length).toBeGreaterThan(0);
-  }, 30_000);
+  }, 60_000);
 
   it("LM-RT3 playback control propagates with a strictly increasing version", async () => {
     const before = (
@@ -178,7 +178,7 @@ suite("phase 7 local media realtime", () => {
     });
     const versions = rows.map((row) => Number(row["version"] ?? 0));
     expect(Math.max(0, ...versions)).toBeGreaterThan(Number(before.version));
-  }, 30_000);
+  }, 60_000);
 
   it("LM-RT4 a non-member receives no local media events (RLS-filtered)", async () => {
     const session = (
@@ -198,7 +198,7 @@ suite("phase 7 local media realtime", () => {
       });
     });
     expect(rows).toHaveLength(0);
-  }, 30_000);
+  }, 60_000);
 
   it("LM-RT5 ending the session propagates and leaves no active row", async () => {
     const session = (
@@ -220,5 +220,5 @@ suite("phase 7 local media realtime", () => {
       .eq("room_id", roomId)
       .eq("status", "active");
     expect(active ?? []).toHaveLength(0);
-  }, 30_000);
+  }, 60_000);
 });

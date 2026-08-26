@@ -31,7 +31,9 @@ import { Route as AuthenticatedRoomsNewRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_authenticated/settings.privacy'
 import { Route as AuthenticatedSettingsSubscriptionRouteImport } from './routes/_authenticated/settings.subscription'
+import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as AuthenticatedAdminReportsReportIdRouteImport } from './routes/_authenticated/admin.reports.$reportId'
+import { Route as ApiPublicBillingReconcileRouteImport } from './routes/api.public.billing.reconcile'
 import { Route as ApiPublicBillingRtdnRouteImport } from './routes/api.public.billing.rtdn'
 
 const IndexRoute = IndexRouteImport.update({
@@ -147,11 +149,22 @@ const AuthenticatedSettingsSubscriptionRoute =
     path: '/settings/subscription',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminReportsReportIdRoute =
   AuthenticatedAdminReportsReportIdRouteImport.update({
     id: '/admin/reports/$reportId',
     path: '/admin/reports/$reportId',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiPublicBillingReconcileRoute =
+  ApiPublicBillingReconcileRouteImport.update({
+    id: '/api/public/billing/reconcile',
+    path: '/api/public/billing/reconcile',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicBillingRtdnRoute = ApiPublicBillingRtdnRouteImport.update({
   id: '/api/public/billing/rtdn',
@@ -178,10 +191,12 @@ export interface FileRoutesByFullPath {
   '/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
+  '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
   '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
 }
 export interface FileRoutesByTo {
@@ -203,10 +218,12 @@ export interface FileRoutesByTo {
   '/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/rooms': typeof AuthenticatedRoomsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
+  '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
   '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
 }
 export interface FileRoutesById {
@@ -230,10 +247,12 @@ export interface FileRoutesById {
   '/_authenticated/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/_authenticated/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/_authenticated/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
+  '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
   '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
 }
 export interface FileRouteTypes {
@@ -257,10 +276,12 @@ export interface FileRouteTypes {
     | '/rooms/new'
     | '/settings/privacy'
     | '/settings/subscription'
+    | '/api/public/health'
     | '/admin/'
     | '/rooms/'
     | '/settings/'
     | '/admin/reports/$reportId'
+    | '/api/public/billing/reconcile'
     | '/api/public/billing/rtdn'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -282,10 +303,12 @@ export interface FileRouteTypes {
     | '/rooms/new'
     | '/settings/privacy'
     | '/settings/subscription'
+    | '/api/public/health'
     | '/admin'
     | '/rooms'
     | '/settings'
     | '/admin/reports/$reportId'
+    | '/api/public/billing/reconcile'
     | '/api/public/billing/rtdn'
   id:
     | '__root__'
@@ -308,10 +331,12 @@ export interface FileRouteTypes {
     | '/_authenticated/rooms/new'
     | '/_authenticated/settings/privacy'
     | '/_authenticated/settings/subscription'
+    | '/api/public/health'
     | '/_authenticated/admin/'
     | '/_authenticated/rooms/'
     | '/_authenticated/settings/'
     | '/_authenticated/admin/reports/$reportId'
+    | '/api/public/billing/reconcile'
     | '/api/public/billing/rtdn'
   fileRoutesById: FileRoutesById
 }
@@ -327,6 +352,8 @@ export interface RootRouteChildren {
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthSignupRoute: typeof AuthSignupRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
+  ApiPublicBillingReconcileRoute: typeof ApiPublicBillingReconcileRoute
   ApiPublicBillingRtdnRoute: typeof ApiPublicBillingRtdnRoute
 }
 
@@ -486,12 +513,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsSubscriptionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/reports/$reportId': {
       id: '/_authenticated/admin/reports/$reportId'
       path: '/admin/reports/$reportId'
       fullPath: '/admin/reports/$reportId'
       preLoaderRoute: typeof AuthenticatedAdminReportsReportIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/billing/reconcile': {
+      id: '/api/public/billing/reconcile'
+      path: '/api/public/billing/reconcile'
+      fullPath: '/api/public/billing/reconcile'
+      preLoaderRoute: typeof ApiPublicBillingReconcileRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/billing/rtdn': {
       id: '/api/public/billing/rtdn'
@@ -550,6 +591,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignupRoute: AuthSignupRoute,
   InviteTokenRoute: InviteTokenRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
+  ApiPublicBillingReconcileRoute: ApiPublicBillingReconcileRoute,
   ApiPublicBillingRtdnRoute: ApiPublicBillingRtdnRoute,
 }
 export const routeTree = rootRouteImport

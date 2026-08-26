@@ -165,13 +165,19 @@ async function verifyAndApply(
   // Acknowledge only AFTER the entitlement was actually granted. Play refunds
   // an unacknowledged purchase after three days, so acknowledgement is the
   // server's confirmation that the user really received what they paid for.
-  // A failed acknowledgement never affects the entitlement; the next
-  // verification or renewal notification retries it.
-  const { acknowledgePlaySubscription, shouldAcknowledge } =
-    await import("@/lib/billing/verification.server");
+  // A failed acknowledgement never affects the entitlement.
+  //
+  // PHASE 12: the intent is written to `billing_ack_state` BEFORE the attempt,
+  // so a crash between granting and acknowledging still leaves a durable,
+  // operator-visible record with bounded retries instead of a silent gap.
+  const { shouldAcknowledge } = await import("@/lib/billing/verification.server");
   if (shouldAcknowledge(verified)) {
-    const ack = await acknowledgePlaySubscription(claim.purchase_token, verified);
-    if (!ack.ok) console.warn("[acknowledge_purchase] failed:", ack.reason);
+    const { acknowledgeWithRecovery } = await import("@/lib/billing/reconciliation.server");
+    await acknowledgeWithRecovery(
+      supabaseAdmin as never,
+      { userId, productId: verified.productId, purchaseToken: claim.purchase_token },
+      verified,
+    );
   }
 
   return (data ?? { ok: false, reason: "server_error" }) as unknown as ApplyOutcome;

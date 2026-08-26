@@ -20,6 +20,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { decodeRtdnEnvelope } from "@/lib/billing/rtdn";
 import { verifyPubSubOidcToken } from "@/lib/billing/google-oidc.server";
 import { EXPECTED_PACKAGE_NAME } from "@/lib/billing/products";
+import { correlationFromHeaders } from "@/lib/observability/correlation";
+import { createLogger } from "@/lib/observability/logger";
+import { classifyReason } from "@/lib/observability/errors";
 
 const ACK = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -31,6 +34,11 @@ export const Route = createFileRoute("/api/public/billing/rtdn")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // PHASE 12: one correlation id follows this delivery through OIDC
+        // verification, dedupe, Play verification and entitlement application.
+        const correlationId = correlationFromHeaders(request.headers, "rtdn");
+        const logger = createLogger("RTDN", correlationId);
+
         const auth = await verifyPubSubOidcToken(
           request.headers.get("authorization"),
           process.env["PLAY_RTDN_AUDIENCE"],
@@ -38,7 +46,12 @@ export const Route = createFileRoute("/api/public/billing/rtdn")({
         );
         if (!auth.ok) {
           // Never explain why; an attacker learns nothing from a probe.
-          console.warn("[rtdn] rejected delivery:", auth.reason);
+          const info = classifyReason(auth.reason);
+          logger.warn("delivery_rejected", {
+            outcome: "denied",
+            errorClass: info.errorClass,
+            reason: auth.reason,
+          });
           const status = auth.reason === "jwks_unavailable" ? 503 : 401;
           return new Response("Unauthorized", { status });
         }
@@ -47,17 +60,19 @@ export const Route = createFileRoute("/api/public/billing/rtdn")({
         try {
           body = await request.json();
         } catch {
+          logger.warn("malformed_body", { outcome: "skipped", reason: "malformed" });
           return ACK({ ok: false, reason: "malformed" });
         }
 
         const packageName = process.env["GOOGLE_PLAY_PACKAGE_NAME"] ?? EXPECTED_PACKAGE_NAME;
         const decoded = decodeRtdnEnvelope(body, packageName);
         if (!decoded.ok) {
-          console.warn("[rtdn] undecodable message:", decoded.reason);
           // Permanently undecodable: acknowledge so Pub/Sub stops retrying.
+          logger.warn("undecodable_message", { outcome: "skipped", reason: decoded.reason });
           return ACK({ ok: false, reason: decoded.reason });
         }
 
+        const started = Date.now();
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { processRtdnMessage } = await import("@/lib/billing/rtdn.server");
@@ -65,13 +80,25 @@ export const Route = createFileRoute("/api/public/billing/rtdn")({
             supabaseAdmin as unknown as Parameters<typeof processRtdnMessage>[0],
             decoded.message,
           );
+          const { recordTiming } = await import("@/lib/observability/monitor");
+          recordTiming("rtdn.process_ms", Date.now() - started, { outcome: result.outcome });
           if (result.outcome === "error") {
             // Transient: ask Pub/Sub to redeliver.
+            logger.error("processing_error", {
+              outcome: "failed",
+              errorClass: "RETRYABLE",
+              ...(result.detail ? { reason: result.detail } : {}),
+            });
             return new Response("retry", { status: 503 });
           }
-          return ACK({ ok: true, outcome: result.outcome });
+          logger.info("processed", {
+            outcome: "ok",
+            data: { rtdn_outcome: result.outcome, duration_ms: Date.now() - started },
+          });
+          return ACK({ ok: true, outcome: result.outcome, correlationId });
         } catch (error) {
-          console.error("[rtdn] processing failed:", (error as Error).message);
+          const { captureError } = await import("@/lib/observability/monitor");
+          captureError("RTDN", "processing_crashed", error, { correlationId });
           return new Response("retry", { status: 503 });
         }
       },

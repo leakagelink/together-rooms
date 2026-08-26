@@ -44,8 +44,20 @@ function fakeAdmin(rows: AckRow[]) {
       }),
       select: () => selectBuilder(),
     }),
-    rpc: async () => ({ data: null, error: null }),
+    // PHASE 12.1: state writes go through the guarded `complete_billing_ack`
+    // RPC; the fake records them in the same shape the table update used.
+    rpc: async (fn: string, args: Record<string, unknown>) => {
+      if (fn === "complete_billing_ack") {
+        const mapped: Record<string, unknown> = { key: args["_hash"] };
+        for (const [name, value] of Object.entries(args)) {
+          if (name !== "_hash") mapped[name.replace(/^_/, "")] = value;
+        }
+        updates.push(mapped);
+      }
+      return { data: null, error: null };
+    },
   } as unknown as ReconciliationClient;
+
 
   return { client, updates, runs };
 }

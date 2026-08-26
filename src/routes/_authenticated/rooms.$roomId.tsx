@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { useAuth } from "@/hooks/useAuth";
+import { useAds } from "@/hooks/useAds";
 import { useRoomRealtime } from "@/hooks/useRoomRealtime";
 import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/analytics";
@@ -134,6 +135,7 @@ function RoomPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const { requestFullscreen } = useAds();
   const leaveMutation = useMutation({
     mutationFn: async () => {
       const result = await leave({ data: { room_id: roomId } });
@@ -152,6 +154,11 @@ function RoomPage() {
             : "You left the room.",
       );
       navigate({ to: "/rooms" });
+      // PHASE 13.1 — the ONLY approved full-screen transition: the session has
+      // fully ended and the user is back on the rooms list. The centralized
+      // policy still decides (premium, consent, frequency, warm-up); this is
+      // merely the transition point where asking is allowed at all.
+      void requestFullscreen("room_session_ended");
     },
     onError: (error: Error) => toast.error(error.message),
   });

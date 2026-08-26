@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { DoorOpen, Plus } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { AdSlot } from "@/components/ads/ad-slot";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,6 +97,9 @@ function RoomsPage() {
             ))}
           </ul>
         )}
+        {/* Ads sit below all content, in normal flow, clearly separated from
+            the list and from every control. Nothing overlays or floats. */}
+        <AdSlot placement="rooms_list_footer" className="mt-8" />
       </div>
     </AppShell>
   );

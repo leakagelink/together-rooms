@@ -71,7 +71,7 @@ describe("ADMOB", () => {
     const { provider } = makeProvider();
     for (const format of ["banner", "interstitial", "app_open"] as const) {
       expect(
-        provider.evaluate({ format, placement: "home" }, context({ premium: true })).eligible,
+        provider.evaluate({ format, placement: "rooms_list_footer" }, context({ premium: true })).eligible,
       ).toBe(false);
     }
   });
@@ -79,7 +79,7 @@ describe("ADMOB", () => {
   it("ADMOB-T4: unresolved consent blocks every ad request", () => {
     const { provider } = makeProvider();
     const outcome = provider.evaluate(
-      { format: "banner", placement: "home" },
+      { format: "banner", placement: "rooms_list_footer" },
       context({ consent: "unresolved" }),
     );
     expect(outcome.eligible).toBe(false);
@@ -88,7 +88,7 @@ describe("ADMOB", () => {
   it("ADMOB-T5: limited consent still serves ads, but non-personalized", () => {
     const { provider } = makeProvider();
     const outcome = provider.evaluate(
-      { format: "banner", placement: "home" },
+      { format: "banner", placement: "rooms_list_footer" },
       context({ consent: "granted_limited" }),
     );
     expect(outcome.eligible).toBe(true);
@@ -98,7 +98,7 @@ describe("ADMOB", () => {
   it("ADMOB-T6: denied consent blocks ads entirely", () => {
     const { provider } = makeProvider();
     expect(
-      provider.evaluate({ format: "banner", placement: "home" }, context({ consent: "denied" }))
+      provider.evaluate({ format: "banner", placement: "rooms_list_footer" }, context({ consent: "denied" }))
         .eligible,
     ).toBe(false);
   });
@@ -112,7 +112,7 @@ describe("ADMOB", () => {
       "activeLocalMedia",
     ] as const) {
       const outcome = provider.evaluate(
-        { format: "interstitial", placement: "room" },
+        { format: "interstitial", placement: "room_session_ended" },
         context({ [flag]: true } as Partial<AdPlacementContext>),
       );
       expect(outcome.eligible).toBe(false);
@@ -122,7 +122,7 @@ describe("ADMOB", () => {
   it("ADMOB-T8: sensitive flows are ad-free", () => {
     const { provider } = makeProvider();
     const outcome = provider.evaluate(
-      { format: "banner", placement: "privacy" },
+      { format: "banner", placement: "rooms_list_footer" },
       context({ sensitiveFlow: "privacy_settings" }),
     );
     expect(outcome.eligible).toBe(false);
@@ -131,15 +131,15 @@ describe("ADMOB", () => {
   it("ADMOB-T9: full-screen formats respect the frequency cap", async () => {
     const { provider, shown } = makeProvider();
     // The first full-screen ad only becomes eligible after the session warmup.
-    expect(await provider.request({ format: "interstitial", placement: "a" }, context())).toBe(
+    expect(await provider.request({ format: "interstitial", placement: "room_session_ended" }, context())).toBe(
       false,
     );
     clock = 10 * 60_000;
-    expect(await provider.request({ format: "interstitial", placement: "a" }, context())).toBe(
+    expect(await provider.request({ format: "interstitial", placement: "room_session_ended" }, context())).toBe(
       true,
     );
     // A second one immediately afterwards is refused by the interval cap.
-    expect(await provider.request({ format: "interstitial", placement: "b" }, context())).toBe(
+    expect(await provider.request({ format: "interstitial", placement: "room_session_ended" }, context())).toBe(
       false,
     );
     expect(shown).toHaveLength(1);
@@ -147,7 +147,7 @@ describe("ADMOB", () => {
 
   it("ADMOB-T10: unconfigured units mean nothing is ever requested", async () => {
     const { provider, shown } = makeProvider({ units: null });
-    await provider.request({ format: "banner", placement: "home" }, context({ configured: false }));
+    await provider.request({ format: "banner", placement: "rooms_list_footer" }, context({ configured: false }));
     expect(shown).toHaveLength(0);
   });
 

@@ -44,6 +44,18 @@
             </intent-filter>
         </activity>
 
+        <!-- Google Mobile Ads SDK application id. Required by the SDK at
+             startup; the SDK itself is only INITIALIZED after UMP consent
+             allows an ad request (see src/hooks/useAds.tsx). -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="@string/admob_app_id" />
+        <!-- Ads are never requested before consent resolution, so the SDK must
+             not auto-initialize on application start. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
+            android:value="true" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

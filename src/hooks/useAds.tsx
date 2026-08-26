@@ -16,6 +16,7 @@ import { useEntitlement } from "@/hooks/useEntitlement";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeAdEvent } from "@/lib/ads/analytics-safety";
 import { DEFAULT_AD_FREQUENCY, mergeAdFrequency, resolveAdUnits } from "@/lib/ads/config";
+import { resolveAdMobAppId, resolveConfiguredAdUnits } from "@/lib/ads/admob-production";
 import type {
   AdFormat,
   AdPlacementContext,
@@ -155,21 +156,26 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
 
   const config = configQuery.data ?? DEFAULT_AD_FREQUENCY;
 
-  const resolution = useMemo(
-    () =>
-      resolveAdUnits(environment(), {
-        ...(import.meta.env["VITE_ADMOB_BANNER_UNIT"]
-          ? { banner: import.meta.env["VITE_ADMOB_BANNER_UNIT"] as string }
-          : {}),
-        ...(import.meta.env["VITE_ADMOB_INTERSTITIAL_UNIT"]
-          ? { interstitial: import.meta.env["VITE_ADMOB_INTERSTITIAL_UNIT"] as string }
-          : {}),
-        ...(import.meta.env["VITE_ADMOB_APP_OPEN_UNIT"]
-          ? { appOpen: import.meta.env["VITE_ADMOB_APP_OPEN_UNIT"] as string }
-          : {}),
-      }),
-    [],
-  );
+  // PHASE 13.1 — all identifiers come from the authoritative AdMob
+  // configuration boundary. Development builds get Google's test inventory;
+  // production builds get the real units, and any malformed/mismatched
+  // configuration disables advertising entirely (fail closed).
+  const resolution = useMemo(() => {
+    const env = environment();
+    const overrides = {
+      banner: import.meta.env["VITE_ADMOB_BANNER_UNIT"] as string | undefined,
+      interstitial: import.meta.env["VITE_ADMOB_INTERSTITIAL_UNIT"] as string | undefined,
+      appOpen: import.meta.env["VITE_ADMOB_APP_OPEN_UNIT"] as string | undefined,
+      rewarded: import.meta.env["VITE_ADMOB_REWARDED_UNIT"] as string | undefined,
+      appId: import.meta.env["VITE_ADMOB_APP_ID"] as string | undefined,
+    };
+    const appId = resolveAdMobAppId(env, overrides);
+    const units = resolveAdUnits(env, resolveConfiguredAdUnits(env, overrides));
+    if (appId.configError) {
+      return { units: null, testMode: false, configError: appId.configError };
+    }
+    return units;
+  }, []);
 
   const providerRef = useRef<AdProvider | null>(null);
   if (!providerRef.current) {

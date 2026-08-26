@@ -374,9 +374,9 @@ describe("phase 14 native admob bridge", () => {
     const bridge = fakeBridge();
     const provider = warmProvider(createNativeAdSdk(bridge));
     for (const placement of ["rooms_list_footer", "room_session_ended", "reward_unlock"]) {
-      await expect(
-        provider.request({ format: "rewarded", placement }, context()),
-      ).resolves.toBe(false);
+      await expect(provider.request({ format: "rewarded", placement }, context())).resolves.toBe(
+        false,
+      );
     }
     expect(bridge.calls).toEqual([]);
     // There is no native rewarded entry point on the bridge at all.

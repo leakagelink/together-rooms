@@ -250,7 +250,6 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     }
   }, [premium, consent]);
 
-
   const showPrivacyOptions = useCallback(async () => {
     try {
       setUmp(await getUmpBridge().showPrivacyOptionsForm());

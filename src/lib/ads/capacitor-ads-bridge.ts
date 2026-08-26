@@ -54,8 +54,7 @@ export function toUmpState(raw: unknown): UmpState {
       status === "required" || status === "not_required" || status === "obtained"
         ? status
         : "unknown",
-    formStatus:
-      formStatus === "available" || formStatus === "unavailable" ? formStatus : "unknown",
+    formStatus: formStatus === "available" || formStatus === "unavailable" ? formStatus : "unknown",
     privacyOptionsRequired: value.privacyOptionsRequired === true,
     canRequestAds: value.canRequestAds === true,
     personalizedAllowed: value.personalizedAllowed === true,

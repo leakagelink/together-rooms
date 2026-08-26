@@ -87,7 +87,7 @@ async function importKey(version: number): Promise<CryptoKey | null> {
 }
 
 export function recoveryEncryptionAvailable(): boolean {
-  const secret = process.env[envKeyName(CURRENT_KEY_VERSION)];
+  const secret = process.env[envKeyName(currentKeyVersion())];
   return Boolean(secret && secret.length >= 16);
 }
 
@@ -98,7 +98,8 @@ export interface RecoveryEnvelope {
 
 /** Encrypts a raw purchase token. Returns null when no key is configured. */
 export async function sealRecoveryToken(rawToken: string): Promise<RecoveryEnvelope | null> {
-  const key = await importKey(CURRENT_KEY_VERSION);
+  const version = currentKeyVersion();
+  const key = await importKey(version);
   if (!key) return null;
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const sealed = await crypto.subtle.encrypt(
@@ -109,11 +110,11 @@ export async function sealRecoveryToken(rawToken: string): Promise<RecoveryEnvel
   return {
     ciphertext: [
       RECOVERY_ENVELOPE_VERSION,
-      String(CURRENT_KEY_VERSION),
+      String(version),
       b64url(iv),
       b64url(new Uint8Array(sealed)),
     ].join("."),
-    keyVersion: CURRENT_KEY_VERSION,
+    keyVersion: version,
   };
 }
 

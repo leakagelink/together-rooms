@@ -144,7 +144,7 @@ function fakeDb(now = NOW) {
         row.next_attempt_at =
           (args["_next_attempt_at"] as string | null) ?? new Date(clock).toISOString();
         row.acknowledged_at =
-          row.acknowledged_at ?? ((args["_acknowledged_at"] as string | null) ?? null);
+          row.acknowledged_at ?? (args["_acknowledged_at"] as string | null) ?? null;
         row.lease_owner = null;
         row.lease_until = null;
         if (args["_clear_recovery"]) {
@@ -158,8 +158,7 @@ function fakeDb(now = NOW) {
         let purged = 0;
         for (const row of rows.values()) {
           if (!row.recovery_ciphertext) continue;
-          const expired =
-            !row.recovery_expires_at || Date.parse(row.recovery_expires_at) <= clock;
+          const expired = !row.recovery_expires_at || Date.parse(row.recovery_expires_at) <= clock;
           if (expired || ["acknowledged", "not_required"].includes(row.status)) {
             row.recovery_ciphertext = null;
             row.recovery_key_version = null;

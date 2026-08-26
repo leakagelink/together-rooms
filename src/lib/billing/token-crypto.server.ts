@@ -69,10 +69,7 @@ async function importKey(version: number): Promise<CryptoKey | null> {
   const secret = process.env[envKeyName(version)];
   if (!secret || secret.length < 16) return null;
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
-  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, [
-    "encrypt",
-    "decrypt",
-  ]);
+  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
 }
 
 export function recoveryEncryptionAvailable(): boolean {
@@ -91,7 +88,7 @@ export async function sealRecoveryToken(rawToken: string): Promise<RecoveryEnvel
   if (!key) return null;
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const sealed = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
+    { name: "AES-GCM", iv: iv as unknown as BufferSource },
     key,
     new TextEncoder().encode(rawToken),
   );
@@ -111,7 +108,9 @@ export async function sealRecoveryToken(rawToken: string): Promise<RecoveryEnvel
  * version, or a failed authentication tag all yield null, so a corrupted or
  * tampered row degrades to "cannot recover" instead of undefined behaviour.
  */
-export async function openRecoveryToken(envelope: string | null | undefined): Promise<string | null> {
+export async function openRecoveryToken(
+  envelope: string | null | undefined,
+): Promise<string | null> {
   if (!envelope || typeof envelope !== "string") return null;
   const parts = envelope.split(".");
   if (parts.length !== 4) return null;
@@ -127,7 +126,11 @@ export async function openRecoveryToken(envelope: string | null | undefined): Pr
   const key = await importKey(version);
   if (!key) return null;
   try {
-    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+    const plain = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: iv as unknown as BufferSource },
+      key,
+      data as unknown as BufferSource,
+    );
     return new TextDecoder().decode(plain);
   } catch {
     return null;

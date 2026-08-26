@@ -123,7 +123,8 @@ export function classifyThrown(error: unknown): ClassifiedError {
   if (status !== null) return classified(classifyHttpStatus(status), `http_${status}`);
 
   const name = typeof raw["name"] === "string" ? (raw["name"] as string) : "";
-  const message = typeof raw["message"] === "string" ? (raw["message"] as string).toLowerCase() : "";
+  const message =
+    typeof raw["message"] === "string" ? (raw["message"] as string).toLowerCase() : "";
   if (name === "AbortError" || message.includes("timeout") || message.includes("network")) {
     return classified("TRANSIENT", "network");
   }

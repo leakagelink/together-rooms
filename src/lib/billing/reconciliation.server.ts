@@ -22,12 +22,7 @@
  *    idempotent and safe to run concurrently with live RTDN traffic.
  *  - A failed acknowledgement never revokes or blocks a paid entitlement.
  */
-import {
-  isAckDue,
-  nextAckState,
-  type AckAttemptResult,
-  type AckStateRow,
-} from "./acknowledgement";
+import { isAckDue, nextAckState, type AckAttemptResult, type AckStateRow } from "./acknowledgement";
 import { newCorrelationId } from "@/lib/observability/correlation";
 import { createLogger } from "@/lib/observability/logger";
 import { recordMetric } from "@/lib/observability/monitor";
@@ -73,14 +68,10 @@ async function resolveRecoveryToken(row: AckRow): Promise<string | null> {
  * been acknowledged or expired resolves to `not_acknowledgeable` instead of a
  * pointless retry.
  */
-async function acknowledgeFromRecovery(
-  row: AckRow,
-  rawToken: string,
-): Promise<AckAttemptResult> {
+async function acknowledgeFromRecovery(row: AckRow, rawToken: string): Promise<AckAttemptResult> {
   try {
-    const { verifyPlayPurchase, acknowledgePlaySubscription } = await import(
-      "./verification.server"
-    );
+    const { verifyPlayPurchase, acknowledgePlaySubscription } =
+      await import("./verification.server");
     const verification = await verifyPlayPurchase(row.product_id, rawToken);
     if (!verification.ok) return { ok: false, reason: verification.reason };
     return await acknowledgePlaySubscription(rawToken, verification.result);
@@ -88,7 +79,6 @@ async function acknowledgeFromRecovery(
     return { ok: false, reason: "request_failed" };
   }
 }
-
 
 /**
  * Records that a purchase needs acknowledgement. Called right after a
@@ -193,7 +183,6 @@ export async function recordAckAttempt(
     recordMetric("billing.ack.terminal_failure");
   }
   return transition;
-
 }
 
 /**
@@ -222,7 +211,6 @@ export async function acknowledgeWithRecovery(
     purchaseToken: input.purchaseToken,
     now,
   });
-
 
   const { data } = await admin
     .from("billing_ack_state")
@@ -255,7 +243,6 @@ export async function acknowledgeWithRecovery(
     });
   }
 }
-
 
 export interface ReconciliationSummary {
   correlationId: string;
@@ -357,7 +344,7 @@ export async function runBillingReconciliation(
       });
       recordMetric("billing.ack.recovery_required");
       // Release the lease and park the row where an operator can see it.
-      if (row.status === "ack_in_progress") {
+      if ((row.status as string) === "ack_in_progress") {
         await admin.rpc("complete_billing_ack", {
           _hash: row.purchase_token_hash,
           _owner: workerId,
@@ -398,7 +385,6 @@ export async function runBillingReconciliation(
   await admin.rpc("purge_expired_ack_recovery", {});
 
   await admin.from("billing_reconciliation_runs").insert({
-
     trigger_source: options.triggerSource ?? "cron",
     finished_at: new Date(Date.now()).toISOString(),
     examined: rows.length,

@@ -17,10 +17,7 @@
 import { RECOVERY_RETENTION_MS } from "@/lib/billing/token-crypto.server";
 
 export type RecoveryKeyProblem =
-  | "missing_current_key"
-  | "weak_key"
-  | "previous_key_removed_too_early"
-  | "invalid_key_version";
+  "missing_current_key" | "weak_key" | "previous_key_removed_too_early" | "invalid_key_version";
 
 export interface RecoveryKeyInput {
   /** Key version this deployment encrypts with. */

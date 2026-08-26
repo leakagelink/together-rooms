@@ -29,6 +29,7 @@ const SETTLE_MS = 6000;
 interface TestUser {
   id: string;
   client: SupabaseClient;
+  token: string;
 }
 
 interface Rpc {
@@ -56,6 +57,16 @@ suite("phase 6 study & research realtime (postgres_changes)", () => {
 
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+  async function waitUntil(predicate: () => boolean, timeoutMs = 20_000): Promise<void> {
+    const startedAt = Date.now();
+    while (!predicate()) {
+      if (Date.now() - startedAt >= timeoutMs) {
+        throw new Error("expected realtime rows were not delivered before the deadline");
+      }
+      await wait(100);
+    }
+  }
+
   async function makeUser(tag: string): Promise<TestUser> {
     const email = `p6rt-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
     const { data, error } = await admin.auth.admin.createUser({
@@ -67,7 +78,9 @@ suite("phase 6 study & research realtime (postgres_changes)", () => {
     const client = createClient(url!, anonKey!, { auth: { persistSession: false } });
     const signIn = await client.auth.signInWithPassword({ email, password });
     if (signIn.error) throw signIn.error;
-    const entry = { id: data.user!.id, client };
+    const token = signIn.data.session?.access_token;
+    if (!token) throw new Error("test user sign-in did not return a realtime token");
+    const entry = { id: data.user!.id, client, token };
     created.push(entry);
     return entry;
   }
@@ -90,8 +103,9 @@ suite("phase 6 study & research realtime (postgres_changes)", () => {
   };
 
   async function subscribe(user: TestUser, onRow: (table: string, eventType: string) => void) {
+    await user.client.realtime.setAuth(user.token);
     const channel = user.client
-      .channel(`rt-study-${user.id}`)
+      .channel(`rt-study-${user.id}-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "room_resources", filter: `room_id=eq.${roomId}` },
@@ -113,11 +127,20 @@ suite("phase 6 study & research realtime (postgres_changes)", () => {
         (payload) => onRow("room_focus_timer", payload.eventType),
       );
 
-    await new Promise<void>((resolve) => {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error("realtime channel never reached SUBSCRIBED")),
+        20_000,
+      );
       channel.subscribe((status) => {
-        if (status === "SUBSCRIBED" || status === "CHANNEL_ERROR" || status === "CLOSED") resolve();
+        if (status === "SUBSCRIBED") {
+          clearTimeout(timer);
+          resolve();
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          clearTimeout(timer);
+          reject(new Error(`realtime subscription failed: ${status}`));
+        }
       });
-      setTimeout(resolve, SETTLE_MS);
     });
     return channel;
   }
@@ -162,7 +185,8 @@ suite("phase 6 study & research realtime (postgres_changes)", () => {
       outsiderSeen.rows += 1;
     });
 
-    // Drive every surface once, then let realtime settle before asserting.
+    // Drive every surface once, then wait for the expected member-visible rows
+    // instead of hoping a fixed delay outlasts replication fan-out.
     const seededResource = await addResource(host);
     expect(seededResource.ok, JSON.stringify(seededResource)).toBe(true);
     const note = await rpc(host, "create_room_note", {
@@ -183,7 +207,14 @@ suite("phase 6 study & research realtime (postgres_changes)", () => {
       _duration_seconds: 300,
     });
 
-    await wait(SETTLE_MS);
+    await waitUntil(
+      () =>
+        memberSeen.resources > 0 &&
+        memberSeen.notes > 0 &&
+        memberSeen.noteUpdates > 0 &&
+        memberSeen.tasks > 0 &&
+        memberSeen.timer > 0,
+    );
   }, 90_000);
 
   afterAll(async () => {

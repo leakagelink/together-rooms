@@ -23,6 +23,7 @@ const password = "Test-Password-123!";
 interface TestUser {
   id: string;
   client: SupabaseClient;
+  token: string;
 }
 
 interface Rpc {
@@ -55,7 +56,9 @@ suite("phase 7 local media realtime", () => {
     const client = createClient(url!, anonKey!, { auth: { persistSession: false } });
     const signIn = await client.auth.signInWithPassword({ email, password });
     if (signIn.error) throw signIn.error;
-    const entry = { id: data.user!.id, client };
+    const token = signIn.data.session?.access_token;
+    if (!token) throw new Error("test user sign-in did not return a realtime token");
+    const entry = { id: data.user!.id, client, token };
     created.push(entry);
     return entry;
   }
@@ -81,6 +84,7 @@ suite("phase 7 local media realtime", () => {
     const matched = new Promise<void>((resolve) => {
       resolveMatch = resolve;
     });
+    await user.client.realtime.setAuth(user.token);
     const channel = user.client.channel(`lm-rt-${Math.random().toString(36).slice(2)}`).on(
       "postgres_changes",
       {
@@ -140,7 +144,8 @@ suite("phase 7 local media realtime", () => {
     quietMs = 6000,
   ): Promise<Record<string, unknown>[]> {
     const received: Record<string, unknown>[] = [];
-    const channel = user.client.channel(`lm-rt-negative-${crypto.randomUUID()}`).on(
+    await user.client.realtime.setAuth(user.token);
+    const channel = user.client.channel(`lm-rt-negative-${Math.random().toString(36).slice(2)}`).on(
       "postgres_changes",
       {
         event: "*",
@@ -199,6 +204,7 @@ suite("phase 7 local media realtime", () => {
   }, 60_000);
 
   afterAll(async () => {
+    for (const user of created) await user.client.removeAllChannels();
     for (const room of rooms) await admin.from("rooms").delete().eq("id", room);
     for (const user of created) await admin.auth.admin.deleteUser(user.id);
   });

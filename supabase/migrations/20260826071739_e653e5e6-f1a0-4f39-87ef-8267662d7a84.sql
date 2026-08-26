@@ -1,0 +1,1 @@
+ALTER TABLE public.room_local_media_sessions REPLICA IDENTITY FULL;

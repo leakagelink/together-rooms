@@ -61,48 +61,106 @@ export interface AckRow extends AckStateRow {
  * Records that a purchase needs acknowledgement. Called right after a
  * successful verification, BEFORE the acknowledge attempt, so a crash between
  * the two still leaves a durable row for the worker to pick up.
+ *
+ * PHASE 12.1: the row also carries an ENCRYPTED, time-bounded copy of the raw
+ * purchase token. Play's acknowledge API needs the raw token and offers no way
+ * to look one up, so without this a failed acknowledgement could never be
+ * repaired after the request ended. The plaintext token is never stored; the
+ * SHA-256 hash remains the primary key and the only idempotency identity.
  */
 export async function recordAckIntent(
   admin: ReconciliationClient,
-  input: { tokenHash: string; userId: string; productId: string },
+  input: {
+    tokenHash: string;
+    userId: string;
+    productId: string;
+    purchaseToken?: string;
+    now?: number;
+  },
 ): Promise<void> {
+  const now = input.now ?? Date.now();
   await admin.from("billing_ack_state").upsert(
     {
       purchase_token_hash: input.tokenHash,
       user_id: input.userId,
       product_id: input.productId,
       status: "pending",
-      next_attempt_at: new Date().toISOString(),
+      next_attempt_at: new Date(now).toISOString(),
     },
     { onConflict: "purchase_token_hash", ignoreDuplicates: true },
   );
+
+  if (!input.purchaseToken) return;
+  const { sealRecoveryToken, RECOVERY_RETENTION_MS } = await import("./token-crypto.server");
+  const sealed = await sealRecoveryToken(input.purchaseToken);
+  if (!sealed) return;
+  await admin
+    .from("billing_ack_state")
+    .update({
+      recovery_ciphertext: sealed.ciphertext,
+      recovery_key_version: sealed.keyVersion,
+      recovery_expires_at: new Date(now + RECOVERY_RETENTION_MS).toISOString(),
+    })
+    .eq("purchase_token_hash", input.tokenHash);
 }
 
-/** Persists the outcome of one acknowledgement attempt. */
+/**
+ * Persists the outcome of one acknowledgement attempt.
+ *
+ * The write goes through `complete_billing_ack`, which refuses to overwrite a
+ * row that already reached `acknowledged`/`not_required` and only accepts a
+ * worker that still holds the lease. That makes a stale or duplicated worker
+ * harmless. If the RPC is unavailable the direct update is used as a fallback.
+ */
 export async function recordAckAttempt(
   admin: ReconciliationClient,
   tokenHash: string,
   previousAttempts: number,
   result: AckAttemptResult,
   now: number = Date.now(),
+  leaseOwner: string | null = null,
 ): Promise<ReturnType<typeof nextAckState>> {
   const transition = nextAckState({ attempts: previousAttempts }, result, now);
-  await admin
-    .from("billing_ack_state")
-    .update({
-      status: transition.status,
-      attempts: transition.attempts,
-      last_error: transition.lastError,
-      last_attempt_at: new Date(now).toISOString(),
-      next_attempt_at: transition.nextAttemptAt ?? new Date(now).toISOString(),
-      acknowledged_at: transition.acknowledgedAt,
-    })
-    .eq("purchase_token_hash", tokenHash);
+  // Recovery material is only needed while an acknowledgement can still be
+  // attempted; any settled outcome drops it immediately.
+  const clearRecovery =
+    transition.status === "acknowledged" ||
+    transition.status === "not_required" ||
+    transition.status === "failed_terminal";
+
+  const { error } = await admin.rpc("complete_billing_ack", {
+    _hash: tokenHash,
+    _owner: leaseOwner,
+    _status: transition.status,
+    _attempts: transition.attempts,
+    _last_error: transition.lastError,
+    _next_attempt_at: transition.nextAttemptAt,
+    _acknowledged_at: transition.acknowledgedAt,
+    _clear_recovery: clearRecovery,
+  });
+
+  if (error) {
+    await admin
+      .from("billing_ack_state")
+      .update({
+        status: transition.status,
+        attempts: transition.attempts,
+        last_error: transition.lastError,
+        last_attempt_at: new Date(now).toISOString(),
+        next_attempt_at: transition.nextAttemptAt ?? new Date(now).toISOString(),
+        acknowledged_at: transition.acknowledgedAt,
+        ...(clearRecovery
+          ? { recovery_ciphertext: null, recovery_key_version: null, recovery_expires_at: null }
+          : {}),
+      })
+      .eq("purchase_token_hash", tokenHash);
+  }
 
   if (transition.terminal) {
     recordMetric("billing.ack.terminal_failure");
   }
   return transition;
+
 }
 
 /**

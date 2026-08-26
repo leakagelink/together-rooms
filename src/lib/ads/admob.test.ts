@@ -182,10 +182,15 @@ describe("ADMOB", () => {
       consent: {} as NativeAdsBridge["consent"],
     } as unknown as NativeAdsBridge;
     const sdk = createNativeAdSdk(bridge);
+    // Phase 14: the id must be a real ad-unit id — a placeholder is rejected
+    // before the bridge is touched at all.
+    const unit = "ca-app-pub-1475323931624357/9884842805";
     sdk.showBanner?.("unit", false);
-    sdk.showBanner?.("unit", false);
+    expect(showBanner).not.toHaveBeenCalled();
+    sdk.showBanner?.(unit, false);
+    sdk.showBanner?.(unit, false);
     expect(showBanner).toHaveBeenCalledTimes(1);
     // A rejected ad load must not throw into the app.
-    await expect(sdk.showFullscreen?.("unit", false)).resolves.toBeUndefined();
+    await expect(sdk.showFullscreen?.(unit, false)).resolves.toBeUndefined();
   });
 });

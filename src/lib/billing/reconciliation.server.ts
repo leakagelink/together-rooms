@@ -105,6 +105,64 @@ export async function recordAckAttempt(
   return transition;
 }
 
+/**
+ * Acknowledges a purchase with durable recovery, from a path that holds the
+ * RAW purchase token (post-verification, or an RTDN redelivery).
+ *
+ * Order matters: the intent row is written first, so a crash before or during
+ * the Play call leaves the purchase visibly un-acknowledged rather than
+ * silently lost. The result is then recorded, which either closes the row or
+ * schedules a bounded retry. The entitlement is never touched here.
+ */
+export async function acknowledgeWithRecovery(
+  admin: ReconciliationClient,
+  input: { userId: string; productId: string; purchaseToken: string },
+  verified: { acknowledged: boolean; state: string; productId: string },
+  now: number = Date.now(),
+): Promise<void> {
+  const { createHash } = await import("node:crypto");
+  const tokenHash = createHash("sha256").update(input.purchaseToken).digest("hex");
+  const logger = createLogger("BILLING");
+
+  await recordAckIntent(admin, {
+    tokenHash,
+    userId: input.userId,
+    productId: input.productId,
+  });
+
+  const { data } = await admin
+    .from("billing_ack_state")
+    .select("attempts")
+    .eq("purchase_token_hash", tokenHash)
+    .limit(1);
+  const attempts = ((data ?? []) as { attempts: number }[])[0]?.attempts ?? 0;
+
+  let result: AckAttemptResult;
+  try {
+    const { acknowledgePlaySubscription } = await import("./verification.server");
+    result = await acknowledgePlaySubscription(
+      input.purchaseToken,
+      verified as unknown as Parameters<typeof acknowledgePlaySubscription>[1],
+    );
+  } catch {
+    result = { ok: false, reason: "request_failed" };
+  }
+
+  const transition = await recordAckAttempt(admin, tokenHash, attempts, result, now);
+  if (transition.status === "acknowledged") {
+    recordMetric("billing.ack.success");
+  } else if (transition.status !== "not_required") {
+    logger.warn("acknowledgement_failed", {
+      outcome: transition.terminal ? "terminal" : "retry_scheduled",
+      ...(transition.errorClass ? { errorClass: transition.errorClass } : {}),
+      ...(transition.lastError ? { reason: transition.lastError } : {}),
+      userId: input.userId,
+      data: { attempts: transition.attempts },
+    });
+  }
+}
+
+
 export interface ReconciliationSummary {
   correlationId: string;
   examined: number;

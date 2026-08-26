@@ -199,9 +199,10 @@ describe("phase 14.1 android build blockers", () => {
           allowedPrefixes.some((prefix) => imported.startsWith(prefix)),
           `${file}: unexpected import ${imported}`,
         ).toBe(true);
-        expect(forbidden.some((bad) => imported.startsWith(bad)), `${file}: ${imported}`).toBe(
-          false,
-        );
+        expect(
+          forbidden.some((bad) => imported.startsWith(bad)),
+          `${file}: ${imported}`,
+        ).toBe(false);
       }
     }
   });
@@ -252,7 +253,7 @@ describe("phase 14.1 android build blockers", () => {
     }
     expect(mainActivity).not.toContain("AppOpenAd");
     // No Application subclass exists to host an app-open lifecycle observer.
-    expect(manifest).not.toContain("android:name=\".SyncTogetherApplication\"");
+    expect(manifest).not.toContain('android:name=".SyncTogetherApplication"');
     expect(manifest).not.toMatch(/<application[^>]*android:name="\.[A-Za-z]*Application"/);
   });
 
@@ -261,14 +262,21 @@ describe("phase 14.1 android build blockers", () => {
     // initialized is only ever set true inside the SDK's completion callback.
     const assignments = plugin.match(/initialized = (true|false)/g) ?? [];
     expect(assignments.filter((line) => line.endsWith("true"))).toHaveLength(1);
-    expect(plugin).toMatch(/MobileAds\.initialize\(activity, status -> \{\s*\n\s*initialized = true;/);
+    expect(plugin).toMatch(
+      /MobileAds\.initialize\(activity, status -> \{\s*\n\s*initialized = true;/,
+    );
     // Ad calls refuse to run before that happened.
-    expect((plugin.match(/if \(!initialized\) \{\s*\n\s*call\.reject\("sdk_init_failed"\);/g) ?? [])
-      .length).toBeGreaterThanOrEqual(3);
+    expect(
+      (plugin.match(/if \(!initialized\) \{\s*\n\s*call\.reject\("sdk_init_failed"\);/g) ?? [])
+        .length,
+    ).toBeGreaterThanOrEqual(3);
     // And the JS side never invents a bridge: no plugin means null, and a
     // rejected initialize resolves to false rather than "ready".
     const jsBridge = readFileSync(resolve(process.cwd(), "src/lib/ads/admob-bridge.ts"), "utf8");
     expect(jsBridge).toContain('initState = "idle"');
-    expect(jsBridge).not.toMatch(/return true;\s*\n\s*\}\)\s*\n\s*\.catch/);
+    // A rejected initialize resets the guard and returns false; it never
+    // latches "ready", and no branch returns true without the bridge resolving.
+    expect(jsBridge).toMatch(/\.catch\([\s\S]*?initState = "idle";[\s\S]*?return false;/);
+    expect(jsBridge).toContain("if (!bridge) return null;");
   });
 });

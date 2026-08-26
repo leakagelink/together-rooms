@@ -44,6 +44,12 @@ suite("phase 7 local media realtime", () => {
   let member: TestUser;
   let outsider: TestUser;
   let roomId = "";
+  let memberChannel: ReturnType<SupabaseClient["channel"]> | null = null;
+  const memberRows: Record<string, unknown>[] = [];
+  const memberWaiters = new Set<{
+    matches: (row: Record<string, unknown>) => boolean;
+    resolve: () => void;
+  }>();
 
   async function makeUser(tag: string): Promise<TestUser> {
     const email = `p7rt-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
@@ -79,47 +85,16 @@ suite("phase 7 local media realtime", () => {
     matches: (row: Record<string, unknown>) => boolean,
     deadlineMs = 20_000,
   ): Promise<Record<string, unknown>[]> {
-    const received: Record<string, unknown>[] = [];
-    let resolveMatch: (() => void) | undefined;
+    if (user !== member || !memberChannel) throw new Error("member realtime channel is not ready");
+    const startIndex = memberRows.length;
+    let waiter:
+      | { matches: (row: Record<string, unknown>) => boolean; resolve: () => void }
+      | undefined;
     const matched = new Promise<void>((resolve) => {
-      resolveMatch = resolve;
+      waiter = { matches, resolve };
+      memberWaiters.add(waiter);
     });
-    await user.client.realtime.setAuth(user.token);
-    const channel = user.client.channel(`lm-rt-${Math.random().toString(36).slice(2)}`).on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "room_local_media_sessions",
-        filter: `room_id=eq.${roomId}`,
-      },
-      (payload) => {
-        const row = payload.new as Record<string, unknown>;
-        received.push(row);
-        if (matches(row)) resolveMatch?.();
-      },
-    );
-    // postgres_changes only delivers what happens AFTER the subscription is
-    // live, so the action must not start until the socket confirms SUBSCRIBED.
-    // Resolving on a short timer instead makes the assertion race the network
-    // and report a delivery failure that never happened.
     try {
-      await new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(
-          () => reject(new Error("realtime channel never reached SUBSCRIBED")),
-          deadlineMs,
-        );
-        channel.subscribe((status) => {
-          if (status === "SUBSCRIBED") {
-            clearTimeout(timer);
-            resolve();
-          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            clearTimeout(timer);
-            reject(new Error(`realtime subscription failed: ${status}`));
-          }
-        });
-      });
-
       await action();
       await new Promise<void>((resolve, reject) => {
         const timer = setTimeout(
@@ -131,9 +106,9 @@ suite("phase 7 local media realtime", () => {
           resolve();
         });
       });
-      return received;
+      return memberRows.slice(startIndex);
     } finally {
-      await user.client.removeChannel(channel);
+      if (waiter) memberWaiters.delete(waiter);
     }
   }
 
@@ -201,9 +176,45 @@ suite("phase 7 local media realtime", () => {
     rooms.push(roomId);
     const joined = await rpc(member, "join_room_by_code", { _code: code });
     expect(joined.ok).toBe(true);
+
+    await member.client.realtime.setAuth(member.token);
+    memberChannel = member.client
+      .channel(`lm-rt-member-${Math.random().toString(36).slice(2)}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "room_local_media_sessions",
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          memberRows.push(row);
+          for (const waiter of memberWaiters) {
+            if (waiter.matches(row)) waiter.resolve();
+          }
+        },
+      );
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error("member realtime channel never reached SUBSCRIBED")),
+        20_000,
+      );
+      memberChannel?.subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          clearTimeout(timer);
+          resolve();
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          clearTimeout(timer);
+          reject(new Error(`member realtime subscription failed: ${status}`));
+        }
+      });
+    });
   }, 60_000);
 
   afterAll(async () => {
+    if (memberChannel) await member.client.removeChannel(memberChannel);
     for (const user of created) await user.client.removeAllChannels();
     for (const room of rooms) await admin.from("rooms").delete().eq("id", room);
     for (const user of created) await admin.auth.admin.deleteUser(user.id);

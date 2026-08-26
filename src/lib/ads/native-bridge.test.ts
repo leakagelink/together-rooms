@@ -259,13 +259,13 @@ describe("phase 14 native admob bridge", () => {
   });
 
   it("PHASE14-T9: dismissal cannot trigger duplicate navigation or a duplicate show", async () => {
-    let resolveShow: (() => void) | null = null;
+    const pending: { resolve: () => void }[] = [];
     const shows: number[] = [];
     const bridge = fakeBridge({
       showInterstitial: async () => {
         shows.push(Date.now());
         await new Promise<void>((resolve) => {
-          resolveShow = resolve;
+          pending.push({ resolve });
         });
         return true;
       },
@@ -275,7 +275,7 @@ describe("phase 14 native admob bridge", () => {
     const second = sdk.showFullscreen?.(PROD_UNITS.units!.interstitial, false);
     await second; // the stacked call returns immediately without showing
     expect(shows).toHaveLength(1);
-    resolveShow?.();
+    pending.forEach((p) => p.resolve());
     await first;
     // Dismissal is a pure ad event: the sdk contract exposes no navigation.
     expect(Object.keys(sdk).sort()).toEqual(["hideBanner", "showBanner", "showFullscreen"]);

@@ -82,12 +82,20 @@ suite("phase 7 local media realtime", () => {
       },
       (payload) => received.push(payload.new as Record<string, unknown>),
     );
-    await new Promise<void>((resolve) => {
+    // postgres_changes only delivers what happens AFTER the subscription is
+    // live, so the action must not start until the socket confirms SUBSCRIBED.
+    // Resolving on a short timer instead makes the assertion race the network
+    // and report a delivery failure that never happened.
+    const subscribed = await new Promise<boolean>((resolve) => {
+      const timer = setTimeout(() => resolve(false), 20_000);
       channel.subscribe((status) => {
-        if (status === "SUBSCRIBED") resolve();
+        if (status === "SUBSCRIBED") {
+          clearTimeout(timer);
+          resolve(true);
+        }
       });
-      setTimeout(resolve, 4000);
     });
+    if (!subscribed) throw new Error("realtime channel never reached SUBSCRIBED");
     await action();
     await new Promise((resolve) => setTimeout(resolve, ms));
     await user.client.removeChannel(channel);

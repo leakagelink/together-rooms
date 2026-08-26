@@ -144,33 +144,46 @@ export async function runBillingReconciliation(
 
   const rows = ((data ?? []) as AckRow[]).filter((row) => isAckDue(row, now));
 
-  const acknowledge =
-    options.acknowledge ??
-    (async (row: AckRow): Promise<AckAttemptResult> => {
-      const { acknowledgePlaySubscription, verifyPlayPurchase } = await import(
-        "./verification.server"
-      );
-      // We only store the token HASH, never the token, so reconciliation
-      // re-verifies through the raw token only when RTDN supplies it. Without
-      // a raw token the safest action is to re-check state and stop retrying
-      // if Play already considers the purchase acknowledged.
-      const verification = await verifyPlayPurchase(row.product_id, row.purchase_token_hash);
-      if (!verification.ok) return { ok: false, reason: verification.reason };
-      if (verification.result.acknowledged) return { ok: true, performed: false };
-      return acknowledgePlaySubscription(row.purchase_token_hash, verification.result);
-    });
-
   let repaired = 0;
   let failed = 0;
 
+  /**
+   * IMPORTANT: only the SHA-256 hash of a purchase token is persisted — storing
+   * raw Play tokens would turn this table into a credential store. Google's
+   * acknowledge API needs the raw token, so a pass can only complete a repair
+   * when a caller supplies a resolver that holds one (RTDN redelivery, or a
+   * restore-purchases request from the owning device).
+   *
+   * Without a resolver the pass is a MEASUREMENT pass: it surfaces the pending
+   * backlog and how stale it is, so an operator sees a stuck acknowledgement
+   * long before Play's three-day auto-refund window closes. It deliberately
+   * does not burn retry attempts on work it cannot perform.
+   */
   for (const row of rows) {
+    if (!options.acknowledge) {
+      failed += 1;
+      logger.warn("acknowledgement_pending", {
+        outcome: "retry_scheduled",
+        reason: "awaiting_raw_token",
+        userId: row.user_id,
+        data: { attempts: row.attempts, due_since_ms: now - Date.parse(row.next_attempt_at) },
+      });
+      continue;
+    }
+
     let result: AckAttemptResult;
     try {
-      result = await acknowledge(row);
+      result = await options.acknowledge(row);
     } catch {
       result = { ok: false, reason: "request_failed" };
     }
-    const transition = await recordAckAttempt(admin, row.purchase_token_hash, row.attempts, result, now);
+    const transition = await recordAckAttempt(
+      admin,
+      row.purchase_token_hash,
+      row.attempts,
+      result,
+      now,
+    );
     if (transition.status === "acknowledged" || transition.status === "not_required") {
       repaired += 1;
     } else {

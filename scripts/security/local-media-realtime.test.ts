@@ -85,7 +85,7 @@ suite("phase 7 local media realtime", () => {
       resolveMatch = resolve;
     });
     await user.client.realtime.setAuth(user.token);
-    const channel = user.client.channel(`lm-rt-${crypto.randomUUID()}`).on(
+    const channel = user.client.channel(`lm-rt-${Math.random().toString(36).slice(2)}`).on(
       "postgres_changes",
       {
         event: "*",
@@ -145,7 +145,7 @@ suite("phase 7 local media realtime", () => {
   ): Promise<Record<string, unknown>[]> {
     const received: Record<string, unknown>[] = [];
     await user.client.realtime.setAuth(user.token);
-    const channel = user.client.channel(`lm-rt-negative-${crypto.randomUUID()}`).on(
+    const channel = user.client.channel(`lm-rt-negative-${Math.random().toString(36).slice(2)}`).on(
       "postgres_changes",
       {
         event: "*",

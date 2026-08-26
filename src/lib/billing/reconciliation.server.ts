@@ -244,64 +244,108 @@ export async function runBillingReconciliation(
     now?: number;
     /** Injected so the pass can be exercised without contacting Google. */
     acknowledge?: (row: AckRow) => Promise<AckAttemptResult>;
+    /** Worker identity used for lease ownership; defaults to the correlation id. */
+    workerId?: string;
   } = {},
 ): Promise<ReconciliationSummary> {
   const correlationId = newCorrelationId("recon");
   const logger = createLogger("BILLING", correlationId);
   const now = options.now ?? Date.now();
   const limit = Math.min(options.limit ?? 50, 200);
+  const workerId = options.workerId ?? correlationId;
 
   logger.info("reconciliation_started", { data: { trigger: options.triggerSource ?? "cron" } });
 
-  const { data } = await admin
-    .from("billing_ack_state")
-    .select("purchase_token_hash, user_id, product_id, status, attempts, next_attempt_at")
-    .eq("status", "pending")
-    .lte("next_attempt_at", new Date(now).toISOString())
-    .order("next_attempt_at", { ascending: true })
-    .limit(limit);
-
-  const rows = ((data ?? []) as AckRow[]).filter((row) => isAckDue(row, now));
+  /**
+   * Work is CLAIMED, not merely selected: `claim_billing_ack_work` takes a
+   * short lease under FOR UPDATE SKIP LOCKED, so two workers (cron overlap,
+   * a manual trigger racing the schedule) can never process the same
+   * acknowledgement. If the RPC is unavailable the pass degrades to a plain
+   * due-row scan rather than doing nothing.
+   */
+  let rows: AckRow[] = [];
+  const claimed = await admin.rpc("claim_billing_ack_work", {
+    _owner: workerId,
+    _limit: limit,
+    _lease_seconds: 120,
+  });
+  if (Array.isArray(claimed.data)) {
+    rows = claimed.data as AckRow[];
+  } else {
+    const { data } = await admin
+      .from("billing_ack_state")
+      .select("purchase_token_hash, user_id, product_id, status, attempts, next_attempt_at")
+      .eq("status", "pending")
+      .lte("next_attempt_at", new Date(now).toISOString())
+      .order("next_attempt_at", { ascending: true })
+      .limit(limit);
+    rows = ((data ?? []) as AckRow[]).filter((row) => isAckDue(row, now));
+  }
 
   let repaired = 0;
   let failed = 0;
 
   /**
-   * IMPORTANT: only the SHA-256 hash of a purchase token is persisted — storing
-   * raw Play tokens would turn this table into a credential store. Google's
-   * acknowledge API needs the raw token, so a pass can only complete a repair
-   * when a caller supplies a resolver that holds one (RTDN redelivery, or a
-   * restore-purchases request from the owning device).
+   * Recovery order for each claimed row:
+   *   1. an injected resolver (tests, or an RTDN/restore path that already
+   *      holds the raw token),
+   *   2. the encrypted recovery envelope stored on the row — this is what makes
+   *      recovery possible with no user, no device and no session,
+   *   3. otherwise the row is parked in RECOVERY_REQUIRED for an operator; no
+   *      retry attempt is burned on work that cannot be performed.
    *
-   * Without a resolver the pass is a MEASUREMENT pass: it surfaces the pending
-   * backlog and how stale it is, so an operator sees a stuck acknowledgement
-   * long before Play's three-day auto-refund window closes. It deliberately
-   * does not burn retry attempts on work it cannot perform.
+   * Only the SHA-256 hash is ever used as an identity. The decrypted token
+   * exists in memory for the duration of the Play call and is never logged,
+   * returned, or written back.
    */
   for (const row of rows) {
-    if (!options.acknowledge) {
+    let result: AckAttemptResult | null = null;
+
+    if (options.acknowledge) {
+      try {
+        result = await options.acknowledge(row);
+      } catch {
+        result = { ok: false, reason: "request_failed" };
+      }
+    } else {
+      const rawToken = await resolveRecoveryToken(row);
+      if (rawToken) {
+        result = await acknowledgeFromRecovery(row, rawToken);
+      }
+    }
+
+    if (!result) {
       failed += 1;
-      logger.warn("acknowledgement_pending", {
-        outcome: "retry_scheduled",
-        reason: "awaiting_raw_token",
+      logger.warn("acknowledgement_recovery_required", {
+        outcome: "terminal",
+        reason: "no_recovery_material",
         userId: row.user_id,
         data: { attempts: row.attempts, due_since_ms: now - Date.parse(row.next_attempt_at) },
       });
+      recordMetric("billing.ack.recovery_required");
+      // Release the lease and park the row where an operator can see it.
+      if (row.status === "ack_in_progress") {
+        await admin.rpc("complete_billing_ack", {
+          _hash: row.purchase_token_hash,
+          _owner: workerId,
+          _status: "recovery_required",
+          _attempts: row.attempts,
+          _last_error: "no_recovery_material",
+          _next_attempt_at: new Date(now).toISOString(),
+          _acknowledged_at: null,
+          _clear_recovery: false,
+        });
+      }
       continue;
     }
 
-    let result: AckAttemptResult;
-    try {
-      result = await options.acknowledge(row);
-    } catch {
-      result = { ok: false, reason: "request_failed" };
-    }
     const transition = await recordAckAttempt(
       admin,
       row.purchase_token_hash,
       row.attempts,
       result,
       now,
+      workerId,
     );
     if (transition.status === "acknowledged" || transition.status === "not_required") {
       repaired += 1;
@@ -317,7 +361,11 @@ export async function runBillingReconciliation(
     }
   }
 
+  // Retention: drop recovery material that is settled or past its window.
+  await admin.rpc("purge_expired_ack_recovery", {});
+
   await admin.from("billing_reconciliation_runs").insert({
+
     trigger_source: options.triggerSource ?? "cron",
     finished_at: new Date(Date.now()).toISOString(),
     examined: rows.length,

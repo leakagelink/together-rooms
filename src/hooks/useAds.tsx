@@ -24,7 +24,13 @@ import type {
   SensitiveFlow,
 } from "@/lib/ads/placement";
 import { AdProvider, type AdOutcome } from "@/lib/ads/provider";
-import { createNativeAdSdk, getAdsBridge, getUmpBridge } from "@/lib/ads/admob-bridge";
+import {
+  createNativeAdSdk,
+  getAdsBridge,
+  getUmpBridge,
+  initializeNativeAds,
+} from "@/lib/ads/admob-bridge";
+import { resolveAdTestMode } from "@/lib/ads/test-devices";
 import {
   mayInitializeAds,
   nextUmpAction,
@@ -176,6 +182,18 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     }
     return units;
   }, []);
+
+  // PHASE 14 — how this build tests ads. Registered test devices are the only
+  // safe way to exercise the REAL ad units; they are explicit build-time
+  // configuration and never flip a production build into test mode.
+  const testMode = useMemo(
+    () =>
+      resolveAdTestMode(
+        environment(),
+        import.meta.env["VITE_ADMOB_TEST_DEVICE_IDS"] as string | undefined,
+      ),
+    [],
+  );
 
   const providerRef = useRef<AdProvider | null>(null);
   if (!providerRef.current) {

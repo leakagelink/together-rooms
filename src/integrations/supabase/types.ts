@@ -2282,6 +2282,7 @@ export type Database = {
         Row: {
           created_at: string
           locale: string
+          notify_chat: boolean
           notify_email: boolean
           notify_push: boolean
           notify_room_activity: boolean
@@ -2295,6 +2296,7 @@ export type Database = {
         Insert: {
           created_at?: string
           locale?: string
+          notify_chat?: boolean
           notify_email?: boolean
           notify_push?: boolean
           notify_room_activity?: boolean
@@ -2308,6 +2310,7 @@ export type Database = {
         Update: {
           created_at?: string
           locale?: string
+          notify_chat?: boolean
           notify_email?: boolean
           notify_push?: boolean
           notify_room_activity?: boolean

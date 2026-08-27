@@ -39,10 +39,6 @@ function SettingsPage() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     theme: "system",
-    notify_email: true,
-    notify_push: false,
-    notify_room_invites: true,
-    notify_room_activity: true,
     reduced_motion: false,
   });
   const [saving, setSaving] = useState(false);
@@ -66,10 +62,6 @@ function SettingsPage() {
     if (d) {
       setForm({
         theme: d.theme,
-        notify_email: d.notify_email,
-        notify_push: d.notify_push,
-        notify_room_invites: d.notify_room_invites,
-        notify_room_activity: d.notify_room_activity,
         reduced_motion: d.reduced_motion,
       });
     }
@@ -101,9 +93,13 @@ function SettingsPage() {
     <AppShell>
       <h1 className="text-2xl font-semibold">Settings</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Looking for visibility and consent controls?{" "}
+        Manage{" "}
+        <Link to="/settings/notifications" className="text-primary hover:underline">
+          notifications
+        </Link>{" "}
+        or{" "}
         <Link to="/settings/privacy" className="text-primary hover:underline">
-          Privacy settings
+          privacy settings
         </Link>
         .
       </p>
@@ -133,32 +129,6 @@ function SettingsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <ToggleRow
-              id="notify_email"
-              label="Email notifications"
-              description="Account and security emails are always sent."
-              checked={form.notify_email}
-              onChange={(v) => setForm({ ...form, notify_email: v })}
-            />
-            <ToggleRow
-              id="notify_push"
-              label="Push notifications"
-              description="Requires notification permission, asked only when you turn this on."
-              checked={form.notify_push}
-              onChange={(v) => setForm({ ...form, notify_push: v })}
-            />
-            <ToggleRow
-              id="notify_room_invites"
-              label="Room invites"
-              checked={form.notify_room_invites}
-              onChange={(v) => setForm({ ...form, notify_room_invites: v })}
-            />
-            <ToggleRow
-              id="notify_room_activity"
-              label="Room activity"
-              checked={form.notify_room_activity}
-              onChange={(v) => setForm({ ...form, notify_room_activity: v })}
-            />
             <ToggleRow
               id="reduced_motion"
               label="Reduce motion"

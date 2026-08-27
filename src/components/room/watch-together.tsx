@@ -767,7 +767,7 @@ export function WatchTogether({
         </p>
       ))}
 
-      {state?.provider_media_id ? (
+      {state?.provider_media_id && !compact ? (
         <p className="mt-3 text-sm">
           <span className="font-medium">{metadata?.title ?? "Loading video details…"}</span>{" "}
           <span className="text-muted-foreground">

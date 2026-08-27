@@ -146,7 +146,7 @@ export function RoomChat({
         </p>
       </header>
 
-      <div className="flex max-h-[60vh] min-h-64 flex-col-reverse overflow-y-auto p-4">
+      <div className="flex max-h-[60dvh] min-h-64 flex-col-reverse overflow-y-auto p-4">
         {chat.isPending ? (
           <LoadingState label="Loading messages" rows={3} />
         ) : chat.isError ? (

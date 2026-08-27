@@ -175,11 +175,12 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
                 controls={isOwner}
                 playsInline
                 className="max-h-[60vh] w-full bg-black"
-                // Background playback is not offered: the stream is live and
-                // ends with the session, so there is nothing to play in the
-                // background.
-                disablePictureInPicture
+                // Background playback is allowed for device-shared media only:
+                // it is the user's own file, not third-party embedded content.
+                // Picture-in-picture stays enabled so playback survives when
+                // the app is minimised.
               />
+
             )}
           </div>
 

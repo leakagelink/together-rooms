@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/useAuth";
+import { setupQueryPersistence } from "@/lib/query-persist";
 import { AdRuntimeProvider } from "@/hooks/useAds";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -143,6 +144,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    setupQueryPersistence(queryClient);
+  }, [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>

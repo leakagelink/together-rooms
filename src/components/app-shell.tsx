@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import {
   DoorOpen,
   Gavel,
@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   User as UserIcon,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import { BrandLogo } from "@/components/brand";
 import { OfflineBanner } from "@/components/state-views";
@@ -28,9 +28,29 @@ import { useStaffContext } from "@/hooks/useStaffContext";
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const router = useRouter();
   const online = useOnlineStatus();
   // Affordance only — the moderation RPCs re-check staff role in the database.
   const { isStaff } = useStaffContext();
+
+  useEffect(() => {
+    if (!online) return;
+    const warmScreens = () => {
+      void Promise.allSettled([
+        router.preloadRoute({ to: "/rooms" }),
+        router.preloadRoute({ to: "/rooms/new" }),
+        router.preloadRoute({ to: "/playlists" }),
+        router.preloadRoute({ to: "/profile" }),
+        router.preloadRoute({ to: "/settings" }),
+      ]);
+    };
+    const idle = window.requestIdleCallback?.(warmScreens, { timeout: 1200 });
+    const timer = idle === undefined ? window.setTimeout(warmScreens, 250) : undefined;
+    return () => {
+      if (idle !== undefined) window.cancelIdleCallback?.(idle);
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [online, router]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { DoorOpen, Plus } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -10,21 +10,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { errorMessage } from "@/lib/errors";
 
-export const Route = createFileRoute("/_authenticated/rooms/")({
-  head: () => ({
-    meta: [
-      { title: "Your rooms — SyncTogether" },
-      { name: "description", content: "Rooms you host or belong to on SyncTogether." },
-      { property: "og:title", content: "Your rooms — SyncTogether" },
-      { property: "og:description", content: "Rooms you host or belong to on SyncTogether." },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  component: RoomsPage,
-});
-
-function RoomsPage() {
-  const { data, isPending, isError, error, refetch } = useQuery({
+const roomsQueryOptions = () =>
+  queryOptions({
     queryKey: ["rooms", "mine"],
     queryFn: async () => {
       const { data: rows, error: queryError } = await supabase
@@ -36,6 +23,33 @@ function RoomsPage() {
       return rows ?? [];
     },
   });
+
+export const Route = createFileRoute("/_authenticated/rooms/")({
+  head: () => ({
+    meta: [
+      { title: "Your rooms — SyncTogether" },
+      { name: "description", content: "Rooms you host or belong to on SyncTogether." },
+      { property: "og:title", content: "Your rooms — SyncTogether" },
+      { property: "og:description", content: "Rooms you host or belong to on SyncTogether." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(roomsQueryOptions()),
+  component: RoomsPage,
+  errorComponent: () => (
+    <AppShell>
+      <ErrorState message="Your rooms couldn't be loaded." />
+    </AppShell>
+  ),
+  notFoundComponent: () => (
+    <AppShell>
+      <EmptyState title="Not found" description="This page doesn't exist." />
+    </AppShell>
+  ),
+});
+
+function RoomsPage() {
+  const { data, isPending, isError, error, refetch } = useQuery(roomsQueryOptions());
 
   return (
     <AppShell>

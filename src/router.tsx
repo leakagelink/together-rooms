@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { restorePersistedQueryCache } from "./lib/query-persist";
 
 export const createAppQueryClient = () =>
   new QueryClient({
@@ -19,6 +20,7 @@ export const createAppQueryClient = () =>
 
 export const getRouter = () => {
   const queryClient = createAppQueryClient();
+  restorePersistedQueryCache(queryClient);
 
   const router = createRouter({
     routeTree,
@@ -26,8 +28,9 @@ export const getRouter = () => {
     scrollRestoration: true,
     // Warm the next screen as soon as the user hovers/taps a link.
     defaultPreload: "intent",
-    defaultPreloadStaleTime: 60_000,
-    defaultPreloadDelay: 30,
+    // Query owns freshness; Router should always give it a chance to preload.
+    defaultPreloadStaleTime: 0,
+    defaultPreloadDelay: 0,
   });
 
   return router;

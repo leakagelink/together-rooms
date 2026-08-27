@@ -18,7 +18,7 @@ Phase 10 adds **Capacitor 8** as a thin, hardened WebView shell:
 
 ## 2. Package ID and versioning
 
-- Application ID: `app.lovable.synctogether` (debug builds: `app.lovable.synctogether.debug`).
+- Application ID: `com.synctogether.com` (debug builds: `com.synctogether.com.debug`).
 - `versionName`: semantic `MAJOR.MINOR.PATCH`, currently `1.0.0`, set in `android/app/build.gradle`.
 - `versionCode`: monotonic integer supplied by CI via the `VERSION_CODE` environment
   value (fallback `1` for local builds), so a code is never reused on Play.
@@ -126,7 +126,7 @@ Nothing sensitive is written to disk by the shell, and device backup/transfer is
 
 | | Debug | Release |
 | --- | --- | --- |
-| Application ID | `…​.debug` | `app.lovable.synctogether` |
+| Application ID | `…​.debug` | `com.synctogether.com` |
 | `debuggable` | true | false |
 | Minify / shrink | off | on |
 | WebView inspection | on | off |

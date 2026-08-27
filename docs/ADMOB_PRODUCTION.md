@@ -178,7 +178,7 @@ Run on a physical Android device with a release-configured build, using AdMob
 
 ## 12. Production release checklist
 
-1. AdMob app linked to `app.lovable.synctogether` in the AdMob console.
+1. AdMob app linked to `com.synctogether.com` in the AdMob console.
 2. `admob_app_id` string resource matches the AdMob console value exactly.
 3. Banner and interstitial units active in the AdMob console.
 4. Rewarded unit exists but remains unused; `REWARDED_ADS_ENABLED` is `false`.

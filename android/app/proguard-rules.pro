@@ -33,10 +33,10 @@
 #
 # 1. The plugin class itself must keep its name (Capacitor resolves it from the
 #    registerPlugin(AdsPlugin.class) reference and reads its annotation).
--keep @com.getcapacitor.annotation.CapacitorPlugin class app.lovable.synctogether.ads.** { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin class com.synctogether.com.ads.** { *; }
 # 2. Bridge-invoked methods and the Plugin lifecycle hooks are reflective entry
 #    points on any class in the ads package.
--keepclassmembers class app.lovable.synctogether.ads.** {
+-keepclassmembers class com.synctogether.com.ads.** {
     @com.getcapacitor.PluginMethod <methods>;
     public <init>(...);
 }

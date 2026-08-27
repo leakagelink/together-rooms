@@ -10,7 +10,7 @@ that missing layer and documents exactly what is and is not verified.
 ## 1. Native bridge architecture
 
 ```
-android/app/src/main/java/app/lovable/synctogether/
+android/app/src/main/java/com/synctogether/com/
   MainActivity.java              registers the plugin (single entry point)
   ads/AdsPlugin.java             Capacitor plugin "SyncTogetherAds"
   ads/BannerAdController.java    one AdView, adaptive size, strict teardown

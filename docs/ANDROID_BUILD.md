@@ -37,8 +37,8 @@ No major SDK version was changed in this phase.
 ## 3. Package consistency
 
 `namespace` = `applicationId` = Java package = manifest activity = string
-resource = `app.lovable.synctogether`; the bridge lives in
-`app.lovable.synctogether.ads`. Debug adds `applicationIdSuffix ".debug"`,
+resource = `com.synctogether.com`; the bridge lives in
+`com.synctogether.com.ads`. Debug adds `applicationIdSuffix ".debug"`,
 which changes only the installed package — the AdMob app id is not namespaced
 by `applicationId`, and the FileProvider authority uses `${applicationId}`, so
 both variants stay valid. Machine-checked by ANDROID-BUILD-T4 and T12.
@@ -46,7 +46,7 @@ both variants stay valid. Machine-checked by ANDROID-BUILD-T4 and T12.
 ## 4. Plugin registration chain
 
 ```
-AdsPlugin.java  package app.lovable.synctogether.ads
+AdsPlugin.java  package com.synctogether.com.ads
   @CapacitorPlugin(name = "SyncTogetherAds")  extends com.getcapacitor.Plugin
 MainActivity.onCreate → registerPlugin(AdsPlugin.class) → super.onCreate(...)
 Capacitor bridge exposes it as plugin "SyncTogetherAds"
@@ -113,7 +113,7 @@ why:
 
 | Rule | Reason |
 | --- | --- |
-| `-keep @com.getcapacitor.annotation.CapacitorPlugin class app.lovable.synctogether.ads.** { *; }` | Capacitor resolves the plugin by class and reads its annotation; R8 sees no call site |
+| `-keep @com.getcapacitor.annotation.CapacitorPlugin class com.synctogether.com.ads.** { *; }` | Capacitor resolves the plugin by class and reads its annotation; R8 sees no call site |
 | `-keepclassmembers ... @com.getcapacitor.PluginMethod <methods>; public <init>(...);` | bridge methods and the no-arg constructor are invoked reflectively |
 | `-keepattributes *Annotation*` | the plugin name lives in the annotation and must survive |
 

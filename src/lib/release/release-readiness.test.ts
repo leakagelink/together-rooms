@@ -31,7 +31,7 @@ const KEY_B = "b".repeat(64);
 function healthyInput(): ReleaseAuditInput {
   return {
     artifact: {
-      packageName: "app.lovable.synctogether",
+      packageName: "com.synctogether.com",
       versionCode: 2,
       versionName: "1.0.0",
       previousVersionCode: 1,
@@ -51,7 +51,7 @@ function healthyInput(): ReleaseAuditInput {
     },
     billing: {
       premiumProductId: "synctogether.premium.monthly",
-      packageName: "app.lovable.synctogether",
+      packageName: "com.synctogether.com",
     },
     ads: {
       banner: "ca-app-pub-1111111111111111/1111111111",
@@ -81,7 +81,7 @@ describe("PHASE 13 — release readiness", () => {
     for (const productId of ["android.test.purchased", "premium.test.monthly", "demo.premium"]) {
       const result = resolveProductConfig("production", {
         premiumProductId: productId,
-        packageName: "app.lovable.synctogether",
+        packageName: "com.synctogether.com",
       });
       expect(result.ok).toBe(false);
       expect(result.problems).toContain("test_product_in_production");
@@ -91,7 +91,7 @@ describe("PHASE 13 — release readiness", () => {
       ...healthyInput(),
       billing: {
         premiumProductId: "android.test.purchased",
-        packageName: "app.lovable.synctogether",
+        packageName: "com.synctogether.com",
       },
     });
     expect(audit.ok).toBe(false);

@@ -27,7 +27,7 @@ Play Billing (device)
 | --- | --- |
 | Client | `VITE_PLAY_PREMIUM_PRODUCT_ID` |
 | Server | `GOOGLE_PLAY_PREMIUM_PRODUCT_ID`, `GOOGLE_PLAY_ADDITIONAL_PRODUCT_IDS` |
-| Both | `GOOGLE_PLAY_PACKAGE_NAME` (must equal `app.lovable.synctogether`) |
+| Both | `GOOGLE_PLAY_PACKAGE_NAME` (must equal `com.synctogether.com`) |
 
 Rules enforced in code: no hard-coded ids anywhere, test-shaped ids are refused
 in production builds, a package mismatch invalidates the whole configuration,

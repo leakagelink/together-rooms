@@ -32,10 +32,10 @@ if (signedReleaseRequired && !missingSigningKeys.isEmpty()) {
 def releaseSigningConfigured = missingSigningKeys.isEmpty()
 
 android {
-    namespace = "app.lovable.synctogether"
+    namespace = "com.synctogether.com"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.lovable.synctogether"
+        applicationId "com.synctogether.com"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode appVersionCode

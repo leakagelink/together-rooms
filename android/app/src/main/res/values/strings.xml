@@ -2,8 +2,8 @@
 <resources>
     <string name="app_name">SyncTogether</string>
     <string name="title_activity_main">SyncTogether</string>
-    <string name="package_name">app.lovable.synctogether</string>
-    <string name="custom_url_scheme">app.lovable.synctogether</string>
+    <string name="package_name">com.synctogether.com</string>
+    <string name="custom_url_scheme">com.synctogether.com</string>
     <!-- PHASE 13.1 — AdMob application id. A public native identifier, not a
          secret. The "~" separates publisher and app id and must be preserved
          verbatim; it is not an XML entity and must never be escaped. -->

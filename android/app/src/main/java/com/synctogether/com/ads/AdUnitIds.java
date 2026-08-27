@@ -1,4 +1,4 @@
-package app.lovable.synctogether.ads;
+package com.synctogether.com.ads;
 
 import java.util.regex.Pattern;
 

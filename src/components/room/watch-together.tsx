@@ -503,16 +503,22 @@ export function WatchTogether({
       : "A host or controller is in charge";
   }, [state?.controlled_by, userId]);
 
-  const onSubmitUrl = (event: React.FormEvent) => {
-    event.preventDefault();
-    const id = youtubeProvider.parseReference(urlInput);
-    if (!id) {
-      toast.error(providerError("invalid_id", "parse").message);
-      return;
-    }
-    setUrlInput("");
-    mutate({ kind: "media", mediaId: id });
-  };
+  const onPickMedia = useCallback(
+    (mediaId: string) => {
+      mutate({ kind: "media", mediaId });
+    },
+    [mutate],
+  );
+
+  /** Relative seek from the device's current position, applied room-wide. */
+  const onNudge = useCallback(
+    (delta: number) => {
+      const base =
+        playerRef.current?.getCurrentTime() ?? stateRef.current?.position_seconds ?? 0;
+      mutate({ kind: "seek", position: Math.max(0, base + delta) });
+    },
+    [mutate],
+  );
 
   const busy = mutation.isPending;
 

@@ -24,7 +24,7 @@ export function useStaffContext(): StaffState {
     queryKey: queryKeys.staff.context(user?.id),
     queryFn: () => fetchContext(),
     enabled: Boolean(user?.id),
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
   });
 
   const data = query.data;

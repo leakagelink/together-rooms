@@ -51,6 +51,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 function NewRoomPage() {
   const navigate = useNavigate();
+  const { user } = Route.useRouteContext();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<(typeof roomTypes)[number]>("friends");
@@ -77,13 +78,12 @@ function NewRoomPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) throw new Error("forbidden");
+      if (!user) throw new Error("forbidden");
       const { data: room, error: insertError } = await supabase
         .from("rooms")
         .insert({
-          owner_id: auth.user.id,
-          host_id: auth.user.id,
+          owner_id: user.id,
+          host_id: user.id,
           name: parsed.data.name,
           description: parsed.data.description || null,
           type: parsed.data.type,

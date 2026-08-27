@@ -1,9 +1,35 @@
-import type { QueryClient } from "@tanstack/react-query";
+import { hydrate, type QueryClient } from "@tanstack/react-query";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { persistQueryClient } from "@tanstack/react-query-persist-client";
 
 const STORAGE_KEY = "synctogether-query-cache";
 const MAX_AGE = 24 * 60 * 60 * 1000;
+
+interface PersistedClient {
+  timestamp?: number;
+  clientState?: Parameters<typeof hydrate>[1];
+}
+
+/** Restore synchronously before the router starts any screen queries. */
+export function restorePersistedQueryCache(queryClient: QueryClient) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const persisted = JSON.parse(raw) as PersistedClient;
+    if (
+      typeof persisted.timestamp !== "number" ||
+      Date.now() - persisted.timestamp > MAX_AGE ||
+      !persisted.clientState
+    ) {
+      window.localStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+    hydrate(queryClient, persisted.clientState);
+  } catch {
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
+}
 
 /**
  * Restores the cached screen data from localStorage so returning users see

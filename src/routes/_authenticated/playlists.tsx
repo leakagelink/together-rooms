@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ChevronDown, ChevronUp, ListMusic, Plus, Trash2 } from "lucide-react";
@@ -24,6 +24,19 @@ import {
   removePlaylistItem,
 } from "@/lib/playlists.functions";
 
+const playlistsQueryOptions = () =>
+  queryOptions({
+    queryKey: queryKeys.playlists.mine(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("playlists")
+        .select("id, name, description, visibility, version, updated_at")
+        .order("updated_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
 export const Route = createFileRoute("/_authenticated/playlists")({
   head: () => ({
     meta: [
@@ -42,6 +55,7 @@ export const Route = createFileRoute("/_authenticated/playlists")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(playlistsQueryOptions()),
   component: PlaylistsPage,
   errorComponent: () => (
     <AppShell>
@@ -67,17 +81,7 @@ function PlaylistsPage() {
   const removeItem = useServerFn(removePlaylistItem);
   const moveItem = useServerFn(movePlaylistItem);
 
-  const playlists = useQuery({
-    queryKey: queryKeys.playlists.mine(),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("playlists")
-        .select("id, name, description, visibility, version, updated_at")
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+  const playlists = useQuery(playlistsQueryOptions());
 
   const activeId = selected ?? playlists.data?.[0]?.id ?? null;
   const active = playlists.data?.find((p) => p.id === activeId) ?? null;

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -9,10 +9,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { errorMessage } from "@/lib/errors";
 import { profileSchema } from "@/lib/validation";
+
+const profileQueryOptions = (userId: string) =>
+  queryOptions({
+    queryKey: ["profile", userId],
+    queryFn: async () => {
+      const { data, error: queryError } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, bio, status, subscription_tier")
+        .eq("id", userId)
+        .maybeSingle();
+      if (queryError) throw queryError;
+      return data;
+    },
+  });
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -24,11 +37,23 @@ export const Route = createFileRoute("/_authenticated/profile")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(profileQueryOptions(context.user.id)),
   component: ProfilePage,
+  errorComponent: () => (
+    <AppShell>
+      <ErrorState message="Your profile couldn't be loaded." />
+    </AppShell>
+  ),
+  notFoundComponent: () => (
+    <AppShell>
+      <ErrorState message="This profile doesn't exist." />
+    </AppShell>
+  ),
 });
 
 function ProfilePage() {
-  const { user } = useAuth();
+  const { user } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -36,19 +61,7 @@ function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const profileQuery = useQuery({
-    enabled: Boolean(user),
-    queryKey: ["profile", user?.id],
-    queryFn: async () => {
-      const { data, error: queryError } = await supabase
-        .from("profiles")
-        .select("id, username, display_name, bio, status, subscription_tier")
-        .eq("id", user!.id)
-        .maybeSingle();
-      if (queryError) throw queryError;
-      return data;
-    },
-  });
+  const profileQuery = useQuery(profileQueryOptions(user.id));
 
   useEffect(() => {
     if (profileQuery.data) {
@@ -75,10 +88,10 @@ function ProfilePage() {
           username: parsed.data.username ? parsed.data.username : null,
           bio: parsed.data.bio ? parsed.data.bio : null,
         })
-        .eq("id", user!.id);
+        .eq("id", user.id);
       if (updateError) throw updateError;
       toast.success("Profile saved.");
-      await queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
     } catch (err) {
       setError(errorMessage(err));
     } finally {

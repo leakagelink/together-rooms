@@ -618,25 +618,10 @@ export function WatchTogether({
       {transport ? <div className="mt-4">{transport}</div> : null}
 
       {canControl && roomActive ? (
-        <div className="mt-4 space-y-3">
-          <form onSubmit={onSubmitUrl} className="flex flex-wrap gap-2">
-            <label htmlFor="yt-url" className="sr-only">
-              YouTube video link
-            </label>
-            <Input
-              id="yt-url"
-              value={urlInput}
-              onChange={(event) => setUrlInput(event.target.value)}
-              placeholder="Paste a YouTube link"
-              className="min-w-48 flex-1"
-              inputMode="url"
-            />
-            <Button type="submit" disabled={busy}>
-              Load video
-            </Button>
-          </form>
+        <div className="mt-4 space-y-4">
+          <MediaSearchPanel onPick={onPickMedia} disabled={busy} actionLabel="Play in room" />
 
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Button
               variant="outline"
               size="sm"
@@ -652,6 +637,30 @@ export function WatchTogether({
               onClick={() => mutate({ kind: "pause" })}
             >
               <Pause className="size-4" aria-hidden="true" /> Pause
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy || !state?.provider_media_id}
+              onClick={() => onNudge(-10)}
+            >
+              <SkipBack className="size-4" aria-hidden="true" /> −10s
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy || !state?.provider_media_id}
+              onClick={() => onNudge(10)}
+            >
+              <SkipForward className="size-4" aria-hidden="true" /> +10s
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy || !state?.provider_media_id}
+              onClick={() => mutate({ kind: "seek", position: 0 })}
+            >
+              <Rewind className="size-4" aria-hidden="true" /> Restart
             </Button>
             <Button
               variant="outline"

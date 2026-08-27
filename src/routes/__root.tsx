@@ -16,6 +16,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { setupQueryPersistence } from "@/lib/query-persist";
 import { AdRuntimeProvider } from "@/hooks/useAds";
 import { Toaster } from "@/components/ui/sonner";
+import { PushRegistrar } from "@/components/push-registrar";
 import { rememberLastRoute } from "@/lib/android/last-route";
 import { hideNativeSplash } from "@/lib/android/splash";
 
@@ -161,6 +162,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <PushRegistrar />
         <AdRuntimeProvider>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "570775056432",
+    "project_id": "sync-b99e0",
+    "storage_bucket": "sync-b99e0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:570775056432:android:ab7bbc8d01f4ccf49fbdf5",
+        "android_client_info": {
+          "package_name": "com.synctogether.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNsJuyeeNMsVdFw9z1EKzPufveKaJqfss"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

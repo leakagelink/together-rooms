@@ -9,7 +9,6 @@ import {
   ShieldCheck,
   Sparkles,
   Users,
-  Video,
 } from "lucide-react";
 
 import { BrandLogo } from "@/components/brand";
@@ -54,10 +53,10 @@ const SMALL_TILES = [
     tone: "violet",
   },
   {
-    icon: Video,
-    emoji: "🎙️",
-    title: "Talk face to face",
-    body: "Private voice and video in the room — never recorded, never transcribed.",
+    icon: MessageSquare,
+    emoji: "💬",
+    title: "Chat in the room",
+    body: "Private room chat with reactions and moderation — no public feeds, no discovery.",
     tone: "plain",
   },
   {
@@ -173,7 +172,7 @@ function Index() {
             </Button>
           </div>
           <p className="animate-rise mt-6 text-xs text-muted-foreground [animation-delay:320ms]">
-            Rooms, invites, synchronized watching, shared music, study rooms and private calls are
+            Rooms, invites, synchronized watching, shared music, study rooms and private chat are
             live. No public feeds, no discovery, no recordings.
           </p>
         </section>

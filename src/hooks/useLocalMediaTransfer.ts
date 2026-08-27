@@ -6,6 +6,13 @@ import {
   type PeerDiag,
 } from "@/lib/local-media/diagnostics";
 import { BUFFERED_HIGH_WATER, BUFFERED_LOW_WATER, CHUNK_BYTES } from "@/lib/local-media/limits";
+import {
+  clampResumePoint,
+  describeResume,
+  planResume,
+  type PartialProgress,
+  type ResumePoint,
+} from "@/lib/local-media/resume";
 import type { SignalEnvelope } from "@/lib/local-media/transport";
 
 /**
@@ -18,8 +25,10 @@ import type { SignalEnvelope } from "@/lib/local-media/transport";
  * is uploaded: the bytes only ever exist in the sender's file handle and in the
  * receiver's in-memory blob, which is revoked when the session ends.
  *
- * Every negotiation step is recorded in an in-memory diagnostics store so the
- * room UI can show per-viewer connection status and a troubleshooting log.
+ * Delivery is resumable: the viewer keeps the chunks it already received and,
+ * on every (re)connection, asks the sharer to continue from the first missing
+ * byte instead of restarting the file. Every negotiation step is recorded in an
+ * in-memory diagnostics store for the room's troubleshooting panel.
  */
 
 interface TransferArgs {
@@ -43,6 +52,10 @@ export interface TransferResult {
   /** Human-readable reason shown when delivery fails. Null while healthy. */
   errorMessage: string | null;
   retry: () => void;
+  /** True when partial bytes are held and a retry would resume, not restart. */
+  canResume: boolean;
+  /** Bytes already buffered for the item currently being received. */
+  resumeBytes: number;
   /** Per-peer connection status: viewers for the sharer, the sharer for a viewer. */
   peers: PeerDiag[];
   /** Newest-first troubleshooting log. */
@@ -62,10 +75,18 @@ const MAX_OFFER_ATTEMPTS = 6;
 const STALL_TIMEOUT_MS = 45_000;
 /** Diagnostics are mutated per chunk; publish them to React on a timer. */
 const DIAG_FLUSH_MS = 600;
+/** Older viewers never send a resume request; start from scratch after this. */
+const RESUME_WAIT_MS = 1500;
+/** Automatic resume attempts after a dropped transfer, before asking the user. */
+const AUTO_RESUME_LIMIT = 3;
+const AUTO_RESUME_DELAY_MS = 4000;
 
-type Header = { file: { index: number; size: number; mime: string; count: number } };
+type Header = {
+  file: { index: number; size: number; mime: string; count: number; offset?: number };
+};
 type Footer = { fileEnd: number };
 type Unavailable = { unavailable: true };
+type ResumeRequest = { resume: ResumePoint };
 
 function isHeader(value: unknown): value is Header {
   return Boolean(value && typeof value === "object" && "file" in (value as object));
@@ -75,6 +96,17 @@ function isFooter(value: unknown): value is Footer {
 }
 function isUnavailable(value: unknown): value is Unavailable {
   return Boolean(value && typeof value === "object" && "unavailable" in (value as object));
+}
+function isResumeRequest(value: unknown): value is ResumeRequest {
+  return Boolean(value && typeof value === "object" && "resume" in (value as object));
+}
+
+interface PartialFile {
+  chunks: ArrayBuffer[];
+  received: number;
+  size: number;
+  mime: string;
+  complete: boolean;
 }
 
 export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
@@ -87,6 +119,7 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
   const [attempt, setAttempt] = useState(0);
   const [peers, setPeers] = useState<PeerDiag[]>([]);
   const [events, setEvents] = useState<DiagEvent[]>([]);
+  const [resumeBytes, setResumeBytes] = useState(0);
 
   const filesRef = useRef(files);
   filesRef.current = files;
@@ -94,6 +127,10 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
   sendRef.current = sendSignal;
   const urlsRef = useRef<(string | null)[]>([]);
   const diagRef = useRef(createDiagnostics());
+  /** Viewer: partially received items, deliberately kept across reconnects. */
+  const partialsRef = useRef(new Map<number, PartialFile>());
+  const itemCountRef = useRef(0);
+  const autoResumeRef = useRef(0);
 
   /** Publish diagnostics on a timer: chunk counters change far too often. */
   useEffect(() => {
@@ -123,8 +160,19 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
     setUrls([]);
   }, []);
 
+  /** A new session invalidates every buffered byte from the previous one. */
+  useEffect(() => {
+    return () => {
+      partialsRef.current.clear();
+      itemCountRef.current = 0;
+      autoResumeRef.current = 0;
+      setResumeBytes(0);
+      releaseUrls();
+    };
+  }, [sessionId, releaseUrls]);
+
   const retry = useCallback(() => {
-    diagRef.current.log("info", "Manual retry requested — renegotiating");
+    diagRef.current.log("info", "Retry requested — resuming from the last received byte");
     setErrorMessage(null);
     setAttempt((value) => value + 1);
   }, []);
@@ -143,7 +191,7 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
     let disposed = false;
     diag.log("info", "Sharing session live — waiting for viewers to request media");
 
-    const streamFiles = async (channel: RTCDataChannel, peerId: string) => {
+    const streamFiles = async (channel: RTCDataChannel, peerId: string, from: ResumePoint) => {
       const list = filesRef.current;
       diag.peer(peerId, "viewer", { channelState: channel.readyState });
       if (list.length === 0) {
@@ -156,17 +204,18 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
         }
         return;
       }
+      const start = clampResumePoint(from, list.length, list[Math.min(from.index, list.length - 1)]!.size);
       setStatus("sending");
-      diag.log("info", `Streaming ${list.length} file(s) to viewer`, peerId);
-      for (let index = 0; index < list.length; index += 1) {
+      diag.log("info", describeResume(start, list[start.index]!.size), peerId);
+      for (let index = start.index; index < list.length; index += 1) {
         const file = list[index]!;
         if (disposed || channel.readyState !== "open") return;
+        let offset = index === start.index ? Math.min(start.offset, file.size) : 0;
         channel.send(
           JSON.stringify({
-            file: { index, size: file.size, mime: file.type, count: list.length },
+            file: { index, size: file.size, mime: file.type, count: list.length, offset },
           } satisfies Header),
         );
-        let offset = 0;
         while (offset < file.size) {
           if (disposed || channel.readyState !== "open") return;
           while (channel.bufferedAmount > BUFFERED_HIGH_WATER) {
@@ -191,6 +240,54 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
         diag.log("info", `File ${index + 1}/${list.length} sent`, peerId);
       }
       if (!disposed) setStatus("ready");
+    };
+
+    const attachChannel = (channel: RTCDataChannel, peerId: string) => {
+      channel.binaryType = "arraybuffer";
+      channel.bufferedAmountLowThreshold = BUFFERED_LOW_WATER;
+      let started = false;
+      let waitTimer: ReturnType<typeof setTimeout> | null = null;
+
+      const begin = (from: ResumePoint) => {
+        if (started || disposed) return;
+        started = true;
+        if (waitTimer) clearTimeout(waitTimer);
+        void streamFiles(channel, peerId, from);
+      };
+
+      channel.onmessage = (event) => {
+        if (typeof event.data !== "string") return;
+        try {
+          const parsed: unknown = JSON.parse(event.data);
+          if (isResumeRequest(parsed)) {
+            diag.log(
+              "info",
+              `Viewer asked to resume at item ${parsed.resume.index + 1}, byte ${parsed.resume.offset}`,
+              peerId,
+            );
+            begin(parsed.resume);
+          }
+        } catch {
+          // Control messages are best-effort; ignore malformed frames.
+        }
+      };
+      channel.onclose = () => {
+        diag.peer(peerId, "viewer", { channelState: "closed" });
+        diag.log("warn", "Data channel closed", peerId);
+      };
+      channel.onerror = () => {
+        diag.peer(peerId, "viewer", { lastReason: "Data channel error" });
+        diag.log("error", "Data channel error while sending", peerId);
+      };
+      const armFallback = () => {
+        // Viewers that never ask (old clients) still get the whole thing.
+        waitTimer = setTimeout(() => begin({ index: 0, offset: 0 }), RESUME_WAIT_MS);
+      };
+      if (channel.readyState === "open") armFallback();
+      channel.onopen = () => {
+        diag.log("info", "Data channel open — awaiting resume point", peerId);
+        armFallback();
+      };
     };
 
     const unsubscribe = onSignal((signal) => {
@@ -229,24 +326,7 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
               payload: { candidate: event.candidate.toJSON() as unknown as Record<string, unknown> },
             });
           };
-          pc.ondatachannel = (event) => {
-            const channel = event.channel;
-            channel.binaryType = "arraybuffer";
-            channel.bufferedAmountLowThreshold = BUFFERED_LOW_WATER;
-            channel.onclose = () => {
-              diag.peer(peerId, "viewer", { channelState: "closed" });
-              diag.log("warn", "Data channel closed", peerId);
-            };
-            channel.onerror = () => {
-              diag.peer(peerId, "viewer", { lastReason: "Data channel error" });
-              diag.log("error", "Data channel error while sending", peerId);
-            };
-            if (channel.readyState === "open") void streamFiles(channel, peerId);
-            channel.onopen = () => {
-              diag.log("info", "Data channel open — starting transfer", peerId);
-              void streamFiles(channel, peerId);
-            };
-          };
+          pc.ondatachannel = (event) => attachChannel(event.channel, peerId);
           await pc.setRemoteDescription({
             type: "offer",
             sdp: String(signal.payload["sdp"] ?? ""),
@@ -293,10 +373,11 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
   useEffect(() => {
     if (!ready || !sessionId || isOwner || !ownerId) return;
     const diag = diagRef.current;
+    const partials = partialsRef.current;
     let disposed = false;
     setStatus("connecting");
     setErrorMessage(null);
-    diag.peer(ownerId, "sharer", { lastReason: attempt > 0 ? "Manual retry" : null });
+    diag.peer(ownerId, "sharer", { lastReason: attempt > 0 ? "Reconnecting to resume" : null });
     diag.log("info", "Connecting to the sharer's device", ownerId);
 
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
@@ -304,17 +385,30 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
     let remoteSet = false;
     let answered = false;
     let lastActivity = Date.now();
+    let current: number | null = null;
 
-    let chunks: ArrayBuffer[] = [];
-    let header: Header["file"] | null = null;
-    let received = 0;
+    const snapshotProgress = (): PartialProgress[] =>
+      [...partials.entries()].map(([index, item]) => ({
+        index,
+        received: item.received,
+        complete: item.complete,
+      }));
 
     const channel = pc.createDataChannel("local-media", { ordered: true });
     channel.binaryType = "arraybuffer";
     channel.onopen = () => {
       lastActivity = Date.now();
       diag.peer(ownerId, "sharer", { channelState: "open" });
-      diag.log("info", "Data channel open — waiting for media", ownerId);
+      const point = planResume(snapshotProgress(), itemCountRef.current);
+      setResumeBytes(point.offset);
+      diag.log(
+        "info",
+        point.offset > 0
+          ? `Asking the sharer to resume item ${point.index + 1} at byte ${point.offset}`
+          : "Data channel open — requesting media from the start",
+        ownerId,
+      );
+      channel.send(JSON.stringify({ resume: point } satisfies ResumeRequest));
       setStatus("receiving");
     };
     channel.onmessage = (event) => {
@@ -326,25 +420,52 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
           return;
         }
         if (isHeader(parsed)) {
-          header = parsed.file;
-          chunks = [];
-          received = 0;
-          diag.log(
-            "info",
-            `Incoming file ${parsed.file.index + 1}/${parsed.file.count} (${Math.round(parsed.file.size / 1024)} KB)`,
-            ownerId,
-          );
+          const meta = parsed.file;
+          itemCountRef.current = meta.count;
+          current = meta.index;
+          const existing = partials.get(meta.index);
+          const resumedAt = meta.offset ?? 0;
+          if (!existing || resumedAt === 0 || existing.received !== resumedAt) {
+            // Either a fresh item, or the sharer restarted it: drop stale bytes
+            // so the rebuilt blob can never be a mix of two streams.
+            if (existing && resumedAt !== existing.received) {
+              diag.log("warn", "Sharer restarted this item — discarding partial bytes", ownerId);
+            }
+            partials.set(meta.index, {
+              chunks: [],
+              received: resumedAt === 0 ? 0 : 0,
+              size: meta.size,
+              mime: meta.mime,
+              complete: false,
+            });
+          } else {
+            existing.size = meta.size;
+            existing.mime = meta.mime;
+            diag.log(
+              "info",
+              `Resuming item ${meta.index + 1} at ${Math.round((resumedAt / Math.max(1, meta.size)) * 100)}%`,
+              ownerId,
+            );
+          }
           setUrls((prev) => {
             const next = [...prev];
-            while (next.length < parsed.file.count) next.push(null);
+            while (next.length < meta.count) next.push(null);
             return next;
           });
+          setResumeBytes(partials.get(meta.index)?.received ?? 0);
           setErrorMessage(null);
           setStatus("receiving");
-        } else if (isFooter(parsed) && header) {
-          const blob = new Blob(chunks, { type: header.mime || "application/octet-stream" });
-          const url = URL.createObjectURL(blob);
+          const held = partials.get(meta.index)!;
+          setProgress(Math.min(1, held.received / Math.max(1, meta.size)));
+        } else if (isFooter(parsed)) {
           const index = parsed.fileEnd;
+          const item = partials.get(index);
+          if (!item) return;
+          const blob = new Blob(item.chunks, {
+            type: item.mime || "application/octet-stream",
+          });
+          const url = URL.createObjectURL(blob);
+          item.complete = true;
           urlsRef.current[index] = url;
           setUrls((prev) => {
             const next = [...prev];
@@ -353,9 +474,9 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
             return next;
           });
           diag.log("info", `File ${index + 1} received in full`, ownerId);
-          chunks = [];
-          header = null;
-          received = 0;
+          current = null;
+          autoResumeRef.current = 0;
+          setResumeBytes(0);
           setProgress(1);
           setErrorMessage(null);
           setStatus("ready");
@@ -363,14 +484,18 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
         return;
       }
       const buffer = event.data as ArrayBuffer;
-      chunks.push(buffer);
-      received += buffer.byteLength;
+      if (current === null) return;
+      const item = partials.get(current);
+      if (!item) return;
+      item.chunks.push(buffer);
+      item.received += buffer.byteLength;
       diag.bumpChunk(ownerId, "sharer", buffer.byteLength);
-      if (header) setProgress(Math.min(1, received / Math.max(1, header.size)));
+      setResumeBytes(item.received);
+      setProgress(Math.min(1, item.received / Math.max(1, item.size)));
     };
     channel.onerror = () => {
       diag.peer(ownerId, "sharer", { lastReason: "Data channel error" });
-      fail("The media stream was interrupted. Try reconnecting.", ownerId);
+      fail("The media stream was interrupted. Resuming from where it stopped…", ownerId);
     };
     channel.onclose = () => {
       diag.peer(ownerId, "sharer", { channelState: "closed" });
@@ -463,10 +588,10 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
     }, OFFER_RETRY_MS);
 
     const stallTimer = setInterval(() => {
-      if (disposed || urlsRef.current.some(Boolean)) return;
+      if (disposed) return;
       if (Date.now() - lastActivity > STALL_TIMEOUT_MS) {
         diag.peer(ownerId, "sharer", { lastReason: "No data for 45s" });
-        fail("The media stream stalled. Check the connection and retry.", ownerId);
+        fail("The media stream stalled. Reconnect to resume where it stopped.", ownerId);
         clearInterval(stallTimer);
       }
     }, 5000);
@@ -483,12 +608,40 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
       } catch {
         // Teardown is best-effort.
       }
-      releaseUrls();
-      diag.log("info", "Left the transfer", ownerId);
+      diag.log("info", "Transfer connection closed (buffered bytes kept for resume)", ownerId);
       setStatus("idle");
       setProgress(0);
     };
-  }, [ready, sessionId, isOwner, ownerId, onSignal, releaseUrls, fail, attempt]);
+  }, [ready, sessionId, isOwner, ownerId, onSignal, fail, attempt]);
 
-  return { urls, progress, status, errorMessage, retry, peers, events, clearLog };
+  /** A dropped transfer with buffered bytes resumes itself a few times. */
+  useEffect(() => {
+    if (isOwner || status !== "failed") return;
+    if (autoResumeRef.current >= AUTO_RESUME_LIMIT) return;
+    const timer = setTimeout(() => {
+      autoResumeRef.current += 1;
+      diagRef.current.log(
+        "warn",
+        `Auto-resume attempt ${autoResumeRef.current}/${AUTO_RESUME_LIMIT}`,
+      );
+      setErrorMessage(null);
+      setAttempt((value) => value + 1);
+    }, AUTO_RESUME_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [isOwner, status]);
+
+  const canResume = resumeBytes > 0;
+
+  return {
+    urls,
+    progress,
+    status,
+    errorMessage,
+    retry,
+    canResume,
+    resumeBytes,
+    peers,
+    events,
+    clearLog,
+  };
 }

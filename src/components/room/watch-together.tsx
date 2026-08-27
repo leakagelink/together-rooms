@@ -38,7 +38,7 @@ import {
 } from "@/lib/playback-device";
 import { planPlayerSurface } from "@/lib/player-surface";
 import { setPlaybackTrackingRestricted } from "@/lib/analytics";
-import { type ProviderError } from "@/lib/providers/media-provider";
+import { providerError, type ProviderError } from "@/lib/providers/media-provider";
 import { youtubeProvider } from "@/lib/providers/youtube";
 import {
   clearRoomMedia,

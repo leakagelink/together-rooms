@@ -7,7 +7,7 @@
  * Everything here is pure apart from `detectCapability`, which takes the
  * probing element as an argument so it is testable without a browser.
  */
-import { MAX_IMAGE_ITEMS, MAX_SESSION_BYTES } from "./limits";
+import { MAX_IMAGE_ITEMS, MAX_QUEUE_ITEMS, MAX_SESSION_BYTES } from "./limits";
 
 export type LocalMediaKind = "image" | "video" | "audio";
 
@@ -97,11 +97,15 @@ export function checkSelection(files: readonly SelectedMediaLike[]): SelectionCh
   }
   if (kinds.size > 1) return { ok: false, reason: "mixed_kinds" };
   const kind = [...kinds][0]!;
-  if (kind !== "image" && files.length > 1) return { ok: false, reason: "mixed_kinds" };
-  if (kind === "image" && files.length > MAX_IMAGE_ITEMS) {
-    return { ok: false, reason: "too_many_items" };
-  }
+  // Photos, videos and audio can all be shared as a queue the room browses
+  // through over the same connection; only mixing kinds is rejected.
+  if (files.length > maxItemsForKind(kind)) return { ok: false, reason: "too_many_items" };
   return { ok: true, kind };
+}
+
+/** Queue size ceiling for a given media kind. */
+export function maxItemsForKind(kind: LocalMediaKind): number {
+  return kind === "image" ? MAX_IMAGE_ITEMS : MAX_QUEUE_ITEMS;
 }
 
 export function selectionMessage(reason: SelectionRejection): string {
@@ -111,9 +115,9 @@ export function selectionMessage(reason: SelectionRejection): string {
     case "too_large":
       return "That file is too large to share in one session.";
     case "too_many_items":
-      return `You can share up to ${MAX_IMAGE_ITEMS} photos at once.`;
+      return `You can share up to ${MAX_IMAGE_ITEMS} photos, or ${MAX_QUEUE_ITEMS} videos or tracks, at once.`;
     case "mixed_kinds":
-      return "Share photos, a video, or an audio file — not a mix.";
+      return "Share photos, videos, or audio — not a mix of kinds.";
     case "empty":
       return "Select something to share first.";
   }

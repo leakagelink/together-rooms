@@ -1,8 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback } from "react";
-import { Copy, LogIn, LogOut, PowerOff, Radio } from "lucide-react";
+import { useCallback, useState } from "react";
+import {
+  Copy,
+  LogIn,
+  LogOut,
+  MessageSquare,
+  MonitorPlay,
+  PowerOff,
+  Radio,
+  Share2,
+  Users,
+  Video,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -66,11 +77,15 @@ export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
   ),
 });
 
+type RoomTab = "stage" | "call" | "chat" | "people" | "share";
+
 function RoomPage() {
   const { roomId } = Route.useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  // The stage (watch/listen/study) is always the landing surface of a room.
+  const [tab, setTab] = useState<RoomTab>("stage");
 
   // Android/browser lifecycle: on foreground or reconnect every authoritative
   // query is refetched instead of trusting the suspended snapshot.

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  Maximize2,
+  Minimize2,
   Pause,
   Play,
   RefreshCw,
@@ -145,6 +147,7 @@ export function WatchTogether({
   const queryClient = useQueryClient();
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const applyingRemote = useRef(false);
   const appliedVersion = useRef<number>(-1);
@@ -154,6 +157,7 @@ export function WatchTogether({
   const gestureRef = useRef(false);
 
   const [playerReady, setPlayerReady] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [providerFailure, setProviderFailure] = useState<ProviderError | null>(null);
   const [drifting, setDrifting] = useState(false);
   const [awaitingGesture, setAwaitingGesture] = useState(false);
@@ -309,6 +313,34 @@ export function WatchTogether({
   const applyPlanRef = useRef(applyPlan);
   applyPlanRef.current = applyPlan;
 
+  // ---- fullscreen: track state and expose an in-app toggle so the stage can
+  // go fullscreen even when the embedded frame's own button is unavailable.
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    const node = stageRef.current;
+    if (!node) return;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined);
+      return;
+    }
+    const request =
+      node.requestFullscreen?.bind(node) ??
+      (node as unknown as { webkitRequestFullscreen?: () => Promise<void> })
+        .webkitRequestFullscreen?.bind(node);
+    if (!request) {
+      toast.error("Fullscreen is not available on this device.");
+      return;
+    }
+    void Promise.resolve(request()).catch(() => {
+      toast.error("Fullscreen was blocked by the browser.");
+    });
+  }, []);
+
   // ---- player bootstrap (client-only, official IFrame API, nocookie host)
   useEffect(() => {
     let cancelled = false;
@@ -327,11 +359,18 @@ export function WatchTogether({
             playsinline: 1,
             modestbranding: 1,
             controls: 1,
+            fs: 1,
             origin: window.location.origin,
           },
           events: {
             onReady: () => {
-              if (!cancelled) setPlayerReady(true);
+              if (cancelled) return;
+              const frame = playerRef.current?.getIframe?.();
+              if (frame) {
+                frame.setAttribute("allowfullscreen", "");
+                frame.setAttribute("allow", "autoplay; encrypted-media; fullscreen; picture-in-picture");
+              }
+              setPlayerReady(true);
             },
             onError: (event: { data: unknown }) => {
               if (cancelled) return;
@@ -565,8 +604,18 @@ export function WatchTogether({
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-lg border border-border bg-muted/40">
-        <div className="relative aspect-video w-full">
+      <div
+        ref={stageRef}
+        className="group mt-4 overflow-hidden rounded-lg border border-border bg-black/90 data-[fs=true]:rounded-none data-[fs=true]:border-0"
+        data-fs={isFullscreen}
+      >
+        <div
+          className={
+            isFullscreen
+              ? "relative h-screen w-full"
+              : "relative aspect-video w-full"
+          }
+        >
           <div ref={containerRef} className="absolute inset-0 size-full" />
           {/*
             Integrity rule: an overlay is only ever rendered while no video is
@@ -577,6 +626,20 @@ export function WatchTogether({
               {surface.overlay}
             </div>
           ) : null}
+          <Button
+            type="button"
+            size="icon"
+            variant="secondary"
+            className="absolute bottom-3 right-3 z-10 size-9 opacity-80 hover:opacity-100"
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="size-4" aria-hidden="true" />
+            ) : (
+              <Maximize2 className="size-4" aria-hidden="true" />
+            )}
+          </Button>
         </div>
       </div>
 

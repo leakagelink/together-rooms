@@ -966,6 +966,27 @@ export type Database = {
         }
         Relationships: []
       }
+      push_dispatch_config: {
+        Row: {
+          endpoint: string
+          id: boolean
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          endpoint: string
+          id?: boolean
+          secret: string
+          updated_at?: string
+        }
+        Update: {
+          endpoint?: string
+          id?: boolean
+          secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       push_tokens: {
         Row: {
           created_at: string

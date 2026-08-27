@@ -129,6 +129,13 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
     ready: Boolean(session && media.credential),
   });
 
+  const transferError = transfer.errorMessage;
+  useEffect(() => {
+    if (isOwner || !transferError) return;
+    toast.error(transferError);
+  }, [isOwner, transferError]);
+
+
   const kind: LocalMediaKind | null = session?.media_kind ?? null;
   const sourceUrls = isOwner ? objectUrls : transfer.urls;
   const currentUrl =
@@ -188,7 +195,9 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
                 />
               ) : (
                 <p className="p-6 text-sm text-muted-foreground">
-                  Waiting for the shared photo to arrive…
+                  {transfer.status === "failed"
+                    ? (transfer.errorMessage ?? "Couldn't receive the shared photo.")
+                    : `Receiving photo from the sharer… ${Math.round(transfer.progress * 100)}%`}
                 </p>
               )
             ) : currentUrl ? (
@@ -204,13 +213,27 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
             ) : (
               <p className="p-6 text-sm text-muted-foreground">
                 {transfer.status === "failed"
-                  ? "Couldn't connect to the sharer's device."
+                  ? (transfer.errorMessage ?? "Couldn't connect to the sharer's device.")
                   : `Receiving ${session.media_kind} from the sharer… ${Math.round(transfer.progress * 100)}%`}
               </p>
             )}
           </div>
 
-          {!isOwner && (transfer.status === "failed" || transfer.status === "connecting") ? (
+          {!isOwner && transfer.status === "failed" ? (
+            <div
+              role="alert"
+              className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+            >
+              <span className="flex-1">
+                {transfer.errorMessage ?? "The shared media couldn't be delivered."}
+              </span>
+              <Button variant="outline" size="sm" onClick={transfer.retry}>
+                <RotateCcw className="size-4" aria-hidden="true" /> Retry
+              </Button>
+            </div>
+          ) : null}
+
+          {!isOwner && transfer.status === "connecting" ? (
             <Button variant="outline" size="sm" onClick={transfer.retry}>
               <RotateCcw className="size-4" aria-hidden="true" /> Reconnect
             </Button>

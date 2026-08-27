@@ -58,15 +58,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {online ? null : <OfflineBanner />}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto grid h-14 w-full max-w-5xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:px-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Go back"
-            className={`shrink-0 rounded-full transition-opacity ${canGoBack ? "opacity-100" : "pointer-events-none opacity-0"}`}
-            onClick={() => router.history.back()}
-          >
-            <ArrowLeft className="size-5" aria-hidden="true" />
-          </Button>
+          <BackButton homePaths={["/", "/rooms"]} />
           <div className="min-w-0">
             <BrandLogo />
           </div>

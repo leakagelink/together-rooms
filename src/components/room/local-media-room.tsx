@@ -266,7 +266,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
                 <img
                   src={currentUrl}
                   alt={`Shared photo ${activeIndex + 1} of ${session.item_count}`}
-                  className="max-h-[60vh] w-full object-contain"
+                  className="max-h-[60dvh] w-full object-contain"
                 />
               ) : (
                 <p className="p-6 text-sm text-muted-foreground">
@@ -281,7 +281,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
                 src={currentUrl}
                 controls={isOwner}
                 playsInline
-                className="max-h-[60vh] w-full bg-black"
+                className="max-h-[60dvh] w-full bg-black"
                 // Background playback is allowed for device-shared media only:
                 // it is the user's own file, not third-party embedded content.
               />

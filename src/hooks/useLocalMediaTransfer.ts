@@ -85,7 +85,15 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
     setUrls([]);
   }, []);
 
-  const retry = useCallback(() => setAttempt((value) => value + 1), []);
+  const retry = useCallback(() => {
+    setErrorMessage(null);
+    setAttempt((value) => value + 1);
+  }, []);
+
+  const fail = useCallback((message: string) => {
+    setStatus("failed");
+    setErrorMessage(message);
+  }, []);
 
   /** Owner: answer incoming offers and stream every file over the channel. */
   useEffect(() => {
@@ -95,6 +103,14 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
 
     const streamFiles = async (channel: RTCDataChannel) => {
       const list = filesRef.current;
+      if (list.length === 0) {
+        // The sharer reloaded or lost the file handle: tell the viewer plainly
+        // instead of leaving them on an endless spinner.
+        if (channel.readyState === "open") {
+          channel.send(JSON.stringify({ unavailable: true } satisfies Unavailable));
+        }
+        return;
+      }
       setStatus("sending");
       for (let index = 0; index < list.length; index += 1) {
         const file = list[index]!;

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { BackButton } from "@/components/back-button";
 import { BrandLogo } from "@/components/brand";
 import { SiteFooter } from "@/components/app-shell";
 

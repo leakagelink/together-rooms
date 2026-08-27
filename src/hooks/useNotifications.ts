@@ -74,7 +74,7 @@ export function useNotifications() {
   const unreadCount = useMemo(() => items.filter((n) => !n.read_at).length, [items]);
 
   const markAllRead = useCallback(async () => {
-    const { error } = await supabase.rpc("mark_notifications_read", { _ids: undefined });
+    const { error } = await supabase.rpc("mark_notifications_read", {});
     if (error) throw error;
     await queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY });
   }, [queryClient]);

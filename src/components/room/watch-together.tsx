@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  Copy,
   Maximize2,
   Minimize2,
   Pause,
@@ -135,6 +136,8 @@ const COMPLIANT_PLAYER_VARS = {
 
 export interface WatchTogetherProps {
   roomId: string;
+  /** Shareable join code shown in the player header so viewers can invite others. */
+  roomCode?: string | null | undefined;
   userId: string | undefined;
   /** Host or a member with can_control_playback. UI gating only — SQL re-checks. */
   canControl: boolean;
@@ -169,6 +172,7 @@ export interface WatchTogetherProps {
 
 export function WatchTogether({
   roomId,
+  roomCode,
   userId,
   canControl,
   roomActive,
@@ -687,6 +691,23 @@ export function WatchTogether({
           <h2 id="watch-heading" className="flex items-center gap-2 text-lg font-semibold">
             <Youtube className="size-5" aria-hidden="true" /> {heading ?? "Watch together"}
           </h2>
+          <button
+            type="button"
+            onClick={() => {
+              const code = roomCode ?? roomId;
+              void navigator.clipboard
+                .writeText(code)
+                .then(() => toast.success("Room ID copied"))
+                .catch(() => toast.error("Copy failed"));
+            }}
+            className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-0.5 font-mono text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title="Copy room ID"
+            aria-label="Copy room ID"
+          >
+            <span className="font-sans text-[10px] uppercase tracking-wide">Room</span>
+            <span className="truncate tracking-wider">{roomCode ?? roomId}</span>
+            <Copy className="size-3 shrink-0" aria-hidden="true" />
+          </button>
           <p className="mt-1 text-xs text-muted-foreground">
             {audioMode
               ? AUDIO_MODE_NOTICE

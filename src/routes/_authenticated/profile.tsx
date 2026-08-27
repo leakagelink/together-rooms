@@ -37,7 +37,8 @@ export const Route = createFileRoute("/_authenticated/profile")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(profileQueryOptions(context.user.id)),
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(profileQueryOptions(context.user.id)),
   component: ProfilePage,
   errorComponent: () => (
     <AppShell>
@@ -87,10 +88,10 @@ function ProfilePage() {
           username: parsed.data.username ? parsed.data.username : null,
           bio: parsed.data.bio ? parsed.data.bio : null,
         })
-        .eq("id", user!.id);
+        .eq("id", user.id);
       if (updateError) throw updateError;
       toast.success("Profile saved.");
-       await queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+      await queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
     } catch (err) {
       setError(errorMessage(err));
     } finally {

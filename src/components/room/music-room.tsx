@@ -348,9 +348,11 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
         canControl={canManage}
         roomActive={roomActive}
         heading="Listen together"
+        audioMode
         {...(roomActive ? { onTrackEnded } : {})}
         transport={transport}
       />
+
 
       <section className="surface-panel mt-8 p-5" aria-labelledby="queue-heading">
         <div className="flex flex-wrap items-start justify-between gap-3">

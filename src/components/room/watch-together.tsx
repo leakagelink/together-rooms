@@ -133,6 +133,12 @@ export interface WatchTogetherProps {
   transport?: React.ReactNode;
   /** Overrides the section heading for music rooms. */
   heading?: string;
+  /**
+   * Music-only presentation. The YouTube frame stays mounted and visible (a
+   * policy requirement) but collapses to a mini player so the queue and
+   * transport lead the UI. Users can expand the video at any time.
+   */
+  audioMode?: boolean;
 }
 
 export function WatchTogether({
@@ -143,7 +149,9 @@ export function WatchTogether({
   onTrackEnded,
   transport,
   heading,
+  audioMode = false,
 }: WatchTogetherProps) {
+
   const playback = useRoomPlayback(roomId, userId);
   const queryClient = useQueryClient();
 
@@ -160,9 +168,11 @@ export function WatchTogether({
 
   const [playerReady, setPlayerReady] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [videoExpanded, setVideoExpanded] = useState(false);
   const [providerFailure, setProviderFailure] = useState<ProviderError | null>(null);
   const [drifting, setDrifting] = useState(false);
   const [awaitingGesture, setAwaitingGesture] = useState(false);
+
 
   const state = playback.state;
   const stateRef = useRef<PlaybackState | null>(null);
@@ -613,6 +623,8 @@ export function WatchTogether({
     policyStatus,
   });
 
+  const compact = audioMode && !videoExpanded && !isFullscreen;
+
   return (
     <section className="surface-panel mt-8 p-4 sm:p-5" aria-labelledby="watch-heading">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -621,8 +633,9 @@ export function WatchTogether({
             <Youtube className="size-5" aria-hidden="true" /> {heading ?? "Watch together"}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Playback is kept close across devices from the room&apos;s saved state. It is not
-            frame-accurate.
+            {audioMode
+              ? "Audio-first mode: the video stays in a mini player (YouTube requires it visible) while the queue leads."
+              : "Playback is kept close across devices from the room's saved state. It is not frame-accurate."}
           </p>
         </div>
         <div className="flex w-full items-center justify-between gap-2 sm:w-auto">
@@ -640,14 +653,18 @@ export function WatchTogether({
         className={
           isFullscreen
             ? "fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black"
-            : "group mt-4 overflow-hidden rounded-lg border border-border bg-black/90"
+            : compact
+              ? "group mt-4 flex items-center gap-3 overflow-hidden rounded-xl border border-border bg-card p-2"
+              : "group mt-4 overflow-hidden rounded-lg border border-border bg-black/90"
         }
       >
         <div
           className={
             isFullscreen
               ? "relative h-full max-h-full w-full"
-              : "relative aspect-video w-full"
+              : compact
+                ? "relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-black sm:w-36"
+                : "relative aspect-video w-full"
           }
         >
           <div ref={containerRef} className="absolute inset-0 size-full" />
@@ -656,7 +673,7 @@ export function WatchTogether({
             loaded in the frame. Notices and the gesture prompt live below.
           */}
           {surface.overlay ? (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/85 p-4 text-center text-sm text-muted-foreground">
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/85 p-2 text-center text-xs text-muted-foreground sm:text-sm">
               {surface.overlay}
             </div>
           ) : null}
@@ -664,7 +681,11 @@ export function WatchTogether({
             type="button"
             size="icon"
             variant="secondary"
-            className="absolute bottom-3 right-3 z-10 size-9 opacity-80 hover:opacity-100"
+            className={
+              compact
+                ? "hidden"
+                : "absolute bottom-3 right-3 z-10 size-9 opacity-80 hover:opacity-100"
+            }
             onClick={toggleFullscreen}
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           >
@@ -675,7 +696,47 @@ export function WatchTogether({
             )}
           </Button>
         </div>
+        {compact ? (
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">
+                {state?.provider_media_id
+                  ? (metadata?.title ?? "Loading track details…")
+                  : "Nothing playing yet"}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {state?.provider_media_id
+                  ? `${state.playback_status}${policy?.made_for_kids ? " · Made for Kids" : ""}`
+                  : "Add a track to the queue to start listening together."}
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-9 shrink-0"
+              onClick={() => setVideoExpanded(true)}
+              aria-label="Expand video"
+            >
+              <Maximize2 className="size-4" aria-hidden="true" />
+            </Button>
+          </div>
+        ) : null}
       </div>
+
+      {audioMode && videoExpanded && !isFullscreen ? (
+        <div className="mt-2 flex justify-end">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => setVideoExpanded(false)}
+          >
+            <Minimize2 className="size-4" aria-hidden="true" /> Minimise video
+          </Button>
+        </div>
+      ) : null}
+
 
       {surface.gesturePrompt ? (
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
@@ -706,7 +767,7 @@ export function WatchTogether({
         </p>
       ))}
 
-      {state?.provider_media_id ? (
+      {state?.provider_media_id && !compact ? (
         <p className="mt-3 text-sm">
           <span className="font-medium">{metadata?.title ?? "Loading video details…"}</span>{" "}
           <span className="text-muted-foreground">
@@ -724,7 +785,12 @@ export function WatchTogether({
 
       {canControl && roomActive ? (
         <div className="mt-4 space-y-4">
-          <MediaSearchPanel onPick={onPickMedia} disabled={busy} actionLabel="Play in room" />
+          <MediaSearchPanel
+            onPick={onPickMedia}
+            disabled={busy}
+            actionLabel={audioMode ? "Play now" : "Play in room"}
+          />
+
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Button

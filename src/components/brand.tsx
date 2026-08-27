@@ -1,15 +1,21 @@
 import { Link } from "@tanstack/react-router";
 
+import brandMark from "@/assets/brand-mark.png";
+
 export function BrandMark({ className = "" }: { className?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={`bg-sunset inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-brand-foreground shadow-soft ${className}`}
+      className={`inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-card shadow-soft ring-1 ring-border/60 ${className}`}
     >
-      <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="9" cy="12" r="5" />
-        <circle cx="15" cy="12" r="5" />
-      </svg>
+      <img
+        src={brandMark}
+        alt=""
+        width={36}
+        height={36}
+        className="size-7 object-contain"
+        decoding="async"
+      />
     </span>
   );
 }

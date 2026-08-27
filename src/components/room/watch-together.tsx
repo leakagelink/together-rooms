@@ -522,8 +522,7 @@ export function WatchTogether({
   /** Relative seek from the device's current position, applied room-wide. */
   const onNudge = useCallback(
     (delta: number) => {
-      const base =
-        playerRef.current?.getCurrentTime() ?? stateRef.current?.position_seconds ?? 0;
+      const base = playerRef.current?.getCurrentTime() ?? stateRef.current?.position_seconds ?? 0;
       mutate({ kind: "seek", position: Math.max(0, base + delta) });
     },
     [mutate],

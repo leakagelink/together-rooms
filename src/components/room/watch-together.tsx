@@ -139,6 +139,16 @@ export interface WatchTogetherProps {
    * transport lead the UI. Users can expand the video at any time.
    */
   audioMode?: boolean;
+  /**
+   * Mini-player queue context (music rooms). `label` summarises the queue,
+   * e.g. "Track 3 of 12". The callbacks drive the authoritative queue RPCs
+   * so the sharer can change tracks without leaving the mini player.
+   */
+  queueStatus?: { label: string; live: boolean };
+  onPreviousTrack?: () => void;
+  onNextTrack?: () => void;
+  /** Disables the mini-player controls while a queue mutation is in flight. */
+  trackNavBusy?: boolean;
 }
 
 export function WatchTogether({
@@ -150,6 +160,10 @@ export function WatchTogether({
   transport,
   heading,
   audioMode = false,
+  queueStatus,
+  onPreviousTrack,
+  onNextTrack,
+  trackNavBusy = false,
 }: WatchTogetherProps) {
   const playback = useRoomPlayback(roomId, userId);
   const queryClient = useQueryClient();
@@ -699,29 +713,94 @@ export function WatchTogether({
           </Button>
         </div>
         {compact ? (
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">
-                {state?.provider_media_id
-                  ? (metadata?.title ?? "Loading track details…")
-                  : "Nothing playing yet"}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {state?.provider_media_id
-                  ? `${state.playback_status}${policy?.made_for_kids ? " · Made for Kids" : ""}`
-                  : "Add a track to the queue to start listening together."}
-              </p>
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">
+                  {state?.provider_media_id
+                    ? (metadata?.title ?? "Loading track details…")
+                    : "Nothing playing yet"}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {state?.provider_media_id
+                    ? `${state.playback_status}${policy?.made_for_kids ? " · Made for Kids" : ""}`
+                    : "Add a track to the queue to start listening together."}
+                </p>
+                {queueStatus ? (
+                  <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
+                    <span
+                      className={
+                        queueStatus.live
+                          ? "inline-block size-1.5 shrink-0 rounded-full bg-primary"
+                          : "inline-block size-1.5 shrink-0 rounded-full bg-muted-foreground/50"
+                      }
+                      aria-hidden="true"
+                    />
+                    {queueStatus.label}
+                  </p>
+                ) : null}
+              </div>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="size-9 shrink-0"
+                onClick={() => setVideoExpanded(true)}
+                aria-label="Expand video"
+              >
+                <Maximize2 className="size-4" aria-hidden="true" />
+              </Button>
             </div>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="size-9 shrink-0"
-              onClick={() => setVideoExpanded(true)}
-              aria-label="Expand video"
-            >
-              <Maximize2 className="size-4" aria-hidden="true" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {onPreviousTrack ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="size-9"
+                  disabled={!canControl || !roomActive || trackNavBusy || busy}
+                  onClick={onPreviousTrack}
+                  aria-label="Previous track"
+                >
+                  <SkipBack className="size-4" aria-hidden="true" />
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="size-10"
+                disabled={!canControl || !roomActive || !state?.provider_media_id || busy}
+                onClick={() =>
+                  mutate({ kind: state?.playback_status === "playing" ? "pause" : "play" })
+                }
+                aria-label={state?.playback_status === "playing" ? "Pause" : "Play"}
+              >
+                {state?.playback_status === "playing" ? (
+                  <Pause className="size-5" aria-hidden="true" />
+                ) : (
+                  <Play className="size-5" aria-hidden="true" />
+                )}
+              </Button>
+              {onNextTrack ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="size-9"
+                  disabled={!canControl || !roomActive || trackNavBusy || busy}
+                  onClick={onNextTrack}
+                  aria-label="Next track"
+                >
+                  <SkipForward className="size-4" aria-hidden="true" />
+                </Button>
+              ) : null}
+              {trackNavBusy ? (
+                <span className="ml-1 text-xs text-muted-foreground" role="status">
+                  Updating…
+                </span>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </div>

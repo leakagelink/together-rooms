@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 
+import { BackButton } from "@/components/back-button";
 import { BrandLogo } from "@/components/brand";
 import { OfflineBanner } from "@/components/state-views";
 import { Button } from "@/components/ui/button";

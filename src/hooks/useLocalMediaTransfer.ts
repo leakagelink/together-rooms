@@ -68,6 +68,7 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
   const [urls, setUrls] = useState<(string | null)[]>([]);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<TransferResult["status"]>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   const filesRef = useRef(files);

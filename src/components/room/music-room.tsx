@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -6,7 +6,6 @@ import {
   ChevronDown,
   ChevronUp,
   ListMusic,
-  Plus,
   Repeat,
   RotateCcw,
   Shuffle,
@@ -19,14 +18,12 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { MediaSearchPanel } from "@/components/room/media-search-panel";
 import { WatchTogether } from "@/components/room/watch-together";
 import { useRoomQueue } from "@/hooks/useRoomQueue";
 import { supabase } from "@/integrations/supabase/client";
 import { queryKeys } from "@/lib/query-keys";
 import type { PlaybackState } from "@/lib/playback-sync";
-import { youtubeProvider } from "@/lib/providers/youtube";
-import { providerError } from "@/lib/providers/media-provider";
 import { rpcMessage, type RpcReason } from "@/lib/rpc-types";
 import {
   addIntent,
@@ -75,7 +72,6 @@ const MODES: QueueMode[] = ["host_only", "collaborative", "host_approval"];
 export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomProps) {
   const queryClient = useQueryClient();
   const queue = useRoomQueue(roomId, userId);
-  const [urlInput, setUrlInput] = useState("");
 
   // Read-only view of the playback state the player hook already maintains.
   const playbackCache = useQuery<PlaybackState | null>({
@@ -139,16 +135,13 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
 
   const intent = addIntent(settings?.queue_mode ?? "host_only", canManage);
 
-  const onSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const id = youtubeProvider.parseReference(urlInput);
-    if (!id) {
-      toast.error(providerError("invalid_id", "parse").message);
-      return;
-    }
-    setUrlInput("");
-    run.mutate(() => add({ data: { room_id: roomId, media_id: id } }));
-  };
+  /** Adds a searched or pasted video to the authoritative room queue. */
+  const onAddMedia = useCallback(
+    (mediaId: string) => {
+      run.mutate(() => add({ data: { room_id: roomId, media_id: mediaId } }));
+    },
+    [add, roomId, run],
+  );
 
   /** End-of-track report from the player. Losing reports get version_conflict. */
   const onTrackEnded = useCallback(
@@ -353,7 +346,6 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
         transport={transport}
       />
 
-
       <section className="surface-panel mt-8 p-5" aria-labelledby="queue-heading">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -400,23 +392,13 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
         ) : null}
 
         {roomActive && intent !== "denied" ? (
-          <form onSubmit={onSubmit} className="mt-4 flex flex-wrap gap-2">
-            <label htmlFor="queue-url" className="sr-only">
-              YouTube link to add
-            </label>
-            <Input
-              id="queue-url"
-              value={urlInput}
-              onChange={(event) => setUrlInput(event.target.value)}
-              placeholder="Paste a YouTube link"
-              className="min-w-48 flex-1"
-              inputMode="url"
+          <div className="mt-4">
+            <MediaSearchPanel
+              onPick={onAddMedia}
+              disabled={busy}
+              actionLabel={intent === "suggest" ? "Suggest" : "Add to queue"}
             />
-            <Button type="submit" disabled={busy}>
-              <Plus className="size-4" aria-hidden="true" />{" "}
-              {intent === "suggest" ? "Suggest" : "Add"}
-            </Button>
-          </form>
+          </div>
         ) : (
           <p className="mt-4 text-xs text-muted-foreground">
             {roomActive

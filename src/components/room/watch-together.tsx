@@ -151,7 +151,6 @@ export function WatchTogether({
   heading,
   audioMode = false,
 }: WatchTogetherProps) {
-
   const playback = useRoomPlayback(roomId, userId);
   const queryClient = useQueryClient();
 
@@ -172,7 +171,6 @@ export function WatchTogether({
   const [providerFailure, setProviderFailure] = useState<ProviderError | null>(null);
   const [drifting, setDrifting] = useState(false);
   const [awaitingGesture, setAwaitingGesture] = useState(false);
-
 
   const state = playback.state;
   const stateRef = useRef<PlaybackState | null>(null);
@@ -364,8 +362,9 @@ export function WatchTogether({
 
     const request =
       node.requestFullscreen?.bind(node) ??
-      (node as unknown as { webkitRequestFullscreen?: () => Promise<void> })
-        .webkitRequestFullscreen?.bind(node);
+      (
+        node as unknown as { webkitRequestFullscreen?: () => Promise<void> }
+      ).webkitRequestFullscreen?.bind(node);
 
     const enterTheatre = () => {
       theatreRef.current = true;
@@ -409,7 +408,10 @@ export function WatchTogether({
               const frame = playerRef.current?.getIframe?.();
               if (frame) {
                 frame.setAttribute("allowfullscreen", "");
-                frame.setAttribute("allow", "autoplay; encrypted-media; fullscreen; picture-in-picture");
+                frame.setAttribute(
+                  "allow",
+                  "autoplay; encrypted-media; fullscreen; picture-in-picture",
+                );
               }
               setPlayerReady(true);
             },
@@ -726,17 +728,11 @@ export function WatchTogether({
 
       {audioMode && videoExpanded && !isFullscreen ? (
         <div className="mt-2 flex justify-end">
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => setVideoExpanded(false)}
-          >
+          <Button type="button" size="sm" variant="ghost" onClick={() => setVideoExpanded(false)}>
             <Minimize2 className="size-4" aria-hidden="true" /> Minimise video
           </Button>
         </div>
       ) : null}
-
 
       {surface.gesturePrompt ? (
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
@@ -790,7 +786,6 @@ export function WatchTogether({
             disabled={busy}
             actionLabel={audioMode ? "Play now" : "Play in room"}
           />
-
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Button

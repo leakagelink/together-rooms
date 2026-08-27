@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLocalMedia } from "@/hooks/useLocalMedia";
+import { useLocalMediaTransfer } from "@/hooks/useLocalMediaTransfer";
 import {
   capabilityMessage,
   checkSelection,

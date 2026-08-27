@@ -415,6 +415,7 @@ export function useLocalMedia(
     credential,
     sendSignal,
     incoming,
+    onSignal,
     error,
   };
 }

@@ -191,21 +191,30 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
                   Waiting for the shared photo to arrive…
                 </p>
               )
-            ) : (
+            ) : currentUrl ? (
               <video
                 ref={videoRef}
-                src={currentUrl ?? undefined}
+                src={currentUrl}
                 controls={isOwner}
                 playsInline
                 className="max-h-[60vh] w-full bg-black"
                 // Background playback is allowed for device-shared media only:
                 // it is the user's own file, not third-party embedded content.
-                // Picture-in-picture stays enabled so playback survives when
-                // the app is minimised.
               />
-
+            ) : (
+              <p className="p-6 text-sm text-muted-foreground">
+                {transfer.status === "failed"
+                  ? "Couldn't connect to the sharer's device."
+                  : `Receiving ${session.media_kind} from the sharer… ${Math.round(transfer.progress * 100)}%`}
+              </p>
             )}
           </div>
+
+          {!isOwner && (transfer.status === "failed" || transfer.status === "connecting") ? (
+            <Button variant="outline" size="sm" onClick={transfer.retry}>
+              <RotateCcw className="size-4" aria-hidden="true" /> Reconnect
+            </Button>
+          ) : null}
 
           <p className="text-xs text-muted-foreground">
             {session.media_kind === "image"

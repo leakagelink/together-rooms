@@ -76,6 +76,7 @@ interface YouTubePlayer {
   getCurrentTime: () => number;
   getPlayerState: () => number;
   destroy: () => void;
+  getIframe?: () => HTMLIFrameElement | null;
 }
 
 interface YTNamespace {

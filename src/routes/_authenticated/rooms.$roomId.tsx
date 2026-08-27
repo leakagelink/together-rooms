@@ -422,6 +422,7 @@ function RoomPage() {
         ) : room.type === "music" ? (
           <MusicRoom
             roomId={room.id}
+            roomCode={room.join_code}
             userId={user?.id}
             canManage={isHost || myMembership?.can_control_playback === true}
             roomActive={lifecycle === "ok"}
@@ -429,6 +430,7 @@ function RoomPage() {
         ) : (
           <WatchTogether
             roomId={room.id}
+            roomCode={room.join_code}
             userId={user?.id}
             canControl={isHost || myMembership?.can_control_playback === true}
             roomActive={lifecycle === "ok"}

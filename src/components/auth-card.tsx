@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { BackButton } from "@/components/back-button";
 import { BrandLogo } from "@/components/brand";
 
 export function AuthCard({

@@ -207,10 +207,13 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
     if (!ready || !sessionId || isOwner || !ownerId) return;
     let disposed = false;
     setStatus("connecting");
+    setErrorMessage(null);
 
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     const pending: RTCIceCandidateInit[] = [];
     let remoteSet = false;
+    let answered = false;
+    let lastActivity = Date.now();
 
     let chunks: ArrayBuffer[] = [];
     let header: Header["file"] | null = null;
@@ -218,10 +221,18 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
 
     const channel = pc.createDataChannel("local-media", { ordered: true });
     channel.binaryType = "arraybuffer";
-    channel.onopen = () => setStatus("receiving");
+    channel.onopen = () => {
+      lastActivity = Date.now();
+      setStatus("receiving");
+    };
     channel.onmessage = (event) => {
+      lastActivity = Date.now();
       if (typeof event.data === "string") {
         const parsed: unknown = JSON.parse(event.data);
+        if (isUnavailable(parsed)) {
+          fail("The sharer's device no longer has this file. Ask them to pick it again.");
+          return;
+        }
         if (isHeader(parsed)) {
           header = parsed.file;
           chunks = [];
@@ -231,6 +242,7 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
             while (next.length < parsed.file.count) next.push(null);
             return next;
           });
+          setErrorMessage(null);
           setStatus("receiving");
         } else if (isFooter(parsed) && header) {
           const blob = new Blob(chunks, { type: header.mime || "application/octet-stream" });
@@ -247,6 +259,7 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
           header = null;
           received = 0;
           setProgress(1);
+          setErrorMessage(null);
           setStatus("ready");
         }
         return;
@@ -256,7 +269,11 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
       received += buffer.byteLength;
       if (header) setProgress(Math.min(1, received / Math.max(1, header.size)));
     };
-    channel.onerror = () => setStatus("failed");
+    channel.onerror = () => fail("The media stream was interrupted. Try reconnecting.");
+    channel.onclose = () => {
+      if (disposed || urlsRef.current.some(Boolean)) return;
+      fail("The sharer's connection closed before the media arrived.");
+    };
 
     pc.onicecandidate = (event) => {
       if (!event.candidate) return;
@@ -266,18 +283,23 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
       });
     };
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "failed") setStatus("failed");
+      if (pc.connectionState === "failed") {
+        fail("Couldn't reach the sharer's device on this network.");
+      }
     };
 
     const unsubscribe = onSignal((signal) => {
       if (signal.sender_id !== ownerId) return;
       void (async () => {
         if (signal.kind === "answer") {
+          if (remoteSet) return; // ignore duplicate answers from offer retries
           await pc.setRemoteDescription({
             type: "answer",
             sdp: String(signal.payload["sdp"] ?? ""),
           });
           remoteSet = true;
+          answered = true;
+          lastActivity = Date.now();
           for (const candidate of pending.splice(0)) {
             await pc.addIceCandidate(candidate).catch(() => null);
           }
@@ -286,22 +308,51 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
           if (remoteSet) await pc.addIceCandidate(candidate).catch(() => null);
           else pending.push(candidate);
         }
-      })().catch(() => null);
+      })().catch(() => fail("Couldn't negotiate the media connection."));
     });
 
-    void (async () => {
+    // The sharer may still be joining, and signals are consumed on read, so a
+    // single offer can be missed. Re-offer until the sharer answers.
+    let offers = 0;
+    const sendOffer = async () => {
+      if (disposed || answered) return;
+      offers += 1;
       const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
+      if (pc.signalingState === "stable" || pc.signalingState === "have-local-offer") {
+        await pc.setLocalDescription(offer);
+      }
       if (disposed) return;
       await sendRef.current(ownerId, {
         kind: "offer",
         payload: { sdp: offer.sdp ?? "", type: "offer" },
       });
-    })().catch(() => setStatus("failed"));
+    };
+    void sendOffer().catch(() => fail("Couldn't ask the sharer for the media."));
+    const offerTimer = setInterval(() => {
+      if (answered || offers >= MAX_OFFER_ATTEMPTS) {
+        if (!answered && offers >= MAX_OFFER_ATTEMPTS) {
+          fail("The sharer's device didn't respond. Ask them to keep the app open, then retry.");
+        }
+        clearInterval(offerTimer);
+        return;
+      }
+      void sendOffer().catch(() => null);
+    }, OFFER_RETRY_MS);
+
+    const stallTimer = setInterval(() => {
+      if (disposed || urlsRef.current.some(Boolean)) return;
+      if (Date.now() - lastActivity > STALL_TIMEOUT_MS) {
+        fail("The media stream stalled. Check the connection and retry.");
+        clearInterval(stallTimer);
+      }
+    }, 5000);
 
     return () => {
       disposed = true;
+      clearInterval(offerTimer);
+      clearInterval(stallTimer);
       unsubscribe();
+      void sendRef.current(ownerId, { kind: "bye", payload: {} }).catch(() => null);
       try {
         channel.close();
         pc.close();
@@ -312,7 +363,7 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
       setStatus("idle");
       setProgress(0);
     };
-  }, [ready, sessionId, isOwner, ownerId, onSignal, releaseUrls, attempt]);
+  }, [ready, sessionId, isOwner, ownerId, onSignal, releaseUrls, fail, attempt]);
 
-  return { urls, progress, status, retry };
+  return { urls, progress, status, errorMessage, retry };
 }

@@ -8,6 +8,7 @@ import { useLocalMedia } from "@/hooks/useLocalMedia";
 import { useLocalMediaTransfer } from "@/hooks/useLocalMediaTransfer";
 import { LocalMediaDiagnostics } from "@/components/room/local-media-diagnostics";
 import { LocalMediaPreflight } from "@/components/room/local-media-preflight";
+import { LocalMediaQueue, type QueueItemView } from "@/components/room/local-media-queue";
 import {
   capabilityMessage,
   checkSelection,
@@ -16,7 +17,7 @@ import {
   selectionMessage,
   type LocalMediaKind,
 } from "@/lib/local-media/capability";
-import { MAX_IMAGE_ITEMS } from "@/lib/local-media/limits";
+import { MAX_IMAGE_ITEMS, MAX_QUEUE_ITEMS } from "@/lib/local-media/limits";
 import {
   buildPreflight,
   canStartSharing,
@@ -58,6 +59,8 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
   const [preflightOpen, setPreflightOpen] = useState(false);
   const [consented, setConsented] = useState(false);
   const [starting, setStarting] = useState(false);
+  /** Viewer-only: an item being browsed instead of the sharer's current one. */
+  const [browseIndex, setBrowseIndex] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -80,6 +83,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
       releaseUrls();
       setFiles([]);
       setConsented(false);
+      setBrowseIndex(null);
     }
   }, [session, releaseUrls]);
 
@@ -143,6 +147,8 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
   useEffect(() => {
     const element = videoRef.current;
     if (!element || !session || session.media_kind === "image") return;
+    // While a viewer browses another queue item, don't fight their playback.
+    if (browsingRef.current) return;
     const target = localExpectedPosition(
       {
         playback_status: session.playback_status,
@@ -179,8 +185,33 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
 
   const kind: LocalMediaKind | null = session?.media_kind ?? null;
   const sourceUrls = isOwner ? objectUrls : transfer.urls;
-  const currentUrl =
-    sourceUrls[session?.current_index ?? 0] ?? (isOwner ? (sourceUrls[0] ?? null) : null);
+  const sharedIndex = session?.current_index ?? 0;
+  // The sharer always shows the authoritative item; viewers may browse the
+  // queue locally — every item already arrives over the same connection.
+  const activeIndex = isOwner ? sharedIndex : (browseIndex ?? sharedIndex);
+  const browsing = !isOwner && browseIndex != null && browseIndex !== sharedIndex;
+  const currentUrl = sourceUrls[activeIndex] ?? (isOwner ? (sourceUrls[0] ?? null) : null);
+
+  const queueItems = useMemo<QueueItemView[]>(() => {
+    const count = session?.item_count ?? 0;
+    return Array.from({ length: count }, (_, index) => ({
+      index,
+      // Filenames never leave the device, so viewers see neutral labels.
+      label: isOwner ? (files[index]?.name ?? `Item ${index + 1}`) : `Item ${index + 1}`,
+      state: (sourceUrls[index] ? "ready" : "pending") as QueueItemView["state"],
+    }));
+  }, [session?.item_count, isOwner, files, sourceUrls]);
+
+  const selectQueueItem = useCallback(
+    (index: number) => {
+      if (isOwner) {
+        void media.control({ action: "set_index", index });
+        return;
+      }
+      setBrowseIndex(index);
+    },
+    [isOwner, media],
+  );
 
   const transportLabel = useMemo(() => {
     if (!isOwner) {
@@ -231,7 +262,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
               currentUrl ? (
                 <img
                   src={currentUrl}
-                  alt={`Shared photo ${(session.current_index ?? 0) + 1} of ${session.item_count}`}
+                  alt={`Shared photo ${activeIndex + 1} of ${session.item_count}`}
                   className="max-h-[60vh] w-full object-contain"
                 />
               ) : (
@@ -287,6 +318,19 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
           ) : null}
 
 
+          {session.item_count > 1 && kind ? (
+            <LocalMediaQueue
+              kind={kind}
+              items={queueItems}
+              activeIndex={activeIndex}
+              sharedIndex={sharedIndex}
+              canControl={isOwner}
+              browsing={browsing}
+              onSelect={selectQueueItem}
+              onFollow={() => setBrowseIndex(null)}
+            />
+          ) : null}
+
           <LocalMediaDiagnostics
             isOwner={isOwner}
             peers={transfer.peers}
@@ -295,8 +339,8 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
           />
 
           <p className="text-xs text-muted-foreground">
-            {session.media_kind === "image"
-              ? `Photo ${session.current_index + 1} of ${session.item_count}`
+            {session.item_count > 1
+              ? `${session.media_kind === "image" ? "Photo" : session.media_kind === "audio" ? "Track" : "Video"} ${activeIndex + 1} of ${session.item_count}`
               : `Live ${session.media_kind} from ${isOwner ? "your device" : "another member's device"}`}
             {" · "}
             Ends {new Date(session.expires_at).toLocaleTimeString()}
@@ -305,7 +349,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
 
           {isOwner ? (
             <div className="flex flex-wrap gap-2">
-              {session.media_kind === "image" ? (
+              {session.item_count > 1 ? (
                 <>
                   <Button
                     variant="outline"
@@ -332,7 +376,8 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
                     Next
                   </Button>
                 </>
-              ) : (
+              ) : null}
+              {session.media_kind !== "image" ? (
                 <>
                   <Button
                     variant="outline"
@@ -368,7 +413,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
                     <RotateCcw className="size-4" aria-hidden="true" /> Resync here
                   </Button>
                 </>
-              )}
+              ) : null}
               <Button variant="destructive" onClick={() => void stopShare()}>
                 <Square className="size-4" aria-hidden="true" /> Stop sharing
               </Button>
@@ -401,7 +446,9 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
               <Images className="size-4" aria-hidden="true" />
               {files.length === 1
                 ? `1 ${files[0]!.type.split("/")[0]} ready to share`
-                : `${files.length} photos ready (up to ${MAX_IMAGE_ITEMS})`}
+                : `${files.length} items queued — the room can browse through them (up to ${
+                    files[0]!.type.startsWith("image/") ? MAX_IMAGE_ITEMS : MAX_QUEUE_ITEMS
+                  })`}
             </p>
           ) : null}
           {warning ? (

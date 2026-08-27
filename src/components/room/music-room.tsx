@@ -400,24 +400,15 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
         ) : null}
 
         {roomActive && intent !== "denied" ? (
-          <form onSubmit={onSubmit} className="mt-4 flex flex-wrap gap-2">
-            <label htmlFor="queue-url" className="sr-only">
-              YouTube link to add
-            </label>
-            <Input
-              id="queue-url"
-              value={urlInput}
-              onChange={(event) => setUrlInput(event.target.value)}
-              placeholder="Paste a YouTube link"
-              className="min-w-48 flex-1"
-              inputMode="url"
+          <div className="mt-4">
+            <MediaSearchPanel
+              onPick={onAddMedia}
+              disabled={busy}
+              actionLabel={intent === "suggest" ? "Suggest" : "Add to queue"}
             />
-            <Button type="submit" disabled={busy}>
-              <Plus className="size-4" aria-hidden="true" />{" "}
-              {intent === "suggest" ? "Suggest" : "Add"}
-            </Button>
-          </form>
+          </div>
         ) : (
+
           <p className="mt-4 text-xs text-muted-foreground">
             {roomActive
               ? "Only the host can add tracks in this room."

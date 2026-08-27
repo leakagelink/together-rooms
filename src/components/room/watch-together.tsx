@@ -1,12 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Pause, Play, RefreshCw, RotateCcw, Trash2, Youtube } from "lucide-react";
+import {
+  Pause,
+  Play,
+  RefreshCw,
+  Rewind,
+  RotateCcw,
+  SkipBack,
+  SkipForward,
+  Trash2,
+  Youtube,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { MediaSearchPanel } from "@/components/room/media-search-panel";
 import { useRoomPlayback } from "@/hooks/useRoomPlayback";
 import { useProviderMetadata } from "@/hooks/useProviderMetadata";
 import { queryKeys } from "@/lib/query-keys";
@@ -145,7 +155,6 @@ export function WatchTogether({
 
   const [playerReady, setPlayerReady] = useState(false);
   const [providerFailure, setProviderFailure] = useState<ProviderError | null>(null);
-  const [urlInput, setUrlInput] = useState("");
   const [drifting, setDrifting] = useState(false);
   const [awaitingGesture, setAwaitingGesture] = useState(false);
 
@@ -503,16 +512,21 @@ export function WatchTogether({
       : "A host or controller is in charge";
   }, [state?.controlled_by, userId]);
 
-  const onSubmitUrl = (event: React.FormEvent) => {
-    event.preventDefault();
-    const id = youtubeProvider.parseReference(urlInput);
-    if (!id) {
-      toast.error(providerError("invalid_id", "parse").message);
-      return;
-    }
-    setUrlInput("");
-    mutate({ kind: "media", mediaId: id });
-  };
+  const onPickMedia = useCallback(
+    (mediaId: string) => {
+      mutate({ kind: "media", mediaId });
+    },
+    [mutate],
+  );
+
+  /** Relative seek from the device's current position, applied room-wide. */
+  const onNudge = useCallback(
+    (delta: number) => {
+      const base = playerRef.current?.getCurrentTime() ?? stateRef.current?.position_seconds ?? 0;
+      mutate({ kind: "seek", position: Math.max(0, base + delta) });
+    },
+    [mutate],
+  );
 
   const busy = mutation.isPending;
 
@@ -530,7 +544,7 @@ export function WatchTogether({
   });
 
   return (
-    <section className="surface-panel mt-8 p-5" aria-labelledby="watch-heading">
+    <section className="surface-panel mt-8 p-4 sm:p-5" aria-labelledby="watch-heading">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="watch-heading" className="flex items-center gap-2 text-lg font-semibold">
@@ -541,7 +555,7 @@ export function WatchTogether({
             frame-accurate.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto">
           <Badge variant="secondary" role="status">
             {status}
           </Badge>
@@ -612,25 +626,10 @@ export function WatchTogether({
       {transport ? <div className="mt-4">{transport}</div> : null}
 
       {canControl && roomActive ? (
-        <div className="mt-4 space-y-3">
-          <form onSubmit={onSubmitUrl} className="flex flex-wrap gap-2">
-            <label htmlFor="yt-url" className="sr-only">
-              YouTube video link
-            </label>
-            <Input
-              id="yt-url"
-              value={urlInput}
-              onChange={(event) => setUrlInput(event.target.value)}
-              placeholder="Paste a YouTube link"
-              className="min-w-48 flex-1"
-              inputMode="url"
-            />
-            <Button type="submit" disabled={busy}>
-              Load video
-            </Button>
-          </form>
+        <div className="mt-4 space-y-4">
+          <MediaSearchPanel onPick={onPickMedia} disabled={busy} actionLabel="Play in room" />
 
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Button
               variant="outline"
               size="sm"
@@ -646,6 +645,30 @@ export function WatchTogether({
               onClick={() => mutate({ kind: "pause" })}
             >
               <Pause className="size-4" aria-hidden="true" /> Pause
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy || !state?.provider_media_id}
+              onClick={() => onNudge(-10)}
+            >
+              <SkipBack className="size-4" aria-hidden="true" /> −10s
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy || !state?.provider_media_id}
+              onClick={() => onNudge(10)}
+            >
+              <SkipForward className="size-4" aria-hidden="true" /> +10s
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy || !state?.provider_media_id}
+              onClick={() => mutate({ kind: "seek", position: 0 })}
+            >
+              <Rewind className="size-4" aria-hidden="true" /> Restart
             </Button>
             <Button
               variant="outline"

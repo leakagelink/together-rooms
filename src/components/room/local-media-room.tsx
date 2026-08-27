@@ -61,6 +61,8 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
   const [starting, setStarting] = useState(false);
   /** Viewer-only: an item being browsed instead of the sharer's current one. */
   const [browseIndex, setBrowseIndex] = useState<number | null>(null);
+  /** Read inside the drift effect, which runs before `browsing` is computed. */
+  const browsingRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -190,6 +192,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
   // queue locally — every item already arrives over the same connection.
   const activeIndex = isOwner ? sharedIndex : (browseIndex ?? sharedIndex);
   const browsing = !isOwner && browseIndex != null && browseIndex !== sharedIndex;
+  browsingRef.current = browsing;
   const currentUrl = sourceUrls[activeIndex] ?? (isOwner ? (sourceUrls[0] ?? null) : null);
 
   const queueItems = useMemo<QueueItemView[]>(() => {

@@ -6,7 +6,13 @@
  * denial degrades exactly one feature: the rest of the product keeps working.
  */
 
-import type { CallDeviceFailure } from "@/lib/calls/capability";
+export type CallDeviceFailure =
+  | "permission_denied"
+  | "not_found"
+  | "unsupported"
+  | "insecure_context"
+  | "in_use"
+  | "unknown";
 
 export type AndroidPermission = "camera" | "microphone" | "media_picker" | "notifications";
 

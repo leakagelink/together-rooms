@@ -371,6 +371,7 @@ export function MusicRoom({ roomId, roomCode, userId, canManage, roomActive }: M
     <>
       <WatchTogether
         roomId={roomId}
+        roomCode={roomCode}
         userId={userId}
         canControl={canManage}
         roomActive={roomActive}

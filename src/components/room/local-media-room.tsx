@@ -116,19 +116,41 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
     if (session.playback_status !== "playing" && !element.paused) element.pause();
   }, [session]);
 
+  // Viewers receive the owner's bytes over an authenticated peer connection.
+  const transfer = useLocalMediaTransfer({
+    sessionId: session?.id ?? null,
+    ownerId: session?.owner_id ?? null,
+    isOwner,
+    userId,
+    files,
+    sendSignal: media.sendSignal,
+    onSignal: media.onSignal,
+    ready: Boolean(session && media.credential),
+  });
+
   const kind: LocalMediaKind | null = session?.media_kind ?? null;
-  const currentUrl = objectUrls[session?.current_index ?? 0] ?? objectUrls[0] ?? null;
+  const sourceUrls = isOwner ? objectUrls : transfer.urls;
+  const currentUrl =
+    sourceUrls[session?.current_index ?? 0] ?? (isOwner ? (sourceUrls[0] ?? null) : null);
 
   const transportLabel = useMemo(() => {
+    if (!isOwner) {
+      if (transfer.status === "receiving") return `Receiving ${Math.round(transfer.progress * 100)}%`;
+      if (transfer.status === "connecting") return "Connecting to sharer…";
+      if (transfer.status === "failed") return "Connection failed";
+      if (transfer.status === "ready") return "Direct encrypted connection";
+    }
     switch (media.transportState) {
       case "direct":
         return "Direct encrypted connection";
       case "relay":
         return "Encrypted via relay";
       default:
-        return "Not connected";
+        return isOwner && transfer.status === "sending"
+          ? `Sending ${Math.round(transfer.progress * 100)}%`
+          : "Not connected";
     }
-  }, [media.transportState]);
+  }, [media.transportState, isOwner, transfer.status, transfer.progress]);
 
   return (
     <section className="surface-panel mt-8 p-5" aria-labelledby="local-media-heading">

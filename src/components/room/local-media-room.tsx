@@ -216,6 +216,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
                 {transfer.status === "failed"
                   ? (transfer.errorMessage ?? "Couldn't connect to the sharer's device.")
                   : `Receiving ${session.media_kind} from the sharer… ${Math.round(transfer.progress * 100)}%`}
+                {transfer.canResume ? ` · ${formatKb(transfer.resumeBytes)} already received` : ""}
               </p>
             )}
           </div>
@@ -227,18 +228,24 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
             >
               <span className="flex-1">
                 {transfer.errorMessage ?? "The shared media couldn't be delivered."}
+                {transfer.canResume
+                  ? ` Transfer will continue from ${formatKb(transfer.resumeBytes)} — nothing already received is lost.`
+                  : ""}
               </span>
               <Button variant="outline" size="sm" onClick={transfer.retry}>
-                <RotateCcw className="size-4" aria-hidden="true" /> Retry
+                <RotateCcw className="size-4" aria-hidden="true" />{" "}
+                {transfer.canResume ? "Resume" : "Retry"}
               </Button>
             </div>
           ) : null}
 
           {!isOwner && transfer.status === "connecting" ? (
             <Button variant="outline" size="sm" onClick={transfer.retry}>
-              <RotateCcw className="size-4" aria-hidden="true" /> Reconnect
+              <RotateCcw className="size-4" aria-hidden="true" />{" "}
+              {transfer.canResume ? "Resume transfer" : "Reconnect"}
             </Button>
           ) : null}
+
 
           <LocalMediaDiagnostics
             isOwner={isOwner}

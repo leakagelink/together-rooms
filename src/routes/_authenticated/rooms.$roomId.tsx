@@ -1,8 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback } from "react";
-import { Copy, LogIn, LogOut, PowerOff, Radio } from "lucide-react";
+import { useCallback, useState } from "react";
+import {
+  Copy,
+  LogIn,
+  LogOut,
+  MessageSquare,
+  MonitorPlay,
+  PowerOff,
+  Radio,
+  Share2,
+  Users,
+  Video,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -66,11 +77,15 @@ export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
   ),
 });
 
+type RoomTab = "stage" | "call" | "chat" | "people" | "share";
+
 function RoomPage() {
   const { roomId } = Route.useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  // The stage (watch/listen/study) is always the landing surface of a room.
+  const [tab, setTab] = useState<RoomTab>("stage");
 
   // Android/browser lifecycle: on foreground or reconnect every authoritative
   // query is refetched instead of trusting the suspended snapshot.
@@ -267,182 +282,249 @@ function RoomPage() {
         ? null
         : "You're not connected to this room right now. Use Rejoin to reconnect.";
 
+  const stageLabel =
+    room.type === "study" || room.type === "research"
+      ? "Study"
+      : room.type === "music"
+        ? "Listen"
+        : "Watch";
+
+  const tabs: { id: RoomTab; label: string; icon: typeof Radio }[] = [
+    { id: "stage", label: stageLabel, icon: MonitorPlay },
+    { id: "call", label: "Call", icon: Video },
+    { id: "chat", label: "Chat", icon: MessageSquare },
+    { id: "people", label: "People", icon: Users },
+    { id: "share", label: "Share", icon: Share2 },
+  ];
+
   return (
     <AppShell>
-      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold break-words sm:text-2xl">{room.name}</h1>
-          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <Badge variant="secondary">{room.type}</Badge>
-            <span>{room.privacy}</span>
-            {room.is_ephemeral ? <span>· ephemeral</span> : null}
-            <span className="inline-flex items-center gap-1">
-              <Radio
-                className={connected ? "size-3 text-primary" : "size-3 text-muted-foreground"}
-                aria-hidden="true"
-              />
-              {!authorized ? "Live updates unavailable" : connected ? "Live" : "Reconnecting"}
-            </span>
+      {/* Compact room header: identity + live state + session actions only. */}
+      <header className="surface-panel overflow-hidden p-4 sm:p-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-black tracking-tight sm:text-2xl">{room.name}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <Badge variant="secondary" className="capitalize">
+                {room.type}
+              </Badge>
+              <span className="capitalize">{room.privacy.replace("_", " ")}</span>
+              {room.is_ephemeral ? <span>· ephemeral</span> : null}
+              <span
+                className={
+                  connected && authorized
+                    ? "inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary"
+                    : "inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-medium"
+                }
+              >
+                <Radio className="size-3" aria-hidden="true" />
+                {!authorized ? "Live off" : connected ? "Live" : "Reconnecting"}
+              </span>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-wrap justify-end gap-2">
+            <ReportDialog targetType="room" targetRoomId={room.id} />
+            {isHost && lifecycle === "ok" ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => endMutation.mutate()}
+                disabled={endMutation.isPending}
+              >
+                <PowerOff className="size-4" aria-hidden="true" />
+                <span className="hidden sm:inline">End room</span>
+              </Button>
+            ) : null}
+            {isJoined ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => leaveMutation.mutate()}
+                disabled={leaveMutation.isPending}
+              >
+                <LogOut className="size-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Leave</span>
+              </Button>
+            ) : lifecycle === "ok" && room.join_code ? (
+              <Button
+                size="sm"
+                onClick={() => rejoinMutation.mutate(room.join_code as string)}
+                disabled={rejoinMutation.isPending}
+              >
+                <LogIn className="size-4" aria-hidden="true" /> Rejoin
+              </Button>
+            ) : null}
+          </div>
+        </div>
+
+        {lifecycle !== "ok" ? (
+          <p role="status" className="mt-3 rounded-lg bg-muted/60 p-3 text-sm">
+            {lifecycle === "room_ended"
+              ? "This room has ended. Nobody new can join it."
+              : lifecycle === "room_expired"
+                ? "This room has expired. Nobody new can join it."
+                : "This room isn't open yet."}
           </p>
+        ) : null}
+      </header>
+
+      {/* Sticky section switcher — one focused surface at a time instead of a
+          single endless scroll. */}
+      <nav
+        aria-label="Room sections"
+        className="sticky top-14 z-20 -mx-3 mt-4 overflow-x-auto border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl sm:mx-0 sm:rounded-xl sm:border sm:px-2"
+      >
+        <div className="flex min-w-max gap-1 py-2">
+          {tabs.map((item) => {
+            const Icon = item.icon;
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setTab(item.id)}
+                aria-current={active ? "page" : undefined}
+                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <Icon className="size-4" aria-hidden="true" />
+                {item.label}
+              </button>
+            );
+          })}
         </div>
-        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-          <ReportDialog targetType="room" targetRoomId={room.id} />
-          {isHost && lifecycle === "ok" ? (
-            <Button
-              variant="outline"
-              onClick={() => endMutation.mutate()}
-              disabled={endMutation.isPending}
-            >
-              <PowerOff className="size-4" aria-hidden="true" /> End room
-            </Button>
-          ) : null}
-          {isJoined ? (
-            <Button
-              variant="outline"
-              onClick={() => leaveMutation.mutate()}
-              disabled={leaveMutation.isPending}
-            >
-              <LogOut className="size-4" aria-hidden="true" /> Leave
-            </Button>
-          ) : lifecycle === "ok" && room.join_code ? (
-            <Button
-              onClick={() => rejoinMutation.mutate(room.join_code as string)}
-              disabled={rejoinMutation.isPending}
-            >
-              <LogIn className="size-4" aria-hidden="true" /> Rejoin
-            </Button>
-          ) : null}
-        </div>
+      </nav>
+
+      {/* Every panel stays mounted so realtime subscriptions, playback and call
+          state survive tab switches; only visibility changes. */}
+      <div className={tab === "stage" ? "pb-8" : "hidden"}>
+        {room.type === "study" || room.type === "research" ? (
+          <StudyRoom
+            roomId={room.id}
+            userId={user?.id}
+            canControl={isHost || myMembership?.can_control_playback === true}
+            roomActive={lifecycle === "ok"}
+          />
+        ) : room.type === "music" ? (
+          <MusicRoom
+            roomId={room.id}
+            userId={user?.id}
+            canManage={isHost || myMembership?.can_control_playback === true}
+            roomActive={lifecycle === "ok"}
+          />
+        ) : (
+          <WatchTogether
+            roomId={room.id}
+            userId={user?.id}
+            canControl={isHost || myMembership?.can_control_playback === true}
+            roomActive={lifecycle === "ok"}
+          />
+        )}
+
+        {room.privacy === "private" || room.privacy === "invite_only" ? (
+          <LocalMediaRoom
+            roomId={room.id}
+            userId={user?.id}
+            canShare={isHost || myMembership?.can_control_playback === true}
+            roomActive={lifecycle === "ok"}
+          />
+        ) : null}
       </div>
 
-      {lifecycle !== "ok" ? (
-        <p role="status" className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-sm">
-          {lifecycle === "room_ended"
-            ? "This room has ended. Nobody new can join it."
-            : lifecycle === "room_expired"
-              ? "This room has expired. Nobody new can join it."
-              : "This room isn't open yet."}
-        </p>
-      ) : null}
+      <div className={tab === "call" ? "pb-8" : "hidden"}>
+        <RoomCall
+          roomId={room.id}
+          userId={user?.id}
+          canModerate={canModerate}
+          roomActive={lifecycle === "ok"}
+        />
+      </div>
 
-      {room.description ? (
-        <p className="mt-4 max-w-2xl text-sm text-muted-foreground">{room.description}</p>
-      ) : null}
+      <div className={tab === "chat" ? "pb-8" : "hidden"}>
+        <RoomChat
+          roomId={room.id}
+          userId={user?.id}
+          members={membersQuery.data ?? []}
+          canModerate={canModerate}
+          canInteract={canChat}
+          disabledReason={chatDisabledReason}
+        />
+      </div>
 
-      {isHost && room.join_code ? (
-        <section className="surface-panel mt-6 flex flex-col items-start justify-between gap-3 p-4 sm:flex-row sm:items-center sm:p-5">
-          <div>
-            <h2 className="text-sm font-semibold">Join code</h2>
-            <p className="mt-1 font-mono text-lg tracking-widest">{room.join_code}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Share it only with people you want in this room.
-            </p>
+      <div className={tab === "people" ? "pb-8" : "hidden"}>
+        <section className="mt-6" aria-labelledby="members-heading">
+          <h2 id="members-heading" className="text-lg font-semibold">
+            Members
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Presence is advisory. Membership in the database is authoritative.
+          </p>
+          <div className="mt-3">
+            {membersQuery.isPending ? (
+              <LoadingState label="Loading members" rows={2} />
+            ) : membersQuery.isError ? (
+              <ErrorState
+                message={errorMessage(membersQuery.error)}
+                onRetry={() => void membersQuery.refetch()}
+              />
+            ) : (
+              <RoomMembersPanel
+                members={membersQuery.data}
+                presence={presence}
+                currentUserId={user?.id}
+                roomId={room.id}
+                canTransferHost={isHost}
+                onTransferHost={(userId) => transferMutation.mutate(userId)}
+                transferPending={transferMutation.isPending}
+                mutedIds={mutedIds}
+                canModerate={canModerate}
+                onToggleMute={(userId, muted) => muteMutation.mutate({ userId, muted })}
+                mutePending={muteMutation.isPending}
+              />
+            )}
           </div>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              await navigator.clipboard.writeText(room.join_code ?? "");
-              toast.success("Join code copied.");
-            }}
-          >
-            <Copy className="size-4" aria-hidden="true" /> Copy
-          </Button>
         </section>
-      ) : null}
+      </div>
 
-      {isHost ? <RoomInvitePanel roomId={room.id} /> : null}
+      <div className={tab === "share" ? "pb-8" : "hidden"}>
+        {room.description ? (
+          <p className="mt-6 max-w-2xl text-sm text-muted-foreground">{room.description}</p>
+        ) : null}
 
-      <section className="mt-8" aria-labelledby="members-heading">
-        <h2 id="members-heading" className="text-lg font-semibold">
-          Members
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Presence is advisory. Membership in the database is authoritative.
-        </p>
-        <div className="mt-3">
-          {membersQuery.isPending ? (
-            <LoadingState label="Loading members" rows={2} />
-          ) : membersQuery.isError ? (
-            <ErrorState
-              message={errorMessage(membersQuery.error)}
-              onRetry={() => void membersQuery.refetch()}
-            />
-          ) : (
-            <RoomMembersPanel
-              members={membersQuery.data}
-              presence={presence}
-              currentUserId={user?.id}
-              roomId={room.id}
-              canTransferHost={isHost}
-              onTransferHost={(userId) => transferMutation.mutate(userId)}
-              transferPending={transferMutation.isPending}
-              mutedIds={mutedIds}
-              canModerate={canModerate}
-              onToggleMute={(userId, muted) => muteMutation.mutate({ userId, muted })}
-              mutePending={muteMutation.isPending}
-            />
-          )}
-        </div>
-      </section>
+        {isHost && room.join_code ? (
+          <section className="surface-panel mt-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 sm:p-5">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold">Join code</h2>
+              <p className="mt-1 font-mono text-lg tracking-widest">{room.join_code}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Share it only with people you want in this room.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="shrink-0"
+              onClick={async () => {
+                await navigator.clipboard.writeText(room.join_code ?? "");
+                toast.success("Join code copied.");
+              }}
+            >
+              <Copy className="size-4" aria-hidden="true" /> Copy
+            </Button>
+          </section>
+        ) : null}
 
-      {room.type === "study" || room.type === "research" ? (
-        <StudyRoom
-          roomId={room.id}
-          userId={user?.id}
-          canControl={isHost || myMembership?.can_control_playback === true}
-          roomActive={lifecycle === "ok"}
-        />
-      ) : room.type === "music" ? (
-        <MusicRoom
-          roomId={room.id}
-          userId={user?.id}
-          canManage={isHost || myMembership?.can_control_playback === true}
-          roomActive={lifecycle === "ok"}
-        />
-      ) : (
-        <WatchTogether
-          roomId={room.id}
-          userId={user?.id}
-          canControl={isHost || myMembership?.can_control_playback === true}
-          roomActive={lifecycle === "ok"}
-        />
-      )}
+        {isHost ? <RoomInvitePanel roomId={room.id} /> : null}
 
-      {/* Phase 7: private, temporary device-media sharing for private rooms. */}
-      {room.privacy === "private" || room.privacy === "invite_only" ? (
-        <LocalMediaRoom
-          roomId={room.id}
-          userId={user?.id}
-          canShare={isHost || myMembership?.can_control_playback === true}
-          roomActive={lifecycle === "ok"}
-        />
-      ) : null}
-
-      {/* Phase 8: live, unrecorded voice & video for members of this room. */}
-      <RoomCall
-        roomId={room.id}
-        userId={user?.id}
-        canModerate={canModerate}
-        roomActive={lifecycle === "ok"}
-      />
-
-      <RoomChat
-        roomId={room.id}
-        userId={user?.id}
-        members={membersQuery.data ?? []}
-        canModerate={canModerate}
-        canInteract={canChat}
-        disabledReason={chatDisabledReason}
-      />
-
-      <section className="surface-panel mt-8 p-5">
-        <h2 className="text-sm font-semibold">Coming in a later phase</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Shared listening, voice and video and the AI room assistant are not implemented yet.
-          YouTube watch-together, the room engine, roles, permissions, realtime event log and chat
-          foundation are in place.
-        </p>
-      </section>
+        {!isHost && !room.description ? (
+          <p className="mt-6 text-sm text-muted-foreground">
+            Only the host can invite people to this room.
+          </p>
+        ) : null}
+      </div>
     </AppShell>
   );
 }
+

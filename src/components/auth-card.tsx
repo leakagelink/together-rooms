@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { BackButton } from "@/components/back-button";
 import { BrandLogo } from "@/components/brand";
 
 export function AuthCard({
@@ -14,7 +15,8 @@ export function AuthCard({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="mx-auto flex h-16 w-full max-w-5xl items-center px-4">
+      <header className="mx-auto flex h-16 w-full max-w-5xl items-center gap-2 px-4">
+        <BackButton homePaths={["/"]} />
         <BrandLogo />
       </header>
       <main className="flex flex-1 items-start justify-center px-4 pt-6 pb-16">

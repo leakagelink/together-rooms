@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 
+import { BackButton } from "@/components/back-button";
 import { BrandLogo } from "@/components/brand";
 import { OfflineBanner } from "@/components/state-views";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col bg-background">
       {online ? null : <OfflineBanner />}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto grid h-14 w-full max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 sm:px-4">
+        <div className="mx-auto grid h-14 w-full max-w-5xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:px-4">
+          <BackButton homePaths={["/", "/rooms"]} />
           <div className="min-w-0">
             <BrandLogo />
           </div>

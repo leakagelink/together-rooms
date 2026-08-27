@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { BackButton } from "@/components/back-button";
 import { BrandLogo } from "@/components/brand";
 import { SiteFooter } from "@/components/app-shell";
 
@@ -15,7 +16,8 @@ export function LegalPage({
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border">
-        <div className="mx-auto flex h-16 w-full max-w-3xl items-center px-4">
+        <div className="mx-auto flex h-16 w-full max-w-3xl items-center gap-2 px-4">
+          <BackButton homePaths={["/"]} />
           <BrandLogo />
         </div>
       </header>

@@ -966,6 +966,33 @@ export type Database = {
         }
         Relationships: []
       }
+      push_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rate_limits: {
         Row: {
           action: string
@@ -2401,6 +2428,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      clear_notifications: { Args: never; Returns: number }
       clear_queue: {
         Args: { _expected_queue_version?: number; _room_id: string }
         Returns: Json
@@ -2493,6 +2521,17 @@ export type Database = {
       edit_room_message: {
         Args: { _content: string; _message_id: string }
         Returns: Json
+      }
+      emit_notification: {
+        Args: {
+          _body?: string
+          _data?: Json
+          _dedupe_seconds?: number
+          _title: string
+          _type: string
+          _user_id: string
+        }
+        Returns: string
       }
       emit_playback_system_message: {
         Args: { _code: string; _room_id: string; _text: string }
@@ -2637,6 +2676,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      mark_notifications_read: { Args: { _ids?: string[] }; Returns: number }
       move_playlist_item: {
         Args: {
           _expected_version?: number
@@ -2656,6 +2696,18 @@ export type Database = {
       my_entitlement: { Args: never; Returns: Json }
       my_staff_context: { Args: never; Returns: Json }
       my_subscription_events: { Args: { _limit?: number }; Returns: Json }
+      notify_room_members: {
+        Args: {
+          _body?: string
+          _data?: Json
+          _dedupe_seconds?: number
+          _except: string
+          _room_id: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
+      }
       pause_room_media: {
         Args: { _expected_version?: number; _room_id: string }
         Returns: Json
@@ -2759,6 +2811,10 @@ export type Database = {
         Returns: Json
       }
       redeem_room_invite: { Args: { _token_hash: string }; Returns: Json }
+      register_push_token: {
+        Args: { _platform?: string; _token: string }
+        Returns: undefined
+      }
       reject_queue_item: { Args: { _item_id: string }; Returns: Json }
       remove_from_queue: { Args: { _item_id: string }; Returns: Json }
       remove_playlist_item: { Args: { _item_id: string }; Returns: Json }

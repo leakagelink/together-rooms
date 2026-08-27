@@ -395,14 +395,19 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
       ) : null}
 
       <Tabs defaultValue="resources" className="mt-5">
-        <TabsList>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="timer">Focus timer</TabsTrigger>
-          <TabsTrigger value="summary">Summary</TabsTrigger>
-          {canControl ? <TabsTrigger value="settings">Settings</TabsTrigger> : null}
-        </TabsList>
+        {/* Mobile: the tab strip scrolls inside its own track instead of
+            pushing the whole page wider than the viewport. */}
+        <div className="-mx-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <TabsList className="w-max min-w-full justify-start">
+            <TabsTrigger value="resources">Resources</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="timer">Timer</TabsTrigger>
+            <TabsTrigger value="summary">Summary</TabsTrigger>
+            {canControl ? <TabsTrigger value="settings">Settings</TabsTrigger> : null}
+          </TabsList>
+        </div>
+
 
         {/* ------------------------------------------------------ resources */}
         <TabsContent value="resources" className="mt-4 space-y-4">

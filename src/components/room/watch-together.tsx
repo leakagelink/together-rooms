@@ -39,6 +39,13 @@ import {
   type LocalPlayerSnapshot,
 } from "@/lib/playback-device";
 import { planPlayerSurface } from "@/lib/player-surface";
+import {
+  AUDIO_MODE_NOTICE,
+  BACKGROUND_PAUSE_NOTICE,
+  isCompliantPlayerVars,
+  planBackgroundEnforcement,
+  YOUTUBE_COMPLIANCE_LIMITS,
+} from "@/lib/youtube-compliance";
 import { setPlaybackTrackingRestricted } from "@/lib/analytics";
 import { providerError, type ProviderError } from "@/lib/providers/media-provider";
 import { youtubeProvider } from "@/lib/providers/youtube";
@@ -117,6 +124,15 @@ function loadYouTubeApi(): Promise<YTNamespace> {
   return apiPromise;
 }
 
+/** The only player configuration allowed by the YouTube compliance gate. */
+const COMPLIANT_PLAYER_VARS = {
+  rel: 0,
+  playsinline: 1,
+  modestbranding: 1,
+  controls: 1,
+  fs: 1,
+} as const;
+
 export interface WatchTogetherProps {
   roomId: string;
   userId: string | undefined;
@@ -185,6 +201,7 @@ export function WatchTogether({
   const [providerFailure, setProviderFailure] = useState<ProviderError | null>(null);
   const [drifting, setDrifting] = useState(false);
   const [awaitingGesture, setAwaitingGesture] = useState(false);
+  const [backgroundPaused, setBackgroundPaused] = useState(false);
 
   const state = playback.state;
   const stateRef = useRef<PlaybackState | null>(null);
@@ -404,18 +421,17 @@ export function WatchTogether({
     void loadYouTubeApi()
       .then((YT) => {
         if (cancelled || playerRef.current) return;
+        // Compliance gate: never construct a player from a configuration that
+        // could hide the video surface or imply audio-only extraction.
+        if (!isCompliantPlayerVars(COMPLIANT_PLAYER_VARS)) {
+          setProviderFailure(providerError("player_init_failed", "policy:player_vars"));
+          return;
+        }
         playerRef.current = new YT.Player(el, {
           host: youtubeProvider.embedHost,
           width: "100%",
           height: "100%",
-          playerVars: {
-            rel: 0,
-            playsinline: 1,
-            modestbranding: 1,
-            controls: 1,
-            fs: 1,
-            origin: window.location.origin,
-          },
+          playerVars: { ...COMPLIANT_PLAYER_VARS, origin: window.location.origin },
           events: {
             onReady: () => {
               if (cancelled) return;
@@ -532,7 +548,30 @@ export function WatchTogether({
     return () => clearTimeout(timer);
   }, [playerReady, setGesture, snapshot, state]);
 
+  // ---- YouTube ToS: no background playback, no audio-only extraction.
+  // When the app is backgrounded the local player is paused. This is a LOCAL
+  // pause only — the authoritative room state is untouched, so everyone else
+  // keeps watching.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onVisibility = () => {
+      const player = playerRef.current;
+      if (!player) return;
+      const enforcement = planBackgroundEnforcement({
+        visibility: document.visibilityState === "hidden" ? "hidden" : "visible",
+        hasMedia: Boolean(stateRef.current?.provider_media_id),
+        locallyPlaying: snapshot().playing,
+      });
+      if (!enforcement.pauseLocally) return;
+      suppress(() => player.pauseVideo());
+      setBackgroundPaused(true);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [snapshot, suppress]);
+
   // ---- bounded drift correction: local seeks only, never a database write
+
   useEffect(() => {
     if (!playerReady) return;
     const id = setInterval(() => {
@@ -650,7 +689,7 @@ export function WatchTogether({
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {audioMode
-              ? "Audio-first mode: the video stays in a mini player (YouTube requires it visible) while the queue leads."
+              ? AUDIO_MODE_NOTICE
               : "Playback is kept close across devices from the room's saved state. It is not frame-accurate."}
           </p>
         </div>
@@ -828,6 +867,24 @@ export function WatchTogether({
         </div>
       ) : null}
 
+      {backgroundPaused ? (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/40 p-3">
+          <p role="status" className="min-w-40 flex-1 text-xs text-foreground">
+            {BACKGROUND_PAUSE_NOTICE}
+          </p>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              setBackgroundPaused(false);
+              onResync();
+            }}
+          >
+            <RefreshCw className="size-4" aria-hidden="true" /> Resume &amp; resync
+          </Button>
+        </div>
+      ) : null}
+
       {surface.notices.map((notice) => (
         <p
           key={notice.id}
@@ -855,6 +912,17 @@ export function WatchTogether({
       ) : null}
 
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
+
+      <details className="mt-3 rounded-md border border-border bg-muted/20 p-2">
+        <summary className="cursor-pointer text-xs text-muted-foreground">
+          YouTube playback limits
+        </summary>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+          {YOUTUBE_COMPLIANCE_LIMITS.map((limit) => (
+            <li key={limit}>{limit}</li>
+          ))}
+        </ul>
+      </details>
 
       {transport ? <div className="mt-4">{transport}</div> : null}
 

@@ -1,5 +1,6 @@
-import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
 import {
+  ArrowLeft,
   DoorOpen,
   Gavel,
   ListMusic,

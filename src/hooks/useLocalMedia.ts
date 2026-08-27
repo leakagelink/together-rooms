@@ -86,6 +86,8 @@ export interface UseLocalMediaResult {
   credential: TransportCredential | null;
   sendSignal: (peerId: string, envelope: SignalEnvelope) => Promise<void>;
   incoming: (SignalEnvelope & { sender_id: string })[];
+  /** Subscribe to every signal as it arrives (signals are consumed on read). */
+  onSignal: (listener: (signal: SignalEnvelope & { sender_id: string }) => void) => () => void;
   error: string | null;
 }
 

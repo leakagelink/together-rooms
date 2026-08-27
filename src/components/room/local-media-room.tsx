@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLocalMedia } from "@/hooks/useLocalMedia";
 import { useLocalMediaTransfer } from "@/hooks/useLocalMediaTransfer";
+import { LocalMediaDiagnostics } from "@/components/room/local-media-diagnostics";
 import {
   capabilityMessage,
   checkSelection,
@@ -239,6 +240,13 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
             </Button>
           ) : null}
 
+          <LocalMediaDiagnostics
+            isOwner={isOwner}
+            peers={transfer.peers}
+            events={transfer.events}
+            onClear={transfer.clearLog}
+          />
+
           <p className="text-xs text-muted-foreground">
             {session.media_kind === "image"
               ? `Photo ${session.current_index + 1} of ${session.item_count}`
@@ -246,6 +254,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
             {" · "}
             Ends {new Date(session.expires_at).toLocaleTimeString()}
           </p>
+
 
           {isOwner ? (
             <div className="flex flex-wrap gap-2">

@@ -25,6 +25,13 @@ interface LocalMediaRoomProps {
   canShare: boolean;
   roomActive: boolean;
 }
+/** Compact byte label used in the resume hints. */
+function formatKb(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 
 /**
  * Phase 7 — private local media sharing surface.

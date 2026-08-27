@@ -55,6 +55,8 @@ import {
 
 interface MusicRoomProps {
   roomId: string;
+  /** Shareable join code shown in the player header so viewers can invite others. */
+  roomCode?: string | null;
   userId: string | undefined;
   /** Host or a member with playback control. UI gating only — SQL re-checks. */
   canManage: boolean;
@@ -69,7 +71,7 @@ const MODES: QueueMode[] = ["host_only", "collaborative", "host_approval"];
  * Every button here calls a queue RPC. The client never decides ordering,
  * permission or what plays next — it only reports and re-reads.
  */
-export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomProps) {
+export function MusicRoom({ roomId, roomCode, userId, canManage, roomActive }: MusicRoomProps) {
   const queryClient = useQueryClient();
   const queue = useRoomQueue(roomId, userId);
 

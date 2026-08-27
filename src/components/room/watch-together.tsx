@@ -42,6 +42,7 @@ import { planPlayerSurface } from "@/lib/player-surface";
 import {
   AUDIO_MODE_NOTICE,
   BACKGROUND_PAUSE_NOTICE,
+  isCompliantPlayerVars,
   planBackgroundEnforcement,
   YOUTUBE_COMPLIANCE_LIMITS,
 } from "@/lib/youtube-compliance";
@@ -122,6 +123,15 @@ function loadYouTubeApi(): Promise<YTNamespace> {
   });
   return apiPromise;
 }
+
+/** The only player configuration allowed by the YouTube compliance gate. */
+const COMPLIANT_PLAYER_VARS = {
+  rel: 0,
+  playsinline: 1,
+  modestbranding: 1,
+  controls: 1,
+  fs: 1,
+} as const;
 
 export interface WatchTogetherProps {
   roomId: string;
@@ -411,18 +421,17 @@ export function WatchTogether({
     void loadYouTubeApi()
       .then((YT) => {
         if (cancelled || playerRef.current) return;
+        // Compliance gate: never construct a player from a configuration that
+        // could hide the video surface or imply audio-only extraction.
+        if (!isCompliantPlayerVars(COMPLIANT_PLAYER_VARS)) {
+          setProviderFailure(providerError("player_init_failed", "policy:player_vars"));
+          return;
+        }
         playerRef.current = new YT.Player(el, {
           host: youtubeProvider.embedHost,
           width: "100%",
           height: "100%",
-          playerVars: {
-            rel: 0,
-            playsinline: 1,
-            modestbranding: 1,
-            controls: 1,
-            fs: 1,
-            origin: window.location.origin,
-          },
+          playerVars: { ...COMPLIANT_PLAYER_VARS, origin: window.location.origin },
           events: {
             onReady: () => {
               if (cancelled) return;

@@ -71,8 +71,10 @@
          INTERNET      : required, the entire product is networked.
          No storage/media permissions are declared: local media sharing uses the
          system file picker (SAF), which grants per-file access without any
-         permission. No POST_NOTIFICATIONS: the app sends no notifications yet. -->
+         permission. POST_NOTIFICATIONS is runtime-requested (Android 13+) and
+         only used for activity notifications the user can disable in settings. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
 </manifest>

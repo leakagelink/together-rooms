@@ -42,9 +42,9 @@ import { planPlayerSurface } from "@/lib/player-surface";
 import {
   AUDIO_MODE_NOTICE,
   BACKGROUND_PAUSE_NOTICE,
+  planBackgroundEnforcement,
   YOUTUBE_COMPLIANCE_LIMITS,
 } from "@/lib/youtube-compliance";
-import { planBackgroundEnforcement } from "@/lib/youtube-compliance";
 import { setPlaybackTrackingRestricted } from "@/lib/analytics";
 import { providerError, type ProviderError } from "@/lib/providers/media-provider";
 import { youtubeProvider } from "@/lib/providers/youtube";
@@ -858,6 +858,24 @@ export function WatchTogether({
         </div>
       ) : null}
 
+      {backgroundPaused ? (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/40 p-3">
+          <p role="status" className="min-w-40 flex-1 text-xs text-foreground">
+            {BACKGROUND_PAUSE_NOTICE}
+          </p>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              setBackgroundPaused(false);
+              onResync();
+            }}
+          >
+            <RefreshCw className="size-4" aria-hidden="true" /> Resume &amp; resync
+          </Button>
+        </div>
+      ) : null}
+
       {surface.notices.map((notice) => (
         <p
           key={notice.id}
@@ -885,6 +903,17 @@ export function WatchTogether({
       ) : null}
 
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
+
+      <details className="mt-3 rounded-md border border-border bg-muted/20 p-2">
+        <summary className="cursor-pointer text-xs text-muted-foreground">
+          YouTube playback limits
+        </summary>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+          {YOUTUBE_COMPLIANCE_LIMITS.map((limit) => (
+            <li key={limit}>{limit}</li>
+          ))}
+        </ul>
+      </details>
 
       {transport ? <div className="mt-4">{transport}</div> : null}
 

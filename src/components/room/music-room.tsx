@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -6,7 +6,6 @@ import {
   ChevronDown,
   ChevronUp,
   ListMusic,
-  Plus,
   Repeat,
   RotateCcw,
   Shuffle,

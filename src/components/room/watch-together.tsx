@@ -785,7 +785,12 @@ export function WatchTogether({
 
       {canControl && roomActive ? (
         <div className="mt-4 space-y-4">
-          <MediaSearchPanel onPick={onPickMedia} disabled={busy} actionLabel="Play in room" />
+          <MediaSearchPanel
+            onPick={onPickMedia}
+            disabled={busy}
+            actionLabel={audioMode ? "Play now" : "Play in room"}
+          />
+
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Button

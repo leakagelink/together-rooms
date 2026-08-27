@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/analytics";
 import { errorMessage } from "@/lib/errors";
@@ -52,7 +51,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 function NewRoomPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = Route.useRouteContext();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<(typeof roomTypes)[number]>("friends");

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { errorMessage } from "@/lib/errors";
 import { profileSchema } from "@/lib/validation";
@@ -53,7 +52,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
 });
 
 function ProfilePage() {
-  const { user } = useAuth();
+  const { user } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -61,7 +60,7 @@ function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const profileQuery = useQuery(profileQueryOptions(user?.id ?? ""));
+  const profileQuery = useQuery(profileQueryOptions(user.id));
 
   useEffect(() => {
     if (profileQuery.data) {
@@ -91,7 +90,7 @@ function ProfilePage() {
         .eq("id", user!.id);
       if (updateError) throw updateError;
       toast.success("Profile saved.");
-      await queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+       await queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
     } catch (err) {
       setError(errorMessage(err));
     } finally {

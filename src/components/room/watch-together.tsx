@@ -135,6 +135,8 @@ const COMPLIANT_PLAYER_VARS = {
 
 export interface WatchTogetherProps {
   roomId: string;
+  /** Shareable join code shown in the player header so viewers can invite others. */
+  roomCode?: string | null;
   userId: string | undefined;
   /** Host or a member with can_control_playback. UI gating only — SQL re-checks. */
   canControl: boolean;

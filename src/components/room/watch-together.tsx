@@ -139,6 +139,16 @@ export interface WatchTogetherProps {
    * transport lead the UI. Users can expand the video at any time.
    */
   audioMode?: boolean;
+  /**
+   * Mini-player queue context (music rooms). `label` summarises the queue,
+   * e.g. "Track 3 of 12". The callbacks drive the authoritative queue RPCs
+   * so the sharer can change tracks without leaving the mini player.
+   */
+  queueStatus?: { label: string; live: boolean };
+  onPreviousTrack?: () => void;
+  onNextTrack?: () => void;
+  /** Disables the mini-player controls while a queue mutation is in flight. */
+  trackNavBusy?: boolean;
 }
 
 export function WatchTogether({
@@ -150,6 +160,10 @@ export function WatchTogether({
   transport,
   heading,
   audioMode = false,
+  queueStatus,
+  onPreviousTrack,
+  onNextTrack,
+  trackNavBusy = false,
 }: WatchTogetherProps) {
   const playback = useRoomPlayback(roomId, userId);
   const queryClient = useQueryClient();

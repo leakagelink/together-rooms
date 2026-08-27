@@ -133,6 +133,12 @@ export interface WatchTogetherProps {
   transport?: React.ReactNode;
   /** Overrides the section heading for music rooms. */
   heading?: string;
+  /**
+   * Music-only presentation. The YouTube frame stays mounted and visible (a
+   * policy requirement) but collapses to a mini player so the queue and
+   * transport lead the UI. Users can expand the video at any time.
+   */
+  audioMode?: boolean;
 }
 
 export function WatchTogether({
@@ -143,7 +149,9 @@ export function WatchTogether({
   onTrackEnded,
   transport,
   heading,
+  audioMode = false,
 }: WatchTogetherProps) {
+
   const playback = useRoomPlayback(roomId, userId);
   const queryClient = useQueryClient();
 

@@ -11,6 +11,7 @@ import type { Session, User } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
 import { clearAnalyticsConsent, setAnalyticsConsent } from "@/lib/analytics";
+import { clearPersistedQueryCache } from "@/lib/query-persist";
 
 interface AuthContextValue {
   user: User | null;
@@ -35,7 +36,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setLoading(false);
-      if (!nextSession) clearAnalyticsConsent();
+      if (!nextSession) {
+        clearAnalyticsConsent();
+        clearPersistedQueryCache();
+      }
     });
 
     supabase.auth.getSession().then(({ data }) => {
@@ -68,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     clearAnalyticsConsent();
+    clearPersistedQueryCache();
     await supabase.auth.signOut();
   }, []);
 

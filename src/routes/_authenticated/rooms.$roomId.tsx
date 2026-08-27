@@ -12,7 +12,6 @@ import {
   Radio,
   Share2,
   Users,
-  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,7 +44,6 @@ import { WatchTogether } from "@/components/room/watch-together";
 import { MusicRoom } from "@/components/room/music-room";
 import { StudyRoom } from "@/components/room/study-room";
 import { LocalMediaRoom } from "@/components/room/local-media-room";
-import { RoomCall } from "@/components/room/room-call";
 
 import { setMemberMute } from "@/lib/chat.functions";
 
@@ -77,7 +75,7 @@ export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
   ),
 });
 
-type RoomTab = "stage" | "call" | "chat" | "people" | "share";
+type RoomTab = "stage" | "chat" | "people" | "share";
 
 function RoomPage() {
   const { roomId } = Route.useParams();
@@ -291,7 +289,6 @@ function RoomPage() {
 
   const tabs: { id: RoomTab; label: string; icon: typeof Radio }[] = [
     { id: "stage", label: stageLabel, icon: MonitorPlay },
-    { id: "call", label: "Call", icon: Video },
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "people", label: "People", icon: Users },
     { id: "share", label: "Share", icon: Share2 },
@@ -432,15 +429,6 @@ function RoomPage() {
             roomActive={lifecycle === "ok"}
           />
         ) : null}
-      </div>
-
-      <div className={tab === "call" ? "pb-8" : "hidden"}>
-        <RoomCall
-          roomId={room.id}
-          userId={user?.id}
-          canModerate={canModerate}
-          roomActive={lifecycle === "ok"}
-        />
       </div>
 
       <div className={tab === "chat" ? "pb-8" : "hidden"}>

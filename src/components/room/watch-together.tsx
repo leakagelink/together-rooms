@@ -149,6 +149,7 @@ export function WatchTogether({
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const theatreRef = useRef(false);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const applyingRemote = useRef(false);
   const appliedVersion = useRef<number>(-1);
@@ -636,13 +637,16 @@ export function WatchTogether({
 
       <div
         ref={stageRef}
-        className="group mt-4 overflow-hidden rounded-lg border border-border bg-black/90 data-[fs=true]:rounded-none data-[fs=true]:border-0"
-        data-fs={isFullscreen}
+        className={
+          isFullscreen
+            ? "fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black"
+            : "group mt-4 overflow-hidden rounded-lg border border-border bg-black/90"
+        }
       >
         <div
           className={
             isFullscreen
-              ? "relative h-screen w-full"
+              ? "relative h-full max-h-full w-full"
               : "relative aspect-video w-full"
           }
         >

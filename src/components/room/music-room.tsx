@@ -143,7 +143,6 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
     [add, roomId, run],
   );
 
-
   /** End-of-track report from the player. Losing reports get version_conflict. */
   const onTrackEnded = useCallback(
     (seenVersion: number) => {
@@ -347,7 +346,6 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
         transport={transport}
       />
 
-
       <section className="surface-panel mt-8 p-5" aria-labelledby="queue-heading">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -402,7 +400,6 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
             />
           </div>
         ) : (
-
           <p className="mt-4 text-xs text-muted-foreground">
             {roomActive
               ? "Only the host can add tracks in this room."

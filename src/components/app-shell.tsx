@@ -69,7 +69,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link to="/playlists">Playlists</Link>
             </Button>
             {isStaff ? (
-              <Button asChild variant="ghost" size="sm" className="hidden rounded-xl sm:inline-flex">
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="hidden rounded-xl sm:inline-flex"
+              >
                 <Link to="/admin">
                   <Gavel className="size-4" aria-hidden="true" />
                   <span>Moderation</span>

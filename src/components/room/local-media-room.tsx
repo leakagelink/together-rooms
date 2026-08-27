@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLocalMedia } from "@/hooks/useLocalMedia";
 import { useLocalMediaTransfer } from "@/hooks/useLocalMediaTransfer";
 import { LocalMediaDiagnostics } from "@/components/room/local-media-diagnostics";
+import { LocalMediaPreflight } from "@/components/room/local-media-preflight";
 import {
   capabilityMessage,
   checkSelection,
@@ -16,6 +17,11 @@ import {
   type LocalMediaKind,
 } from "@/lib/local-media/capability";
 import { MAX_IMAGE_ITEMS } from "@/lib/local-media/limits";
+import {
+  buildPreflight,
+  canStartSharing,
+  detectTransportSupport,
+} from "@/lib/local-media/permissions";
 import { localExpectedPosition, shouldCorrectDrift } from "@/lib/local-media/sync";
 
 interface LocalMediaRoomProps {
@@ -46,6 +52,12 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
   const [files, setFiles] = useState<File[]>([]);
   const [objectUrls, setObjectUrls] = useState<string[]>([]);
   const [warning, setWarning] = useState<string | null>(null);
+  const [decodeVerdict, setDecodeVerdict] = useState<"supported" | "maybe" | "unsupported">(
+    "maybe",
+  );
+  const [preflightOpen, setPreflightOpen] = useState(false);
+  const [consented, setConsented] = useState(false);
+  const [starting, setStarting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -67,6 +79,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
     if (!session) {
       releaseUrls();
       setFiles([]);
+      setConsented(false);
     }
   }, [session, releaseUrls]);
 
@@ -84,6 +97,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
         : document.createElement(check.kind === "audio" ? "audio" : "video");
     const verdict = detectCapability(list[0]!.type, probe);
     setWarning(capabilityMessage(verdict, list[0]!.type));
+    setDecodeVerdict(verdict === "unsupported" ? "unsupported" : verdict);
     if (verdict === "unsupported") {
       setFiles([]);
       return;
@@ -92,12 +106,31 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
     setObjectUrls(list.map((file) => URL.createObjectURL(file)));
   }, []);
 
+  /** Device permission / capability gate evaluated before any bytes are sent. */
+  const preflightChecks = useMemo(
+    () =>
+      buildPreflight({
+        fileCount: files.length,
+        decode: decodeVerdict,
+        transportAvailable: detectTransportSupport(),
+        consented,
+      }),
+    [files.length, decodeVerdict, consented],
+  );
+
   const startShare = useCallback(async () => {
+    if (!canStartSharing(preflightChecks)) return;
     const descriptor = describeSelection(files);
     if (!descriptor) return;
+    setStarting(true);
     const id = await media.start(descriptor);
-    if (!id) toast.error("Couldn't start sharing. Check you're still in this room.");
-  }, [files, media]);
+    setStarting(false);
+    if (!id) {
+      toast.error("Couldn't start sharing. Check you're still in this room.");
+      return;
+    }
+    setPreflightOpen(false);
+  }, [files, media, preflightChecks]);
 
   const stopShare = useCallback(async () => {
     await media.end();
@@ -356,8 +389,11 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
             <Button variant="outline" onClick={() => inputRef.current?.click()}>
               <Upload className="size-4" aria-hidden="true" /> Choose from this device
             </Button>
-            <Button onClick={() => void startShare()} disabled={files.length === 0 || !roomActive}>
-              <MonitorPlay className="size-4" aria-hidden="true" /> Start sharing
+            <Button
+              onClick={() => setPreflightOpen(true)}
+              disabled={files.length === 0 || !roomActive}
+            >
+              <MonitorPlay className="size-4" aria-hidden="true" /> Review &amp; share
             </Button>
           </div>
           {files.length > 0 ? (
@@ -373,6 +409,19 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
               {warning}
             </p>
           ) : null}
+          <LocalMediaPreflight
+            open={preflightOpen}
+            onOpenChange={(open) => {
+              setPreflightOpen(open);
+              if (!open) setStarting(false);
+            }}
+            checks={preflightChecks}
+            consented={consented}
+            onConsentChange={setConsented}
+            fileNames={files.map((file) => file.name)}
+            onConfirm={() => void startShare()}
+            starting={starting}
+          />
           <p className="text-xs text-muted-foreground">
             Only share media you have the right to share. Sharing is peer-to-peer and encrypted in
             transit, but people in the room can record their own screen — treat it as visible to

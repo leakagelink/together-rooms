@@ -344,6 +344,10 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
         audioMode
         {...(roomActive ? { onTrackEnded } : {})}
         transport={transport}
+        queueStatus={miniQueueStatus}
+        onPreviousTrack={onPreviousTrack}
+        onNextTrack={onNextTrack}
+        trackNavBusy={busy}
       />
 
       <section className="surface-panel mt-8 p-5" aria-labelledby="queue-heading">

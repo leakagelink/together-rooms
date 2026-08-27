@@ -16,7 +16,7 @@ import {
 } from "./rtdn";
 import { validateOidcClaims } from "./google-oidc.server";
 
-const PACKAGE = "app.lovable.synctogether";
+const PACKAGE = "com.synctogether.com";
 
 const envelope = (payload: unknown, messageId = "msg-1") => ({
   message: {

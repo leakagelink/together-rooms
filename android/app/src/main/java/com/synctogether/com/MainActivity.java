@@ -1,10 +1,10 @@
-package app.lovable.synctogether;
+package com.synctogether.com;
 
 import android.os.Bundle;
 
 import com.getcapacitor.BridgeActivity;
 
-import app.lovable.synctogether.ads.AdsPlugin;
+import com.synctogether.com.ads.AdsPlugin;
 
 /**
  * PHASE 14 — the ads plugin is registered here, and only here, so there is

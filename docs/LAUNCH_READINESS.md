@@ -161,7 +161,7 @@ tablets without them can still install.
 
 - [ ] `./gradlew bundleRelease` produces an AAB
 - [ ] Signed with the release keystore (not debug)
-- [ ] `applicationId = app.lovable.synctogether`
+- [ ] `applicationId = com.synctogether.com`
 - [ ] `versionCode` strictly greater than the previous track upload
 - [ ] `versionName` semantic `MAJOR.MINOR.PATCH`
 - [ ] `debuggable=false`, WebView debugging off, cleartext off

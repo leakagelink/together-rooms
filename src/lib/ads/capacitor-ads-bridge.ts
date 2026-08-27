@@ -2,7 +2,7 @@
  * PHASE 14 — the real Capacitor ↔ Google Mobile Ads SDK binding.
  *
  * The Android shell registers a Capacitor plugin named `SyncTogetherAds`
- * (see android/app/src/main/java/app/lovable/synctogether/ads/AdsPlugin.java).
+ * (see android/app/src/main/java/com/synctogether/com/ads/AdsPlugin.java).
  * This module adapts that plugin to the `NativeAdsBridge` contract the ad
  * runtime already speaks.
  *

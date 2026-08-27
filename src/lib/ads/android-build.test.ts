@@ -19,8 +19,8 @@ import { REWARDED_ADS_ENABLED } from "./config";
 import { PRODUCTION_ADMOB_APP_ID } from "./admob-production";
 
 const ANDROID = resolve(process.cwd(), "android");
-const ADS_DIR = resolve(ANDROID, "app/src/main/java/app/lovable/synctogether/ads");
-const APP_PACKAGE = "app.lovable.synctogether";
+const ADS_DIR = resolve(ANDROID, "app/src/main/java/com/synctogether/com/ads");
+const APP_PACKAGE = "com.synctogether.com";
 
 const read = (relative: string) => readFileSync(resolve(ANDROID, relative), "utf8");
 const adsSources = () =>
@@ -33,7 +33,7 @@ const appGradle = read("app/build.gradle");
 const manifest = read("app/src/main/AndroidManifest.xml");
 const strings = read("app/src/main/res/values/strings.xml");
 const proguard = read("app/proguard-rules.pro");
-const mainActivity = read("app/src/main/java/app/lovable/synctogether/MainActivity.java");
+const mainActivity = read("app/src/main/java/com/synctogether/com/MainActivity.java");
 
 function gradleInt(name: string): number {
   const match = new RegExp(`${name}\\s*=\\s*(\\d+)`).exec(variables);
@@ -79,7 +79,7 @@ describe("phase 14.1 android build blockers", () => {
     const version = /userMessagingPlatformVersion\s*=\s*'([^']+)'/.exec(variables)?.[1];
     expect(version).toBe("3.2.0");
     // UMP is used through its own artifact, never assumed to be transitive.
-    expect(read("app/src/main/java/app/lovable/synctogether/ads/ConsentController.java")).toContain(
+    expect(read("app/src/main/java/com/synctogether/com/ads/ConsentController.java")).toContain(
       "import com.google.android.ump.UserMessagingPlatform;",
     );
   });
@@ -130,7 +130,7 @@ describe("phase 14.1 android build blockers", () => {
   });
 
   it("ANDROID-BUILD-T6: MainActivity registers the plugin exactly once, before super", () => {
-    expect(mainActivity).toContain("import app.lovable.synctogether.ads.AdsPlugin;");
+    expect(mainActivity).toContain("import com.synctogether.com.ads.AdsPlugin;");
     const registrations = mainActivity.match(/registerPlugin\(AdsPlugin\.class\)/g) ?? [];
     expect(registrations).toHaveLength(1);
     expect(mainActivity).toMatch(
@@ -177,7 +177,7 @@ describe("phase 14.1 android build blockers", () => {
       "com.google.android.gms.ads.",
       "com.google.android.ump.",
       "com.google.ads.mediation.admob.",
-      "app.lovable.synctogether.",
+      "com.synctogether.com.",
     ];
     // APIs that do not exist in the 24.x / UMP 3.x line — a leftover from an
     // older or newer SDK would be a hard compile failure.
@@ -212,7 +212,7 @@ describe("phase 14.1 android build blockers", () => {
     expect(appGradle).toContain("'proguard-rules.pro'");
     // The reflective entry points are kept…
     expect(proguard).toContain(
-      "-keep @com.getcapacitor.annotation.CapacitorPlugin class app.lovable.synctogether.ads.** { *; }",
+      "-keep @com.getcapacitor.annotation.CapacitorPlugin class com.synctogether.com.ads.** { *; }",
     );
     expect(proguard).toContain("@com.getcapacitor.PluginMethod <methods>;");
     expect(proguard).toContain("-keepattributes *Annotation*");

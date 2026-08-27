@@ -15,7 +15,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const APP_ORIGIN = process.env["CAPACITOR_APP_ORIGIN"] ?? "https://together-rooms.lovable.app";
 
 const config: CapacitorConfig = {
-  appId: "app.lovable.synctogether",
+  appId: "com.synctogether.com",
   appName: "SyncTogether",
   // Only used as an offline fallback shell; the live app is served from the origin.
   webDir: "android-shell",

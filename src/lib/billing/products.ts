@@ -40,7 +40,7 @@ export interface ProductConfigResult {
 }
 
 /** The Android application id this build must belong to. */
-export const EXPECTED_PACKAGE_NAME = "app.lovable.synctogether";
+export const EXPECTED_PACKAGE_NAME = "com.synctogether.com";
 
 /** Play product ids: lowercase alphanumerics, dots, underscores, hyphens. */
 const PRODUCT_ID_PATTERN = /^[a-z0-9](?:[a-z0-9._-]{1,118})[a-z0-9]$/;

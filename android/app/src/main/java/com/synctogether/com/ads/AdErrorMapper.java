@@ -1,4 +1,4 @@
-package app.lovable.synctogether.ads;
+package com.synctogether.com.ads;
 
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;

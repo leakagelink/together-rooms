@@ -1,12 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Pause, Play, RefreshCw, RotateCcw, Trash2, Youtube } from "lucide-react";
+import {
+  Pause,
+  Play,
+  RefreshCw,
+  Rewind,
+  RotateCcw,
+  SkipBack,
+  SkipForward,
+  Trash2,
+  Youtube,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { MediaSearchPanel } from "@/components/room/media-search-panel";
 import { useRoomPlayback } from "@/hooks/useRoomPlayback";
 import { useProviderMetadata } from "@/hooks/useProviderMetadata";
 import { queryKeys } from "@/lib/query-keys";
@@ -28,7 +38,7 @@ import {
 } from "@/lib/playback-device";
 import { planPlayerSurface } from "@/lib/player-surface";
 import { setPlaybackTrackingRestricted } from "@/lib/analytics";
-import { providerError, type ProviderError } from "@/lib/providers/media-provider";
+import { type ProviderError } from "@/lib/providers/media-provider";
 import { youtubeProvider } from "@/lib/providers/youtube";
 import {
   clearRoomMedia,
@@ -145,7 +155,6 @@ export function WatchTogether({
 
   const [playerReady, setPlayerReady] = useState(false);
   const [providerFailure, setProviderFailure] = useState<ProviderError | null>(null);
-  const [urlInput, setUrlInput] = useState("");
   const [drifting, setDrifting] = useState(false);
   const [awaitingGesture, setAwaitingGesture] = useState(false);
 
@@ -536,7 +545,7 @@ export function WatchTogether({
   });
 
   return (
-    <section className="surface-panel mt-8 p-5" aria-labelledby="watch-heading">
+    <section className="surface-panel mt-8 p-4 sm:p-5" aria-labelledby="watch-heading">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="watch-heading" className="flex items-center gap-2 text-lg font-semibold">
@@ -547,7 +556,7 @@ export function WatchTogether({
             frame-accurate.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto">
           <Badge variant="secondary" role="status">
             {status}
           </Badge>

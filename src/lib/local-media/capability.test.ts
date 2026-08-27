@@ -7,7 +7,7 @@ import {
   kindForMimeType,
   selectionMessage,
 } from "./capability";
-import { MAX_IMAGE_ITEMS, MAX_SESSION_BYTES } from "./limits";
+import { MAX_IMAGE_ITEMS, MAX_QUEUE_ITEMS, MAX_SESSION_BYTES } from "./limits";
 
 const probe = (answer: string) => ({ canPlayType: () => answer });
 
@@ -52,6 +52,31 @@ describe("local media capability", () => {
   it("accepts a valid photo set and a single video", () => {
     expect(checkSelection([{ type: "image/jpeg", size: 100 }]).ok).toBe(true);
     expect(checkSelection([{ type: "video/mp4", size: 100 }]).kind).toBe("video");
+  });
+
+  it("accepts a multi-item video or audio queue up to the queue limit", () => {
+    const videos = Array.from({ length: MAX_QUEUE_ITEMS }, () => ({
+      type: "video/mp4",
+      size: 100,
+    }));
+    expect(checkSelection(videos).ok).toBe(true);
+    expect(checkSelection([...videos, { type: "video/mp4", size: 100 }]).reason).toBe(
+      "too_many_items",
+    );
+    expect(
+      checkSelection([
+        { type: "audio/mpeg", size: 10 },
+        { type: "audio/mpeg", size: 10 },
+      ]).kind,
+    ).toBe("audio");
+  });
+
+  it("counts every queued item in the privacy-safe descriptor", () => {
+    const descriptor = describeSelection([
+      { type: "video/mp4", size: 10 },
+      { type: "video/mp4", size: 10 },
+    ]);
+    expect(descriptor?.item_count).toBe(2);
   });
 
   it("describes a selection without any identifying metadata", () => {

@@ -20,6 +20,13 @@ export const BUFFERED_LOW_WATER = 1 * 1024 * 1024;
 /** Maximum images in one shared slideshow session. */
 export const MAX_IMAGE_ITEMS = 50;
 
+/**
+ * Maximum videos or audio tracks in one shared queue. Lower than the photo
+ * limit because every item is streamed from the sharer's device on demand and
+ * the server caps `item_count` at 50 regardless.
+ */
+export const MAX_QUEUE_ITEMS = 20;
+
 /** Server-authoritative session lifetime (mirrors the database default). */
 export const SESSION_MAX_MINUTES = 120;
 

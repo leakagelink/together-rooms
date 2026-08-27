@@ -25,6 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotifications, type AppNotification } from "@/hooks/useNotifications";
 import { errorMessage } from "@/lib/errors";
+import { resolveNotificationTarget } from "@/lib/notifications/routing";
 
 const ICONS: Record<string, typeof Bell> = {
   chat_message: MessageSquare,
@@ -57,12 +58,8 @@ export function NotificationBell() {
     setOpen(false);
     try {
       if (!notification.read_at) await markRead(notification.id);
-      const roomId = notification.data?.["room_id"];
-      if (typeof roomId === "string" && roomId.length > 0) {
-        void navigate({ to: "/rooms/$roomId", params: { roomId } });
-      } else if (notification.type === "subscription") {
-        void navigate({ to: "/settings/subscription" });
-      }
+      const target = resolveNotificationTarget(notification.type, notification.data);
+      void navigate(target as never);
     } catch (error) {
       toast.error(errorMessage(error));
     }

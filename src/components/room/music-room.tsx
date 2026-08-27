@@ -19,14 +19,12 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { MediaSearchPanel } from "@/components/room/media-search-panel";
 import { WatchTogether } from "@/components/room/watch-together";
 import { useRoomQueue } from "@/hooks/useRoomQueue";
 import { supabase } from "@/integrations/supabase/client";
 import { queryKeys } from "@/lib/query-keys";
 import type { PlaybackState } from "@/lib/playback-sync";
-import { youtubeProvider } from "@/lib/providers/youtube";
-import { providerError } from "@/lib/providers/media-provider";
 import { rpcMessage, type RpcReason } from "@/lib/rpc-types";
 import {
   addIntent,
@@ -75,7 +73,6 @@ const MODES: QueueMode[] = ["host_only", "collaborative", "host_approval"];
 export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomProps) {
   const queryClient = useQueryClient();
   const queue = useRoomQueue(roomId, userId);
-  const [urlInput, setUrlInput] = useState("");
 
   // Read-only view of the playback state the player hook already maintains.
   const playbackCache = useQuery<PlaybackState | null>({

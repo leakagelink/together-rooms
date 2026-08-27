@@ -8,7 +8,6 @@
 export type NotificationTarget =
   | { to: "/rooms/$roomId"; params: { roomId: string }; search: { tab: RoomDeepTab } }
   | { to: "/settings/subscription" }
-  | { to: "/notifications" }
   | { to: "/rooms" };
 
 export type RoomDeepTab = "stage" | "chat" | "people" | "share";

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLocalMedia } from "@/hooks/useLocalMedia";
+import { useLocalMediaTransfer } from "@/hooks/useLocalMediaTransfer";
 import {
   capabilityMessage,
   checkSelection,
@@ -116,19 +117,41 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
     if (session.playback_status !== "playing" && !element.paused) element.pause();
   }, [session]);
 
+  // Viewers receive the owner's bytes over an authenticated peer connection.
+  const transfer = useLocalMediaTransfer({
+    sessionId: session?.id ?? null,
+    ownerId: session?.owner_id ?? null,
+    isOwner,
+    userId,
+    files,
+    sendSignal: media.sendSignal,
+    onSignal: media.onSignal,
+    ready: Boolean(session && media.credential),
+  });
+
   const kind: LocalMediaKind | null = session?.media_kind ?? null;
-  const currentUrl = objectUrls[session?.current_index ?? 0] ?? objectUrls[0] ?? null;
+  const sourceUrls = isOwner ? objectUrls : transfer.urls;
+  const currentUrl =
+    sourceUrls[session?.current_index ?? 0] ?? (isOwner ? (sourceUrls[0] ?? null) : null);
 
   const transportLabel = useMemo(() => {
+    if (!isOwner) {
+      if (transfer.status === "receiving") return `Receiving ${Math.round(transfer.progress * 100)}%`;
+      if (transfer.status === "connecting") return "Connecting to sharer…";
+      if (transfer.status === "failed") return "Connection failed";
+      if (transfer.status === "ready") return "Direct encrypted connection";
+    }
     switch (media.transportState) {
       case "direct":
         return "Direct encrypted connection";
       case "relay":
         return "Encrypted via relay";
       default:
-        return "Not connected";
+        return isOwner && transfer.status === "sending"
+          ? `Sending ${Math.round(transfer.progress * 100)}%`
+          : "Not connected";
     }
-  }, [media.transportState]);
+  }, [media.transportState, isOwner, transfer.status, transfer.progress]);
 
   return (
     <section className="surface-panel mt-8 p-5" aria-labelledby="local-media-heading">
@@ -168,21 +191,30 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
                   Waiting for the shared photo to arrive…
                 </p>
               )
-            ) : (
+            ) : currentUrl ? (
               <video
                 ref={videoRef}
-                src={currentUrl ?? undefined}
+                src={currentUrl}
                 controls={isOwner}
                 playsInline
                 className="max-h-[60vh] w-full bg-black"
                 // Background playback is allowed for device-shared media only:
                 // it is the user's own file, not third-party embedded content.
-                // Picture-in-picture stays enabled so playback survives when
-                // the app is minimised.
               />
-
+            ) : (
+              <p className="p-6 text-sm text-muted-foreground">
+                {transfer.status === "failed"
+                  ? "Couldn't connect to the sharer's device."
+                  : `Receiving ${session.media_kind} from the sharer… ${Math.round(transfer.progress * 100)}%`}
+              </p>
             )}
           </div>
+
+          {!isOwner && (transfer.status === "failed" || transfer.status === "connecting") ? (
+            <Button variant="outline" size="sm" onClick={transfer.retry}>
+              <RotateCcw className="size-4" aria-hidden="true" /> Reconnect
+            </Button>
+          ) : null}
 
           <p className="text-xs text-muted-foreground">
             {session.media_kind === "image"

@@ -86,6 +86,8 @@ export interface UseLocalMediaResult {
   credential: TransportCredential | null;
   sendSignal: (peerId: string, envelope: SignalEnvelope) => Promise<void>;
   incoming: (SignalEnvelope & { sender_id: string })[];
+  /** Subscribe to every signal as it arrives (signals are consumed on read). */
+  onSignal: (listener: (signal: SignalEnvelope & { sender_id: string }) => void) => () => void;
   error: string | null;
 }
 
@@ -256,6 +258,21 @@ export function useLocalMedia(
     };
   }, [session, grantFn]);
 
+  /** Live signal listeners. Signals are consumed on read, so every batch is
+   * dispatched exactly once to whoever is negotiating a peer connection. */
+  const listenersRef = useRef(
+    new Set<(signal: SignalEnvelope & { sender_id: string }) => void>(),
+  );
+  const onSignal = useCallback(
+    (listener: (signal: SignalEnvelope & { sender_id: string }) => void) => {
+      listenersRef.current.add(listener);
+      return () => {
+        listenersRef.current.delete(listener);
+      };
+    },
+    [],
+  );
+
   /** Signaling relay: authenticated, credential-bound, short-lived payloads. */
   useEffect(() => {
     if (!session || !credential) return;
@@ -267,7 +284,17 @@ export function useLocalMedia(
           if (cancelled || !result.ok) return;
           const rows = Array.isArray(result.signals) ? result.signals : [];
           if (rows.length === 0) return;
-          setIncoming(rows as unknown as (SignalEnvelope & { sender_id: string })[]);
+          const typed = rows as unknown as (SignalEnvelope & { sender_id: string })[];
+          setIncoming(typed);
+          typed.forEach((signal) => {
+            listenersRef.current.forEach((listener) => {
+              try {
+                listener(signal);
+              } catch {
+                // A failing listener must not stop the others.
+              }
+            });
+          });
         })
         .catch(() => null);
     }, SIGNAL_POLL_MS);
@@ -388,6 +415,7 @@ export function useLocalMedia(
     credential,
     sendSignal,
     incoming,
+    onSignal,
     error,
   };
 }

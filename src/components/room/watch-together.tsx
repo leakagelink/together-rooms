@@ -171,6 +171,7 @@ export interface WatchTogetherProps {
 
 export function WatchTogether({
   roomId,
+  roomCode,
   userId,
   canControl,
   roomActive,

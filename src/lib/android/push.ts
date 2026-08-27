@@ -7,8 +7,20 @@
  * by RLS — the client never decides who a notification belongs to.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { resolvePushTarget, type NotificationTarget } from "@/lib/notifications/routing";
 
 let started = false;
+let navigator_: ((target: NotificationTarget) => void) | null = null;
+
+/** The app shell hands us a router navigate fn so taps can deep-link. */
+export function setPushNavigator(fn: ((target: NotificationTarget) => void) | null): void {
+  navigator_ = fn;
+}
+
+function openFromData(data: unknown): void {
+  if (!navigator_ || !data || typeof data !== "object") return;
+  navigator_(resolvePushTarget(data as Record<string, unknown>));
+}
 
 function isNative(): boolean {
   if (typeof window === "undefined") return false;
@@ -48,6 +60,10 @@ export async function startPushRegistration(): Promise<void> {
       console.warn("push registration error", err);
     });
 
+    await PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+      openFromData(action.notification?.data);
+    });
+
     await PushNotifications.register();
   } catch (error) {
     started = false;
@@ -57,4 +73,5 @@ export async function startPushRegistration(): Promise<void> {
 
 export function resetPushRegistrationForTests(): void {
   started = false;
+  navigator_ = null;
 }

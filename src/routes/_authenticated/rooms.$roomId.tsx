@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Copy,
   LogIn,
@@ -47,7 +47,15 @@ import { LocalMediaRoom } from "@/components/room/local-media-room";
 
 import { setMemberMute } from "@/lib/chat.functions";
 
+const ROOM_TABS = ["stage", "chat", "people", "share"] as const;
+
 export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
+  validateSearch: (search: Record<string, unknown>): { tab?: RoomTab } => {
+    const raw = search["tab"];
+    return typeof raw === "string" && (ROOM_TABS as readonly string[]).includes(raw)
+      ? { tab: raw as RoomTab }
+      : {};
+  },
   head: () => ({
     meta: [
       { title: "Room — SyncTogether" },
@@ -79,15 +87,21 @@ type RoomTab = "stage" | "chat" | "people" | "share";
 
 function RoomPage() {
   const { roomId } = Route.useParams();
+  const { tab: initialTab } = Route.useSearch();
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   // The stage (watch/listen/study) is always the landing surface of a room.
-  const [tab, setTab] = useState<RoomTab>("stage");
+  const [tab, setTab] = useState<RoomTab>(initialTab ?? "stage");
 
   // Android/browser lifecycle: on foreground or reconnect every authoritative
   // query is refetched instead of trusting the suspended snapshot.
   useAppLifecycle({ inRoom: true, inCall: false });
+
+  // Deep links (notification taps) can change the requested tab while mounted.
+  useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
 
   const fetchMembers = useServerFn(listRoomMembers);
   const leave = useServerFn(leaveRoom);

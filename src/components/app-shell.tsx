@@ -30,7 +30,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const router = useRouter();
+  const location = useLocation();
   const online = useOnlineStatus();
+  const isHome = location.pathname === "/" || location.pathname === "/rooms";
+  const canGoBack = typeof window !== "undefined" && window.history.length > 1 && !isHome;
   // Affordance only — the moderation RPCs re-check staff role in the database.
   const { isStaff } = useStaffContext();
 

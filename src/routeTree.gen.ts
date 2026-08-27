@@ -30,6 +30,7 @@ import { Route as AuthenticatedRoomsRoomIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedRoomsJoinRouteImport } from './routes/_authenticated/rooms.join'
 import { Route as AuthenticatedRoomsNewRouteImport } from './routes/_authenticated/rooms.new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
+import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
 import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_authenticated/settings.privacy'
 import { Route as AuthenticatedSettingsSubscriptionRouteImport } from './routes/_authenticated/settings.subscription'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
@@ -144,6 +145,12 @@ const AuthenticatedSettingsIndexRoute =
     path: '/settings/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSettingsNotificationsRoute =
+  AuthenticatedSettingsNotificationsRouteImport.update({
+    id: '/settings/notifications',
+    path: '/settings/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsPrivacyRoute =
   AuthenticatedSettingsPrivacyRouteImport.update({
     id: '/settings/privacy',
@@ -202,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/rooms/$roomId': typeof AuthenticatedRoomsRoomIdRoute
   '/rooms/join': typeof AuthenticatedRoomsJoinRoute
   '/rooms/new': typeof AuthenticatedRoomsNewRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -231,6 +239,7 @@ export interface FileRoutesByTo {
   '/rooms/$roomId': typeof AuthenticatedRoomsRoomIdRoute
   '/rooms/join': typeof AuthenticatedRoomsJoinRoute
   '/rooms/new': typeof AuthenticatedRoomsNewRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -262,6 +271,7 @@ export interface FileRoutesById {
   '/_authenticated/rooms/$roomId': typeof AuthenticatedRoomsRoomIdRoute
   '/_authenticated/rooms/join': typeof AuthenticatedRoomsJoinRoute
   '/_authenticated/rooms/new': typeof AuthenticatedRoomsNewRoute
+  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
   '/_authenticated/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/rooms/$roomId'
     | '/rooms/join'
     | '/rooms/new'
+    | '/settings/notifications'
     | '/settings/privacy'
     | '/settings/subscription'
     | '/api/public/health'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/rooms/$roomId'
     | '/rooms/join'
     | '/rooms/new'
+    | '/settings/notifications'
     | '/settings/privacy'
     | '/settings/subscription'
     | '/api/public/health'
@@ -352,6 +364,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rooms/$roomId'
     | '/_authenticated/rooms/join'
     | '/_authenticated/rooms/new'
+    | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/privacy'
     | '/_authenticated/settings/subscription'
     | '/api/public/health'
@@ -532,6 +545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/notifications': {
+      id: '/_authenticated/settings/notifications'
+      path: '/settings/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/privacy': {
       id: '/_authenticated/settings/privacy'
       path: '/settings/privacy'
@@ -591,6 +611,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRoomsRoomIdRoute: typeof AuthenticatedRoomsRoomIdRoute
   AuthenticatedRoomsJoinRoute: typeof AuthenticatedRoomsJoinRoute
   AuthenticatedRoomsNewRoute: typeof AuthenticatedRoomsNewRoute
+  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsPrivacyRoute: typeof AuthenticatedSettingsPrivacyRoute
   AuthenticatedSettingsSubscriptionRoute: typeof AuthenticatedSettingsSubscriptionRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -606,6 +627,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRoomsRoomIdRoute: AuthenticatedRoomsRoomIdRoute,
   AuthenticatedRoomsJoinRoute: AuthenticatedRoomsJoinRoute,
   AuthenticatedRoomsNewRoute: AuthenticatedRoomsNewRoute,
+  AuthenticatedSettingsNotificationsRoute:
+    AuthenticatedSettingsNotificationsRoute,
   AuthenticatedSettingsPrivacyRoute: AuthenticatedSettingsPrivacyRoute,
   AuthenticatedSettingsSubscriptionRoute:
     AuthenticatedSettingsSubscriptionRoute,

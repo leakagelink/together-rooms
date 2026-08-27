@@ -12,6 +12,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { clearAnalyticsConsent, setAnalyticsConsent } from "@/lib/analytics";
 import { clearPersistedQueryCache } from "@/lib/query-persist";
+import { clearLastRoute } from "@/lib/android/last-route";
 
 interface AuthContextValue {
   user: User | null;
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!nextSession) {
         clearAnalyticsConsent();
         clearPersistedQueryCache();
+        clearLastRoute();
       }
     });
 
@@ -73,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     clearAnalyticsConsent();
     clearPersistedQueryCache();
+    clearLastRoute();
     await supabase.auth.signOut();
   }, []);
 

@@ -153,6 +153,38 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
     [advance, afterMutation, roomId],
   );
 
+  /**
+   * Mini-player queue status: "Track X of Y" over the playable items
+   * (played + playing + queued), plus the live-connection indicator.
+   */
+  const miniQueueStatus = useMemo(() => {
+    const items = queue.snapshot?.items ?? [];
+    const playable = items.filter((item) => item.status !== "suggested" && item.status !== "rejected");
+    const currentIndex = sections.nowPlaying
+      ? playable.findIndex((item) => item.id === sections.nowPlaying!.id)
+      : -1;
+    return {
+      live: queue.connected,
+      label:
+        playable.length === 0
+          ? "Queue is empty"
+          : currentIndex >= 0
+            ? `Track ${currentIndex + 1} of ${playable.length} · ${sections.upNext.length} up next`
+            : `${playable.length} in queue · start when ready`,
+    };
+  }, [queue.connected, queue.snapshot, sections]);
+
+  /** Mini-player track navigation — same authoritative RPCs as the transport row. */
+  const onPreviousTrack = useCallback(() => {
+    run.mutate(() => previous({ data: { room_id: roomId, expected_version: version } }));
+  }, [previous, roomId, run, version]);
+
+  const onNextTrack = useCallback(() => {
+    run.mutate(() =>
+      advance({ data: { room_id: roomId, cause: "next", expected_version: version } }),
+    );
+  }, [advance, roomId, run, version]);
+
   const transport = canManage ? (
     <div className="flex flex-wrap gap-2">
       <Button

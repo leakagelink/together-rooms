@@ -22,7 +22,7 @@ export interface PreflightInput {
   /** Files handed over by the OS picker. Non-empty means access was granted. */
   fileCount: number;
   /** Result of `detectCapability` for the selected media type. */
-  decode: "supported" | "likely" | "unsupported";
+  decode: "supported" | "maybe" | "unsupported";
   /** WebRTC data channels available in this runtime. */
   transportAvailable: boolean;
   /** The user ticked the "I have the right to share this" confirmation. */

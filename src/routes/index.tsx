@@ -5,6 +5,7 @@ import {
   Headphones,
   Heart,
   Lock,
+  MessageSquare,
   MonitorPlay,
   ShieldCheck,
   Sparkles,

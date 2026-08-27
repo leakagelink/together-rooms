@@ -39,6 +39,12 @@ import {
   type LocalPlayerSnapshot,
 } from "@/lib/playback-device";
 import { planPlayerSurface } from "@/lib/player-surface";
+import {
+  AUDIO_MODE_NOTICE,
+  BACKGROUND_PAUSE_NOTICE,
+  YOUTUBE_COMPLIANCE_LIMITS,
+} from "@/lib/youtube-compliance";
+import { planBackgroundEnforcement } from "@/lib/youtube-compliance";
 import { setPlaybackTrackingRestricted } from "@/lib/analytics";
 import { providerError, type ProviderError } from "@/lib/providers/media-provider";
 import { youtubeProvider } from "@/lib/providers/youtube";
@@ -185,6 +191,7 @@ export function WatchTogether({
   const [providerFailure, setProviderFailure] = useState<ProviderError | null>(null);
   const [drifting, setDrifting] = useState(false);
   const [awaitingGesture, setAwaitingGesture] = useState(false);
+  const [backgroundPaused, setBackgroundPaused] = useState(false);
 
   const state = playback.state;
   const stateRef = useRef<PlaybackState | null>(null);
@@ -673,7 +680,7 @@ export function WatchTogether({
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {audioMode
-              ? "Audio-first mode: the video stays in a mini player (YouTube requires it visible) while the queue leads."
+              ? AUDIO_MODE_NOTICE
               : "Playback is kept close across devices from the room's saved state. It is not frame-accurate."}
           </p>
         </div>

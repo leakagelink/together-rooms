@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -15,6 +16,8 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { setupQueryPersistence } from "@/lib/query-persist";
 import { AdRuntimeProvider } from "@/hooks/useAds";
 import { Toaster } from "@/components/ui/sonner";
+import { rememberLastRoute } from "@/lib/android/last-route";
+import { hideNativeSplash } from "@/lib/android/splash";
 
 function NotFoundComponent() {
   return (
@@ -138,10 +141,22 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   useEffect(() => {
     setupQueryPersistence(queryClient);
   }, [queryClient]);
+
+  // The native splash stays up until the remote app has actually painted, so
+  // users never see the blank WebView while the origin loads.
+  useEffect(() => {
+    void hideNativeSplash();
+  }, []);
+
+  // Remember where the user was so a cold start can resume there.
+  useEffect(() => {
+    rememberLastRoute(pathname);
+  }, [pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>

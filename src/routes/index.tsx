@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import {
   BookOpen,
   Headphones,
@@ -15,6 +16,7 @@ import { BrandLogo } from "@/components/brand";
 import { SiteFooter } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { readLastRoute } from "@/lib/android/last-route";
 
 const TITLE = "SyncTogether — Watch. Listen. Study. Connect. Together.";
 const DESCRIPTION =
@@ -97,6 +99,16 @@ const ICON_TONES: Record<string, string> = {
 
 function Index() {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // A signed-in user reopening the app (or the Android shell after a cold
+  // start) resumes their last in-app screen instead of the public landing
+  // page. Signed-out visitors always see the landing page.
+  useEffect(() => {
+    if (loading || !user) return;
+    const target = readLastRoute() ?? "/rooms";
+    void navigate({ to: target, replace: true });
+  }, [loading, user, navigate]);
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden">

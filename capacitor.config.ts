@@ -24,6 +24,19 @@ const config: CapacitorConfig = {
     captureInput: true,
     webContentsDebuggingEnabled: false,
   },
+  plugins: {
+    SplashScreen: {
+      // The WebView loads the live origin, so the splash is dismissed by the
+      // web app after first paint instead of on a fixed timer.
+      launchAutoHide: false,
+      launchShowDuration: 0,
+      backgroundColor: "#140B24",
+      androidScaleType: "CENTER_CROP",
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: false,
+    },
+  },
   server: {
     androidScheme: "https",
     url: APP_ORIGIN,

@@ -149,6 +149,7 @@ export function WatchTogether({
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const theatreRef = useRef(false);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const applyingRemote = useRef(false);
   const appliedVersion = useRef<number>(-1);
@@ -314,31 +315,60 @@ export function WatchTogether({
   const applyPlanRef = useRef(applyPlan);
   applyPlanRef.current = applyPlan;
 
-  // ---- fullscreen: track state and expose an in-app toggle so the stage can
-  // go fullscreen even when the embedded frame's own button is unavailable.
+  // ---- fullscreen: prefer the native Fullscreen API. Some embedding contexts
+  // (preview iframes without the `fullscreen` permission) reject the request —
+  // there we fall back to an in-app theatre mode that fills the viewport.
   useEffect(() => {
-    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    const onChange = () => {
+      if (document.fullscreenElement) setIsFullscreen(true);
+      else if (!theatreRef.current) setIsFullscreen(false);
+    };
     document.addEventListener("fullscreenchange", onChange);
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || !theatreRef.current) return;
+      theatreRef.current = false;
+      setIsFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isFullscreen]);
+
   const toggleFullscreen = useCallback(() => {
     const node = stageRef.current;
     if (!node) return;
+
     if (document.fullscreenElement) {
       void document.exitFullscreen().catch(() => undefined);
       return;
     }
+    if (theatreRef.current) {
+      theatreRef.current = false;
+      setIsFullscreen(false);
+      return;
+    }
+
     const request =
       node.requestFullscreen?.bind(node) ??
       (node as unknown as { webkitRequestFullscreen?: () => Promise<void> })
         .webkitRequestFullscreen?.bind(node);
+
+    const enterTheatre = () => {
+      theatreRef.current = true;
+      setIsFullscreen(true);
+    };
+
     if (!request) {
-      toast.error("Fullscreen is not available on this device.");
+      enterTheatre();
       return;
     }
     void Promise.resolve(request()).catch(() => {
-      toast.error("Fullscreen was blocked by the browser.");
+      // Blocked (e.g. embedded preview without fullscreen permission).
+      enterTheatre();
     });
   }, []);
 
@@ -607,13 +637,16 @@ export function WatchTogether({
 
       <div
         ref={stageRef}
-        className="group mt-4 overflow-hidden rounded-lg border border-border bg-black/90 data-[fs=true]:rounded-none data-[fs=true]:border-0"
-        data-fs={isFullscreen}
+        className={
+          isFullscreen
+            ? "fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black"
+            : "group mt-4 overflow-hidden rounded-lg border border-border bg-black/90"
+        }
       >
         <div
           className={
             isFullscreen
-              ? "relative h-screen w-full"
+              ? "relative h-full max-h-full w-full"
               : "relative aspect-video w-full"
           }
         >

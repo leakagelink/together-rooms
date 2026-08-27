@@ -129,6 +129,13 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
     ready: Boolean(session && media.credential),
   });
 
+  const transferError = transfer.errorMessage;
+  useEffect(() => {
+    if (isOwner || !transferError) return;
+    toast.error(transferError);
+  }, [isOwner, transferError]);
+
+
   const kind: LocalMediaKind | null = session?.media_kind ?? null;
   const sourceUrls = isOwner ? objectUrls : transfer.urls;
   const currentUrl =

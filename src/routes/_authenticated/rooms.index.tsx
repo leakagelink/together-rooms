@@ -13,6 +13,11 @@ import { errorMessage } from "@/lib/errors";
 const roomsQueryOptions = () =>
   queryOptions({
     queryKey: ["rooms", "mine"],
+    // The list must always reflect the server: a room created moments ago (or
+    // on another device) has to appear as soon as this screen opens, so the
+    // cached copy is shown instantly but revalidated on every mount.
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data: rows, error: queryError } = await supabase
         .from("rooms")

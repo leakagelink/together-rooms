@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback } from "react";
-import { Copy, LogOut, PowerOff, Radio } from "lucide-react";
+import { Copy, LogIn, LogOut, PowerOff, Radio } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -21,7 +21,13 @@ import { track } from "@/lib/analytics";
 import { errorMessage } from "@/lib/errors";
 import { queryKeys } from "@/lib/query-keys";
 import { roomJoinability } from "@/lib/room-rules";
-import { endRoom, leaveRoom, listRoomMembers, transferRoomHost } from "@/lib/rooms.functions";
+import {
+  endRoom,
+  joinRoomByCode,
+  leaveRoom,
+  listRoomMembers,
+  transferRoomHost,
+} from "@/lib/rooms.functions";
 import { rpcMessage } from "@/lib/rpc-types";
 import { RoomChat } from "@/components/room/room-chat";
 import { WatchTogether } from "@/components/room/watch-together";
@@ -72,6 +78,7 @@ function RoomPage() {
 
   const fetchMembers = useServerFn(listRoomMembers);
   const leave = useServerFn(leaveRoom);
+  const rejoin = useServerFn(joinRoomByCode);
   const end = useServerFn(endRoom);
   const transfer = useServerFn(transferRoomHost);
   const mute = useServerFn(setMemberMute);
@@ -163,6 +170,24 @@ function RoomPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  // Accidentally disconnected, backgrounded or explicitly left: as long as the
+  // room is still visible to this user (owner/host or an existing membership
+  // row), they can reconnect without hunting for the invite again.
+  const rejoinMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const result = await rejoin({ data: { join_code: code } });
+      if (!result.ok) throw new Error(rpcMessage(result.reason));
+      return result;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.detail(roomId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.members(roomId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.mine() });
+      toast.success("You're back in the room.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const endMutation = useMutation({
     mutationFn: async () => {
       const result = await end({ data: { room_id: roomId } });
@@ -232,14 +257,15 @@ function RoomPage() {
   const canModerate =
     isHost || myMembership?.role === "co_host" || myMembership?.role === "moderator";
   const isMuted = myMembership?.is_muted === true;
-  const canChat = lifecycle === "ok" && !isMuted && myMembership?.status === "joined";
+  const isJoined = myMembership?.status === "joined";
+  const canChat = lifecycle === "ok" && !isMuted && isJoined;
   const chatDisabledReason = isMuted
     ? "You're muted in this room. A host or moderator can unmute you."
     : lifecycle !== "ok"
       ? "This room is closed, so chat is read-only."
-      : myMembership
+      : isJoined
         ? null
-        : "Join this room to post messages.";
+        : "You're not connected to this room right now. Use Rejoin to reconnect.";
 
   return (
     <AppShell>
@@ -270,13 +296,22 @@ function RoomPage() {
               <PowerOff className="size-4" aria-hidden="true" /> End room
             </Button>
           ) : null}
-          <Button
-            variant="outline"
-            onClick={() => leaveMutation.mutate()}
-            disabled={leaveMutation.isPending}
-          >
-            <LogOut className="size-4" aria-hidden="true" /> Leave
-          </Button>
+          {isJoined ? (
+            <Button
+              variant="outline"
+              onClick={() => leaveMutation.mutate()}
+              disabled={leaveMutation.isPending}
+            >
+              <LogOut className="size-4" aria-hidden="true" /> Leave
+            </Button>
+          ) : lifecycle === "ok" && room.join_code ? (
+            <Button
+              onClick={() => rejoinMutation.mutate(room.join_code as string)}
+              disabled={rejoinMutation.isPending}
+            >
+              <LogIn className="size-4" aria-hidden="true" /> Rejoin
+            </Button>
+          ) : null}
         </div>
       </div>
 

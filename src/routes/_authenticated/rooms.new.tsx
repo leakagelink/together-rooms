@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/analytics";
 import { errorMessage } from "@/lib/errors";
+import { queryKeys } from "@/lib/query-keys";
 import { generateJoinCode } from "@/lib/room-codes";
 import { createRoomSchema, roomTypes } from "@/lib/validation";
 
@@ -51,6 +53,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 function NewRoomPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = Route.useRouteContext();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -99,6 +102,9 @@ function NewRoomPage() {
         .select("id")
         .single();
       if (insertError) throw insertError;
+      // The new room must be present in the rooms list the moment the user
+      // navigates back, even if the cached list was restored from storage.
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.mine() });
       void track("room_created", { type: parsed.data.type, ephemeral: parsed.data.is_ephemeral });
       toast.success("Room created.");
       navigate({ to: "/rooms/$roomId", params: { roomId: room.id } });

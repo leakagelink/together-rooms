@@ -532,7 +532,30 @@ export function WatchTogether({
     return () => clearTimeout(timer);
   }, [playerReady, setGesture, snapshot, state]);
 
+  // ---- YouTube ToS: no background playback, no audio-only extraction.
+  // When the app is backgrounded the local player is paused. This is a LOCAL
+  // pause only — the authoritative room state is untouched, so everyone else
+  // keeps watching.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onVisibility = () => {
+      const player = playerRef.current;
+      if (!player) return;
+      const enforcement = planBackgroundEnforcement({
+        visibility: document.visibilityState === "hidden" ? "hidden" : "visible",
+        hasMedia: Boolean(stateRef.current?.provider_media_id),
+        locallyPlaying: snapshot().playing,
+      });
+      if (!enforcement.pauseLocally) return;
+      suppress(() => player.pauseVideo());
+      setBackgroundPaused(true);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [snapshot, suppress]);
+
   // ---- bounded drift correction: local seeks only, never a database write
+
   useEffect(() => {
     if (!playerReady) return;
     const id = setInterval(() => {

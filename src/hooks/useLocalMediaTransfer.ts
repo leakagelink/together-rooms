@@ -32,6 +32,8 @@ export interface TransferResult {
   /** 0..1 for the item currently being received (viewer) or sent (owner). */
   progress: number;
   status: "idle" | "connecting" | "receiving" | "sending" | "ready" | "failed";
+  /** Human-readable reason shown when delivery fails. Null while healthy. */
+  errorMessage: string | null;
   retry: () => void;
 }
 
@@ -40,14 +42,24 @@ const ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:global.stun.twilio.com:3478" },
 ];
 
+/** Re-send the offer while the sharer has not answered yet. */
+const OFFER_RETRY_MS = 4000;
+const MAX_OFFER_ATTEMPTS = 6;
+/** No bytes at all within this window counts as a failed delivery. */
+const STALL_TIMEOUT_MS = 45_000;
+
 type Header = { file: { index: number; size: number; mime: string; count: number } };
 type Footer = { fileEnd: number };
+type Unavailable = { unavailable: true };
 
 function isHeader(value: unknown): value is Header {
   return Boolean(value && typeof value === "object" && "file" in (value as object));
 }
 function isFooter(value: unknown): value is Footer {
   return Boolean(value && typeof value === "object" && "fileEnd" in (value as object));
+}
+function isUnavailable(value: unknown): value is Unavailable {
+  return Boolean(value && typeof value === "object" && "unavailable" in (value as object));
 }
 
 export function useLocalMediaTransfer(args: TransferArgs): TransferResult {

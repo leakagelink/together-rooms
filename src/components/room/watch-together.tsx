@@ -168,9 +168,11 @@ export function WatchTogether({
 
   const [playerReady, setPlayerReady] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [videoExpanded, setVideoExpanded] = useState(false);
   const [providerFailure, setProviderFailure] = useState<ProviderError | null>(null);
   const [drifting, setDrifting] = useState(false);
   const [awaitingGesture, setAwaitingGesture] = useState(false);
+
 
   const state = playback.state;
   const stateRef = useRef<PlaybackState | null>(null);

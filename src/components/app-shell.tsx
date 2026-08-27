@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 
 import { BackButton } from "@/components/back-button";
 import { BrandLogo } from "@/components/brand";
+import { NotificationBell } from "@/components/notification-bell";
 import { OfflineBanner } from "@/components/state-views";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,6 +84,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Link>
               </Button>
             ) : null}
+            <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

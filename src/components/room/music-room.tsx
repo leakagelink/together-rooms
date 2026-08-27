@@ -139,16 +139,14 @@ export function MusicRoom({ roomId, userId, canManage, roomActive }: MusicRoomPr
 
   const intent = addIntent(settings?.queue_mode ?? "host_only", canManage);
 
-  const onSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const id = youtubeProvider.parseReference(urlInput);
-    if (!id) {
-      toast.error(providerError("invalid_id", "parse").message);
-      return;
-    }
-    setUrlInput("");
-    run.mutate(() => add({ data: { room_id: roomId, media_id: id } }));
-  };
+  /** Adds a searched or pasted video to the authoritative room queue. */
+  const onAddMedia = useCallback(
+    (mediaId: string) => {
+      run.mutate(() => add({ data: { room_id: roomId, media_id: mediaId } }));
+    },
+    [add, roomId, run],
+  );
+
 
   /** End-of-track report from the player. Losing reports get version_conflict. */
   const onTrackEnded = useCallback(

@@ -36,6 +36,7 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as AuthenticatedAdminReportsReportIdRouteImport } from './routes/_authenticated/admin.reports.$reportId'
 import { Route as ApiPublicBillingReconcileRouteImport } from './routes/api.public.billing.reconcile'
 import { Route as ApiPublicBillingRtdnRouteImport } from './routes/api.public.billing.rtdn'
+import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push/dispatch'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -177,6 +178,11 @@ const ApiPublicBillingRtdnRoute = ApiPublicBillingRtdnRouteImport.update({
   path: '/api/public/billing/rtdn',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPushDispatchRoute = ApiPublicPushDispatchRouteImport.update({
+  id: '/api/public/push/dispatch',
+  path: '/api/public/push/dispatch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
   '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
   '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
+  '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
   '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
   '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
+  '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -263,6 +271,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
   '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
   '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
+  '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -293,6 +302,7 @@ export interface FileRouteTypes {
     | '/admin/reports/$reportId'
     | '/api/public/billing/reconcile'
     | '/api/public/billing/rtdn'
+    | '/api/public/push/dispatch'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/admin/reports/$reportId'
     | '/api/public/billing/reconcile'
     | '/api/public/billing/rtdn'
+    | '/api/public/push/dispatch'
   id:
     | '__root__'
     | '/'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/reports/$reportId'
     | '/api/public/billing/reconcile'
     | '/api/public/billing/rtdn'
+    | '/api/public/push/dispatch'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -368,6 +380,7 @@ export interface RootRouteChildren {
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicBillingReconcileRoute: typeof ApiPublicBillingReconcileRoute
   ApiPublicBillingRtdnRoute: typeof ApiPublicBillingRtdnRoute
+  ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -561,6 +574,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBillingRtdnRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/push/dispatch': {
+      id: '/api/public/push/dispatch'
+      path: '/api/public/push/dispatch'
+      fullPath: '/api/public/push/dispatch'
+      preLoaderRoute: typeof ApiPublicPushDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -615,6 +635,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicBillingReconcileRoute: ApiPublicBillingReconcileRoute,
   ApiPublicBillingRtdnRoute: ApiPublicBillingRtdnRoute,
+  ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

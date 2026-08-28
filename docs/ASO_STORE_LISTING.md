@@ -2,11 +2,11 @@
 
 ## App title (30 char limit)
 
-**Primary (29 chars)**
+**Recommended (25 chars)**
 ```
 SyncTogether: Watch Party
 ```
-Wait — count: 25 chars. Use one of the options below.
+
 
 | Option | Text | Chars |
 | --- | --- | --- |

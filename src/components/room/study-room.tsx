@@ -435,7 +435,6 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
           </TabsList>
         </div>
 
-
         {/* ------------------------------------------------------ resources */}
         <TabsContent value="resources" className="mt-4 space-y-4">
           {/* Surf: search or open any site inside the app's own browser. */}

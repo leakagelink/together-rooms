@@ -110,105 +110,112 @@ export function ResearchViewer({
 
   return (
     <>
-    <Dialog open={Boolean(target)} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[92svh] flex-col gap-4 overflow-y-auto sm:max-w-lg">
-        <DialogHeader className="text-left">
-          <DialogTitle className="text-base leading-snug">{target?.title ?? "Resource"}</DialogTitle>
-          <DialogDescription className="flex items-center gap-2 text-xs">
-            <Globe className="size-3.5 shrink-0" aria-hidden="true" />
-            <span className="truncate">{displayHost(target?.host ?? null) || target?.url}</span>
-          </DialogDescription>
-        </DialogHeader>
+      <Dialog open={Boolean(target)} onOpenChange={onOpenChange}>
+        <DialogContent className="flex max-h-[92svh] flex-col gap-4 overflow-y-auto sm:max-w-lg">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-base leading-snug">
+              {target?.title ?? "Resource"}
+            </DialogTitle>
+            <DialogDescription className="flex items-center gap-2 text-xs">
+              <Globe className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate">{displayHost(target?.host ?? null) || target?.url}</span>
+            </DialogDescription>
+          </DialogHeader>
 
-        <Button
-          onClick={() => target && browse(target.url)}
-          disabled={opening || !target}
-          className="w-full"
-        >
-          {opening ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <ExternalLink className="size-4" aria-hidden="true" />
-          )}
-          {native ? "Open in SyncTogether browser" : "Open page"}
-        </Button>
-
-        {/* Free surfing from the same sheet: search terms or a bare domain. */}
-        <form
-          className="flex gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const url = toBrowseUrl(surf);
-            if (!url) {
-              toast.error("Enter a search term or a website address.");
-              return;
-            }
-            void browse(url);
-          }}
-        >
-          <Input
-            value={surf}
-            onChange={(event) => setSurf(event.target.value)}
-            placeholder="Search the web or enter a site"
-            inputMode="url"
-            aria-label="Search the web or enter a site"
-          />
-          <Button type="submit" variant="outline" disabled={opening}>
-            <Compass className="size-4" aria-hidden="true" />
-            <span className="sr-only sm:not-sr-only">Surf</span>
+          <Button
+            onClick={() => target && browse(target.url)}
+            disabled={opening || !target}
+            className="w-full"
+          >
+            {opening ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <ExternalLink className="size-4" aria-hidden="true" />
+            )}
+            {native ? "Open in SyncTogether browser" : "Open page"}
           </Button>
-        </form>
 
-        <p className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-          <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-          {native
-            ? "Pages open inside SyncTogether with the real address shown. Sites load exactly as their owners published them, and your browsing is never recorded or shared with the room."
-            : "Your browser opens this page in a new tab. SyncTogether never reads or records what you browse."}
-        </p>
-
-        {canSaveNotes && onSaveNote ? (
-          <div className="space-y-2">
-            <label htmlFor="research-note" className="text-sm font-medium">
-              Research notes {visited ? <span className="text-muted-foreground">· ready</span> : null}
-            </label>
-            <Textarea
-              id="research-note"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              rows={6}
-              placeholder="What did you find on this page?"
-              autoFocus={visited}
+          {/* Free surfing from the same sheet: search terms or a bare domain. */}
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const url = toBrowseUrl(surf);
+              if (!url) {
+                toast.error("Enter a search term or a website address.");
+                return;
+              }
+              void browse(url);
+            }}
+          >
+            <Input
+              value={surf}
+              onChange={(event) => setSurf(event.target.value)}
+              placeholder="Search the web or enter a site"
+              inputMode="url"
+              aria-label="Search the web or enter a site"
             />
-            <p className="text-xs text-muted-foreground">
-              Saved as a room note with the source link attached.
-            </p>
-          </div>
-        ) : null}
-
-        <DialogFooter className="gap-2 sm:justify-between">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
-            Close
-          </Button>
-          {canSaveNotes && onSaveNote ? (
-            <Button onClick={save} disabled={saving} className="w-full sm:w-auto">
-              {saving ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <NotebookPen className="size-4" aria-hidden="true" />
-              )}
-              Save note
+            <Button type="submit" variant="outline" disabled={opening}>
+              <Compass className="size-4" aria-hidden="true" />
+              <span className="sr-only sm:not-sr-only">Surf</span>
             </Button>
+          </form>
+
+          <p className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+            <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+            {native
+              ? "Pages open inside SyncTogether with the real address shown. Sites load exactly as their owners published them, and your browsing is never recorded or shared with the room."
+              : "Your browser opens this page in a new tab. SyncTogether never reads or records what you browse."}
+          </p>
+
+          {canSaveNotes && onSaveNote ? (
+            <div className="space-y-2">
+              <label htmlFor="research-note" className="text-sm font-medium">
+                Research notes{" "}
+                {visited ? <span className="text-muted-foreground">· ready</span> : null}
+              </label>
+              <Textarea
+                id="research-note"
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                rows={6}
+                placeholder="What did you find on this page?"
+                autoFocus={visited}
+              />
+              <p className="text-xs text-muted-foreground">
+                Saved as a room note with the source link attached.
+              </p>
+            </div>
           ) : null}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-    <EmbeddedBrowser
-      url={embedUrl}
-      onClose={() => {
-        setEmbedUrl(null);
-        setVisited(true);
-      }}
-    />
+
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
+            >
+              Close
+            </Button>
+            {canSaveNotes && onSaveNote ? (
+              <Button onClick={save} disabled={saving} className="w-full sm:w-auto">
+                {saving ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <NotebookPen className="size-4" aria-hidden="true" />
+                )}
+                Save note
+              </Button>
+            ) : null}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <EmbeddedBrowser
+        url={embedUrl}
+        onClose={() => {
+          setEmbedUrl(null);
+          setVisited(true);
+        }}
+      />
     </>
   );
 }

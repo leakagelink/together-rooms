@@ -7,7 +7,7 @@
 
 export type NotificationTarget =
   | { to: "/rooms/$roomId"; params: { roomId: string }; search: { tab: RoomDeepTab } }
-  | { to: "/settings/subscription" }
+  | { to: "/settings" }
   | { to: "/rooms" };
 
 export type RoomDeepTab = "stage" | "chat" | "people" | "share";
@@ -34,7 +34,7 @@ export function resolveNotificationTarget(
   type: string,
   data: unknown,
 ): NotificationTarget {
-  if (type === "subscription") return { to: "/settings/subscription" };
+  if (type === "subscription" || type === "account") return { to: "/settings" };
 
   const roomId = roomIdFromData(data);
   if (roomId) {

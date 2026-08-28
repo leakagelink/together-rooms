@@ -28,7 +28,7 @@ describe("notification routing", () => {
 
   it("subscription opens billing settings", () => {
     expect(resolveNotificationTarget("subscription", { plan: "premium" })).toEqual({
-      to: "/settings/subscription",
+      to: "/settings",
     });
   });
 
@@ -60,7 +60,7 @@ describe("notification routing", () => {
     ).toEqual({ to: "/rooms/$roomId", params: { roomId: ROOM }, search: { tab: "chat" } });
 
     expect(resolvePushTarget({ type: "subscription", payload: "{}" })).toEqual({
-      to: "/settings/subscription",
+      to: "/settings",
     });
   });
 });

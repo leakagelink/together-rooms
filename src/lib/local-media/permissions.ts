@@ -87,18 +87,33 @@ export function buildPreflight(input: PreflightInput): PreflightCheck[] {
   ];
 }
 
-/** Sharing may start only when nothing is blocked or still pending. */
+/**
+ * Checks that only warn. An uncertain format ("may not play everywhere") is
+ * advisory: the user is allowed to try anyway, so it must not disable the
+ * start button — only hard blocks and the required gates do that.
+ */
+const ADVISORY_CHECKS: CheckId[] = ["decode"];
+
+/** Sharing may start when nothing is blocked and every required check passed. */
 export function canStartSharing(checks: PreflightCheck[]): boolean {
-  return checks.every((check) => check.state === "granted" || check.state === "not-required");
+  return checks.every(
+    (check) =>
+      check.state === "granted" ||
+      check.state === "not-required" ||
+      (check.state === "pending" && ADVISORY_CHECKS.includes(check.id)),
+  );
 }
 
 /** First reason the user cannot continue, for the button hint. */
 export function blockingReason(checks: PreflightCheck[]): string | null {
   const blocked = checks.find((check) => check.state === "blocked");
   if (blocked) return blocked.detail;
-  const pending = checks.find((check) => check.state === "pending");
+  const pending = checks.find(
+    (check) => check.state === "pending" && !ADVISORY_CHECKS.includes(check.id),
+  );
   return pending ? pending.detail : null;
 }
+
 
 /** Runtime probe: are WebRTC data channels usable here? */
 export function detectTransportSupport(scope: {

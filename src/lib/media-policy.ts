@@ -22,6 +22,7 @@ export type MediaPrivacyStatus = "public" | "unlisted" | "private" | "unknown";
 export type MediaPolicyStatus =
   | "ok"
   | "made_for_kids"
+  | "age_restricted"
   | "not_embeddable"
   | "privacy_blocked"
   | "unavailable"

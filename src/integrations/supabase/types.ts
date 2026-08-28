@@ -2625,6 +2625,7 @@ export type Database = {
       }
       entitlement_precheck: { Args: { _feature: string }; Returns: Json }
       entitlement_snapshot: { Args: { _user_id: string }; Returns: Json }
+      expire_account_suspensions: { Args: never; Returns: number }
       export_user_data: { Args: never; Returns: Json }
       fetch_call_signals: {
         Args: { _session_id: string; _token: string }
@@ -2641,6 +2642,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_account_active: { Args: { _user_id: string }; Returns: boolean }
       is_blocked_between: { Args: { _a: string; _b: string }; Returns: boolean }
       is_premium: { Args: { _user_id: string }; Returns: boolean }
       is_room_host: {
@@ -2701,6 +2703,21 @@ export type Database = {
         }
       }
       mark_notifications_read: { Args: { _ids?: string[] }; Returns: number }
+      moderation_enforce: {
+        Args: {
+          _action: string
+          _duration_minutes?: number
+          _reason?: string
+          _report_id?: string
+          _room_id?: string
+          _target_user_id: string
+        }
+        Returns: Json
+      }
+      moderation_reverse: {
+        Args: { _action_id: string; _reason?: string }
+        Returns: Json
+      }
       move_playlist_item: {
         Args: {
           _expected_version?: number
@@ -2808,6 +2825,7 @@ export type Database = {
         Args: { _expected_version?: number; _room_id: string }
         Returns: Json
       }
+      product_limits: { Args: never; Returns: Json }
       purge_expired_ack_recovery: { Args: never; Returns: number }
       purge_expired_chat: { Args: never; Returns: number }
       purge_user_data: { Args: { _user_id: string }; Returns: Json }
@@ -2843,6 +2861,15 @@ export type Database = {
       remove_from_queue: { Args: { _item_id: string }; Returns: Json }
       remove_playlist_item: { Args: { _item_id: string }; Returns: Json }
       remove_room_resource: { Args: { _resource_id: string }; Returns: Json }
+      report_content: {
+        Args: {
+          _category: string
+          _details?: string
+          _target_id: string
+          _target_type: string
+        }
+        Returns: Json
+      }
       report_message: {
         Args: { _category: string; _details?: string; _message_id: string }
         Returns: Json
@@ -2999,6 +3026,7 @@ export type Database = {
         }
         Returns: Json
       }
+      staff_user_enforcement: { Args: { _user_id: string }; Returns: Json }
       start_call_session: {
         Args: { _call_mode: string; _room_id: string }
         Returns: Json

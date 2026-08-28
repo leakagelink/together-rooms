@@ -63,3 +63,17 @@
 **NO-GO for production submission.** All six critical items must be closed first; C1, C2, and C4 are cheap, and C3 can be closed either by integrating billing or by removing the Premium purchase surface for v1.
 
 **CONDITIONAL GO for internal testing** once C1, C2, and C5 are addressed — internal testing does not require App Links verification or a live billing client.
+
+---
+
+## Phase 15 remediation status (free-only release)
+
+| ID | Blocker | Status |
+| --- | --- | --- |
+| C1 | Privacy policy did not match app behaviour | **Resolved** — `/privacy` and `/terms` rewritten: free-only (no purchases), AdMob + UMP disclosed, local-media P2P handling, FCM tokens, children policy and a published contact address. |
+| C3 | Missing Play Billing client | **Not applicable** — billing removed entirely. No billing code, products, entitlements or purchase surfaces ship. Play Console: declare "no in-app purchases". |
+| C5 | Security suites failed under parallel execution | **Resolved** — `vitest.config.ts` runs test files sequentially, removing auth rate-limit contention. Full suite green. |
+| — | Moderation recorded decisions without enforcing them | **Resolved** — the console now calls `moderation_enforce` / `moderation_reverse`; suspensions are enforced by a database trigger on every user-writable table, so suspended accounts cannot write through any path. |
+| — | UGC reporting bypassed server checks | **Resolved** — all reports go through `report_content`; direct writes to `user_reports` are revoked. Reportable surfaces now include resources, notes, tasks, queue items, playlists and local-media sessions. |
+
+Remaining owner actions are listed in `PLAY_CONSOLE_CONFIGURATION.md`.

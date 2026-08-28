@@ -64,7 +64,7 @@ async function fetchDataApiPolicy(mediaId: string): Promise<MediaPolicy | null> 
 
   const url = new URL("https://www.googleapis.com/youtube/v3/videos");
   url.searchParams.set("id", mediaId);
-  url.searchParams.set("part", "snippet,status");
+  url.searchParams.set("part", "snippet,status,contentDetails");
   url.searchParams.set("key", key);
 
   const controller = new AbortController();

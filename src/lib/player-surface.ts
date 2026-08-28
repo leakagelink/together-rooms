@@ -50,6 +50,7 @@ const PLAYABLE: readonly MediaPolicyStatus[] = ["ok", "made_for_kids"];
 
 const BLOCKED_COPY: Partial<Record<MediaPolicyStatus, string>> = {
   not_embeddable: "The owner has disabled embedding for this video.",
+  age_restricted: "This video is age-restricted on YouTube and can't be played in a room.",
   privacy_blocked: "This video is private.",
   unavailable: "This video is unavailable.",
   invalid: "That video reference isn't valid.",

@@ -120,7 +120,6 @@ export function StudyRoom({
   const [now, setNow] = useState(() => Date.now());
   const [reading, setReading] = useState<ResearchTarget | null>(null);
   const [surfQuery, setSurfQuery] = useState("");
-  const [surfing, setSurfing] = useState(false);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
 
   const canAddResources = roomActive && (settings.resource_mode !== "host_only" || canControl);
@@ -469,7 +468,7 @@ export function StudyRoom({
                 inputMode="url"
               />
             </div>
-            <Button type="submit" variant="outline" disabled={surfing || !surfQuery.trim()}>
+            <Button type="submit" variant="outline" disabled={!surfQuery.trim()}>
               <Compass className="size-4" aria-hidden="true" /> Surf
             </Button>
           </form>
@@ -981,7 +980,28 @@ export function StudyRoom({
         }}
       />
 
-      <EmbeddedBrowser url={embedUrl} onClose={() => setEmbedUrl(null)} />
+      <ResearchBrowser
+        url={embedUrl}
+        onClose={() => setEmbedUrl(null)}
+        onDiscussInRoom={onDiscussInRoom}
+        onShareWithRoom={
+          canAddResources
+            ? async (sharedUrl, sharedTitle) => {
+                unwrap(
+                  (await addResource({
+                    data: {
+                      room_id: roomId,
+                      resource_type: "web_link",
+                      title: sharedTitle,
+                      url: sharedUrl,
+                    },
+                  })) as Result,
+                );
+                await invalidate(queryKeys.study.resources(roomId));
+              }
+            : undefined
+        }
+      />
     </section>
   );
 }

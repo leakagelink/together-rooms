@@ -106,6 +106,7 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ revision: number; content: string } | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [reading, setReading] = useState<ResearchTarget | null>(null);
 
   const canAddResources = roomActive && (settings.resource_mode !== "host_only" || canControl);
   const canEditNotes = roomActive && (settings.note_mode !== "host_only" || canControl);

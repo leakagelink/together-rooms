@@ -77,3 +77,13 @@
 | — | UGC reporting bypassed server checks | **Resolved** — all reports go through `report_content`; direct writes to `user_reports` are revoked. Reportable surfaces now include resources, notes, tasks, queue items, playlists and local-media sessions. |
 
 Remaining owner actions are listed in `PLAY_CONSOLE_CONFIGURATION.md`.
+
+### Post-Phase-15 hardening (2026-08-28)
+
+| ID | Blocker | Status |
+| --- | --- | --- |
+| H1 | `anon` held INSERT/UPDATE/DELETE on public tables | **Resolved** — all write privileges revoked from `anon` on every public table, and default privileges updated so future tables never grant them. |
+| H2 | Dead voice/video call tables still writable and in the realtime publication | **Resolved** — `room_call_sessions`, `room_call_participants`, `room_call_settings`, `call_signals`, `call_transport_grants`, their RPCs, guards and enums dropped. |
+| H6 | Pasted YouTube links bypassed SafeSearch | **Resolved** — metadata lookup now requests `contentDetails` and blocks `ytRating = ytAgeRestricted` with the new `age_restricted` policy status, so pasted 18+ videos are never embeddable. |
+
+Remaining before submission: C4 (`assetlinks.json`), H3 (TURN relay), H7 (physical-device verification) and the Play Console form-filling in `PLAY_CONSOLE_CONFIGURATION.md`.

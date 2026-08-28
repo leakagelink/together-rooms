@@ -57,20 +57,6 @@ export function ResearchViewer({
     setSurf("");
   }, [target?.id]);
 
-  // Reveal the note pad the moment the in-app browser is dismissed.
-  useEffect(() => {
-    if (!target) return;
-    let dispose: (() => void) | undefined;
-    let cancelled = false;
-    void onBrowserClosed(() => setVisited(true)).then((off) => {
-      if (cancelled) off();
-      else dispose = off;
-    });
-    return () => {
-      cancelled = true;
-      dispose?.();
-    };
-  }, [target]);
 
   // Surf Mode always stays inside SyncTogether; the system browser is only
   // reachable from the in-app browser's explicit "Open in Browser" fallback.

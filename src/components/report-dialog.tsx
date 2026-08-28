@@ -132,7 +132,7 @@ export function ReportDialog({
         } as never);
         if (rpcError) throw rpcError;
         const result = data as { ok?: boolean; reason?: string; outcome?: string } | null;
-        if (!result?.ok) throw new Error(rpcMessage(result?.reason ?? "unknown"));
+        if (!result?.ok) throw new Error(rpcMessage((result?.reason ?? "unknown") as never));
         if (result.outcome === "already_reported") {
           toast.info("You already reported this. Our team is on it.");
           setOpen(false);

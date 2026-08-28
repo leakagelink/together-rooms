@@ -445,24 +445,18 @@ export function StudyRoom({
 
         {/* ------------------------------------------------------ resources */}
         <TabsContent value="resources" className="mt-4 space-y-4">
-          {/* Surf: search or open any site inside the app's own browser. */}
+          {/* Surf Mode: opens the in-app Research Browser without leaving the
+              room. The external browser is never launched from here. */}
           <form
             className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-muted/30 p-3"
-            onSubmit={async (event) => {
+            onSubmit={(event) => {
               event.preventDefault();
               const next = toBrowseUrl(surfQuery);
               if (!next) {
                 toast.error("Enter a search term or a website address.");
                 return;
               }
-              if (!isNativeRuntime()) {
-                setEmbedUrl(next);
-                return;
-              }
-              setSurfing(true);
-              const mode = await openResource(next);
-              setSurfing(false);
-              if (!mode) toast.error("That address can't be opened.");
+              setEmbedUrl(next);
             }}
           >
             <div className="min-w-[16rem] flex-1">

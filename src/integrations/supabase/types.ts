@@ -2328,6 +2328,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      account_is_active: { Args: { _user_id?: string }; Returns: boolean }
       add_playlist_item: {
         Args: { _media_id: string; _playlist_id: string; _provider: string }
         Returns: Json

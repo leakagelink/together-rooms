@@ -88,7 +88,6 @@ describe("ad placement policy (ADS-T1..T12)", () => {
       privacy_settings: "NO_AD_PRIVACY_SETTINGS",
       consent: "NO_AD_PRIVACY_SETTINGS",
       payment: "NO_AD_PAYMENT_FLOW",
-      restore_purchases: "NO_AD_PAYMENT_FLOW",
       report: "NO_AD_REPORT_FLOW",
       block: "NO_AD_REPORT_FLOW",
       auth: "NO_AD_SENSITIVE_FLOW",

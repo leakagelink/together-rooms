@@ -22,7 +22,18 @@ import type { Json } from "@/lib/rpc-types";
 const uuid = z.string().uuid();
 
 const reportStatus = z.enum(["open", "reviewing", "actioned", "dismissed"]);
-const reportTarget = z.enum(["user", "room", "message", "other"]);
+const reportTarget = z.enum([
+  "user",
+  "room",
+  "message",
+  "resource",
+  "note",
+  "task",
+  "queue_item",
+  "playlist",
+  "local_media_session",
+  "other",
+]);
 const appRole = z.enum(["moderator", "admin"]);
 const actionType = z.enum([
   "warn",
@@ -178,28 +189,69 @@ export const createModerationAction = createServerFn({ method: "POST" })
         action: actionType,
         report_id: uuid.nullish(),
         room_id: uuid.nullish(),
-        target_user_id: uuid.nullish(),
+        target_user_id: uuid,
         reason: z.string().trim().max(1000).optional(),
+        // 5 minutes .. 1 year. Omitted means "use the action's own default"
+        // (permanent for a ban, 7 days for a suspension).
+        duration_minutes: z.number().int().min(5).max(525_600).nullish(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("create_moderation_action", {
-      // The SQL signature defaults these to NULL; the generated types mark
-      // them required, so nulls are passed explicitly.
+    // `moderation_enforce` does not merely record the decision: it applies it
+    // (mute, kick, room ban, account suspension) inside the same transaction
+    // and writes the audit row. Recording without enforcing was the Phase 15
+    // audit finding this replaces.
+    const { data: result, error } = await context.supabase.rpc("moderation_enforce", {
+      _target_user_id: data.target_user_id,
       _action: data.action,
-      _report_id: data.report_id ?? null,
       _room_id: data.room_id ?? null,
-      _target_user_id: data.target_user_id ?? null,
       _reason: data.reason ?? null,
-    } as unknown as {
-      _action: ModerationActionType;
-      _report_id: string;
-      _room_id: string;
-      _target_user_id: string;
-      _reason: string;
-    });
-    return normalizeRpc<{ id: string }>("create_moderation_action", result, error);
+      _duration_minutes: data.duration_minutes ?? null,
+      _report_id: data.report_id ?? null,
+    } as never);
+    return normalizeRpc<{ action_id: string; action: ModerationActionType; expires_at: string | null }>(
+      "moderation_enforce",
+      result,
+      error,
+    );
+  });
+
+/** Undo an enforcement action (unmute, unban, lift a suspension). */
+export const reverseModerationAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ action_id: uuid, reason: z.string().trim().max(1000).optional() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("moderation_reverse", {
+      _action_id: data.action_id,
+      _reason: data.reason ?? null,
+    } as never);
+    return normalizeRpc<{ action_id: string }>("moderation_reverse", result, error);
+  });
+
+/** Account-level enforcement state for one user, for the review screen. */
+export const getUserEnforcement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ user_id: uuid }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("staff_user_enforcement", {
+      _user_id: data.user_id,
+    } as never);
+    return normalizeRpc<{
+      account_status: string | null;
+      distinct_reporters: number;
+      open_reports: number;
+      actions: {
+        id: string;
+        action: string;
+        room_id: string | null;
+        reason: string | null;
+        expires_at: string | null;
+        created_at: string;
+      }[];
+    }>("staff_user_enforcement", result, error);
   });
 
 /**

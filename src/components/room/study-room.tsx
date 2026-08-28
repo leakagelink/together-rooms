@@ -51,7 +51,8 @@ import {
   updateRoomTask,
 } from "@/lib/study.functions";
 import { checkResourceUrl, displayHost, urlRejectionMessage } from "@/lib/url-safety";
-import { openResource, toBrowseUrl } from "@/lib/in-app-browser";
+import { EmbeddedBrowser } from "@/components/room/embedded-browser";
+import { isNativeRuntime, openResource, toBrowseUrl } from "@/lib/in-app-browser";
 import {
   FOCUS_PRESETS,
   formatDuration,

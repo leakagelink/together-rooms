@@ -108,6 +108,7 @@ export function ResearchViewer({
   };
 
   return (
+    <>
     <Dialog open={Boolean(target)} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[92svh] flex-col gap-4 overflow-y-auto sm:max-w-lg">
         <DialogHeader className="text-left">

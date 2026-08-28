@@ -296,7 +296,7 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       evaluate,
       requestFullscreen,
       setActivity,
-      premium,
+      
       resolution.units,
       consent,
       ump,

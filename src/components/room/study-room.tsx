@@ -112,6 +112,7 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
   const [reading, setReading] = useState<ResearchTarget | null>(null);
   const [surfQuery, setSurfQuery] = useState("");
   const [surfing, setSurfing] = useState(false);
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
 
   const canAddResources = roomActive && (settings.resource_mode !== "host_only" || canControl);
   const canEditNotes = roomActive && (settings.note_mode !== "host_only" || canControl);

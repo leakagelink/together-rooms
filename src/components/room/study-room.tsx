@@ -282,10 +282,19 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
       </div>
       <div className="flex flex-wrap gap-2">
         {resource.url ? (
-          <Button asChild size="sm" variant="outline">
-            <a href={resource.url} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="size-4" aria-hidden="true" /> Open
-            </a>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              setReading({
+                id: resource.id,
+                title: resource.title,
+                url: resource.url as string,
+                host: resource.host,
+              })
+            }
+          >
+            <ExternalLink className="size-4" aria-hidden="true" /> Read
           </Button>
         ) : null}
         {canControl && resource.status === "active" ? (

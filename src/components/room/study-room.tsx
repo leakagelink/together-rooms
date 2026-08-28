@@ -446,6 +446,10 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
                 toast.error("Enter a search term or a website address.");
                 return;
               }
+              if (!isNativeRuntime()) {
+                setEmbedUrl(next);
+                return;
+              }
               setSurfing(true);
               const mode = await openResource(next);
               setSurfing(false);

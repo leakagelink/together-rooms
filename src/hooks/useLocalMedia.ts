@@ -260,9 +260,7 @@ export function useLocalMedia(
 
   /** Live signal listeners. Signals are consumed on read, so every batch is
    * dispatched exactly once to whoever is negotiating a peer connection. */
-  const listenersRef = useRef(
-    new Set<(signal: SignalEnvelope & { sender_id: string }) => void>(),
-  );
+  const listenersRef = useRef(new Set<(signal: SignalEnvelope & { sender_id: string }) => void>());
   const onSignal = useCallback(
     (listener: (signal: SignalEnvelope & { sender_id: string }) => void) => {
       listenersRef.current.add(listener);

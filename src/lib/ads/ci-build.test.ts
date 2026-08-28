@@ -24,7 +24,9 @@ describe("phase 14.2 deterministic Android CI build gate", () => {
 
   it("CI-BUILD-T3: invokes the checked-in wrapper for debug and unsigned release", () => {
     expect(workflow).toContain("./gradlew assembleDebug --no-daemon --console=plain --stacktrace");
-    expect(workflow).toContain("./gradlew assembleRelease --no-daemon --console=plain --stacktrace");
+    expect(workflow).toContain(
+      "./gradlew assembleRelease --no-daemon --console=plain --stacktrace",
+    );
     expect(workflow).toContain("uses: gradle/actions/setup-gradle@v4");
   });
 

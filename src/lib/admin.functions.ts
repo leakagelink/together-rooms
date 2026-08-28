@@ -210,11 +210,11 @@ export const createModerationAction = createServerFn({ method: "POST" })
       _duration_minutes: data.duration_minutes ?? null,
       _report_id: data.report_id ?? null,
     } as never);
-    return normalizeRpc<{ action_id: string; action: ModerationActionType; expires_at: string | null }>(
-      "moderation_enforce",
-      result,
-      error,
-    );
+    return normalizeRpc<{
+      action_id: string;
+      action: ModerationActionType;
+      expires_at: string | null;
+    }>("moderation_enforce", result, error);
   });
 
 /** Undo an enforcement action (unmute, unban, lift a suspension). */

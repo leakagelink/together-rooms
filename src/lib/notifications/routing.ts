@@ -30,10 +30,7 @@ export function roomIdFromData(data: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-export function resolveNotificationTarget(
-  type: string,
-  data: unknown,
-): NotificationTarget {
+export function resolveNotificationTarget(type: string, data: unknown): NotificationTarget {
   if (type === "subscription" || type === "account") return { to: "/settings" };
 
   const roomId = roomIdFromData(data);

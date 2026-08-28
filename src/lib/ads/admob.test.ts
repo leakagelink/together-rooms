@@ -70,8 +70,10 @@ describe("ADMOB", () => {
     const { provider } = makeProvider();
     for (const format of ["banner", "interstitial", "app_open"] as const) {
       expect(
-        provider.evaluate({ format, placement: "rooms_list_footer" }, context({ configured: false }))
-          .eligible,
+        provider.evaluate(
+          { format, placement: "rooms_list_footer" },
+          context({ configured: false }),
+        ).eligible,
       ).toBe(false);
     }
   });

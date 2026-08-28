@@ -155,10 +155,7 @@ function SignupPage() {
             {PASSWORD_RULES.map((rule) => {
               const ok = rule.test(password);
               return (
-                <li
-                  key={rule.label}
-                  className={ok ? "text-emerald-500" : "text-muted-foreground"}
-                >
+                <li key={rule.label} className={ok ? "text-emerald-500" : "text-muted-foreground"}>
                   <span aria-hidden="true">{ok ? "✓" : "•"}</span> {rule.label}
                 </li>
               );

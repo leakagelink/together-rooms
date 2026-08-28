@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  createDiagnostics,
-  formatDiagEvent,
-  MAX_DIAG_EVENTS,
-  shortPeer,
-} from "./diagnostics";
+import { createDiagnostics, formatDiagEvent, MAX_DIAG_EVENTS, shortPeer } from "./diagnostics";
 
 describe("local media diagnostics", () => {
   it("records events newest-first and caps the buffer", () => {

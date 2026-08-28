@@ -45,7 +45,6 @@ describe("buildPreflight", () => {
     expect(blockingReason(checks)).toBeNull();
   });
 
-
   it("never requires camera or microphone", () => {
     const checks = buildPreflight(base);
     expect(checks.find((c) => c.id === "camera")?.state).toBe("not-required");

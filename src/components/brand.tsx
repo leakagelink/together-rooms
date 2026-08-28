@@ -22,11 +22,7 @@ export function BrandMark({ className = "" }: { className?: string }) {
 
 export function BrandLogo({ withTagline = false }: { withTagline?: boolean }) {
   return (
-    <Link
-      to="/"
-      className="group inline-flex items-center gap-2.5"
-      aria-label="SyncTogether home"
-    >
+    <Link to="/" className="group inline-flex items-center gap-2.5" aria-label="SyncTogether home">
       <BrandMark className="transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3" />
       <span className="flex flex-col leading-none">
         <span className="font-display text-lg font-extrabold tracking-tight">SyncTogether</span>

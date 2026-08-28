@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  parsePushPayload,
-  resolveNotificationTarget,
-  resolvePushTarget,
-} from "./routing";
+import { parsePushPayload, resolveNotificationTarget, resolvePushTarget } from "./routing";
 
 const ROOM = "11111111-1111-4111-8111-111111111111";
 

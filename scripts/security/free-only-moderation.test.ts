@@ -99,7 +99,10 @@ suite("phase 15 free-only product & moderation enforcement", () => {
       "subscription_events",
       "plan_limits",
     ] as const) {
-      const { data, error } = await host.client.from(table as never).select("*").limit(1);
+      const { data, error } = await host.client
+        .from(table as never)
+        .select("*")
+        .limit(1);
       expect(error ?? (data ?? []).length === 0, `${table} must be closed`).toBeTruthy();
     }
   });
@@ -143,8 +146,7 @@ suite("phase 15 free-only product & moderation enforcement", () => {
       _title: "Paper",
     });
     const resourceId = (created.data as Record<string, unknown>)?.["resource_id"] as
-      | string
-      | undefined;
+      string | undefined;
     if (!resourceId) return; // resource RPC unavailable in this environment
 
     const report = await member.client.rpc("report_content", {
@@ -203,11 +205,7 @@ suite("phase 15 free-only product & moderation enforcement", () => {
     });
     expect((enforce.data as Record<string, unknown>)?.["ok"]).toBe(true);
 
-    const status = await admin
-      .from("profiles")
-      .select("status")
-      .eq("id", member.id)
-      .maybeSingle();
+    const status = await admin.from("profiles").select("status").eq("id", member.id).maybeSingle();
     expect(status.data?.status).toBe("suspended");
 
     const channel = await member.client.rpc("authorize_room_channel", { _room_id: roomId });
@@ -241,8 +239,7 @@ suite("phase 15 free-only product & moderation enforcement", () => {
   it("MOD15-T5: staff can reverse enforcement and access is restored", async () => {
     const history = await staff.client.rpc("staff_user_enforcement", { _user_id: member.id });
     const actions = (history.data as Record<string, unknown>)?.["actions"] as
-      | { id: string; action: string }[]
-      | undefined;
+      { id: string; action: string }[] | undefined;
     const suspension = actions?.find((a) => a.action === "suspend");
     expect(suspension).toBeTruthy();
 

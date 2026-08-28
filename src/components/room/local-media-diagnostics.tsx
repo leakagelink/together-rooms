@@ -4,7 +4,12 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatDiagEvent, shortPeer, type DiagEvent, type PeerDiag } from "@/lib/local-media/diagnostics";
+import {
+  formatDiagEvent,
+  shortPeer,
+  type DiagEvent,
+  type PeerDiag,
+} from "@/lib/local-media/diagnostics";
 
 interface Props {
   isOwner: boolean;
@@ -66,7 +71,9 @@ export function LocalMediaDiagnostics({ isOwner, peers, events, onClear }: Props
           Connection status
           {peers.length > 0 ? (
             <span className="ml-2 text-xs font-normal text-muted-foreground">
-              {isOwner ? `${peers.length} viewer${peers.length === 1 ? "" : "s"}` : stateLabel(peers[0]!)}
+              {isOwner
+                ? `${peers.length} viewer${peers.length === 1 ? "" : "s"}`
+                : stateLabel(peers[0]!)}
             </span>
           ) : (
             <span className="ml-2 text-xs font-normal text-muted-foreground">

@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Archive,
   Check,
+  Compass,
   ExternalLink,
   Eye,
   Pin,
@@ -50,6 +51,7 @@ import {
   updateRoomTask,
 } from "@/lib/study.functions";
 import { checkResourceUrl, displayHost, urlRejectionMessage } from "@/lib/url-safety";
+import { openResource, toBrowseUrl } from "@/lib/in-app-browser";
 import {
   FOCUS_PRESETS,
   formatDuration,
@@ -108,6 +110,8 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
   const [draft, setDraft] = useState<{ revision: number; content: string } | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [reading, setReading] = useState<ResearchTarget | null>(null);
+  const [surfQuery, setSurfQuery] = useState("");
+  const [surfing, setSurfing] = useState(false);
 
   const canAddResources = roomActive && (settings.resource_mode !== "host_only" || canControl);
   const canEditNotes = roomActive && (settings.note_mode !== "host_only" || canControl);

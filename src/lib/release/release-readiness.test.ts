@@ -83,9 +83,9 @@ describe("free-only release readiness", () => {
   });
 
   it("REL-T6: WebView debugging and cleartext traffic are refused", () => {
-    expect(
-      auditReleaseCandidate(input({ webContentsDebuggingEnabled: true })).problems,
-    ).toContain("webview_debugging_enabled");
+    expect(auditReleaseCandidate(input({ webContentsDebuggingEnabled: true })).problems).toContain(
+      "webview_debugging_enabled",
+    );
     expect(auditReleaseCandidate(input({ cleartextTrafficPermitted: true })).problems).toContain(
       "cleartext_enabled",
     );

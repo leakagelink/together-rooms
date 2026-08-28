@@ -30,11 +30,19 @@ export const Route = createFileRoute("/auth/signup")({
   component: SignupPage,
 });
 
+const PASSWORD_RULES: { label: string; test: (value: string) => boolean }[] = [
+  { label: "At least 10 characters", test: (v) => v.length >= 10 },
+  { label: "One lowercase letter", test: (v) => /[a-z]/.test(v) },
+  { label: "One uppercase letter", test: (v) => /[A-Z]/.test(v) },
+  { label: "One number", test: (v) => /[0-9]/.test(v) },
+];
+
 function SignupPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +61,8 @@ function SignupPage() {
     }
     const parsed = signUpSchema.safeParse({ email, password, displayName });
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Check your details.");
+      const issues = parsed.error.issues.map((issue) => issue.message);
+      setError(issues.join(" ") || "Check your details.");
       return;
     }
     setSubmitting(true);
@@ -122,18 +131,39 @@ function SignupPage() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            aria-describedby="password-hint"
-          />
-          <p id="password-hint" className="text-xs text-muted-foreground">
-            At least 10 characters, with upper case, lower case and a number.
-          </p>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              aria-describedby="password-hint"
+              className="pr-16"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute inset-y-0 right-0 px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+              aria-pressed={showPassword}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+          <ul id="password-hint" className="space-y-1 text-xs">
+            {PASSWORD_RULES.map((rule) => {
+              const ok = rule.test(password);
+              return (
+                <li
+                  key={rule.label}
+                  className={ok ? "text-emerald-500" : "text-muted-foreground"}
+                >
+                  <span aria-hidden="true">{ok ? "✓" : "•"}</span> {rule.label}
+                </li>
+              );
+            })}
+          </ul>
         </div>
         <div className="flex items-start gap-2">
           <Checkbox

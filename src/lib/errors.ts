@@ -28,6 +28,12 @@ const FRIENDLY: Record<AppErrorCode, string> = {
   auth_invalid_credentials: "That email or password doesn't match our records.",
   auth_email_not_confirmed: "Confirm your email address first, then sign in.",
   auth_rate_limited: "Too many attempts. Please wait a moment and try again.",
+  auth_weak_password:
+    "That password is too weak. Use at least 10 characters with an upper case letter, a lower case letter and a number.",
+  auth_pwned_password:
+    "This password has appeared in a known data breach. Please choose a different one.",
+  auth_email_taken: "An account with this email already exists. Try signing in instead.",
+  auth_invalid_email: "Enter a valid email address.",
   not_found: "We couldn't find that. It may have been removed or expired.",
   forbidden: "You don't have access to this.",
   conflict: "That value is already taken.",

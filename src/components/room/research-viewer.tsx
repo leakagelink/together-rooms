@@ -49,6 +49,7 @@ export function ResearchViewer({
   const [opening, setOpening] = useState(false);
   const [visited, setVisited] = useState(false);
   const [surf, setSurf] = useState("");
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const native = useMemo(() => isNativeRuntime(), []);
 
   useEffect(() => {

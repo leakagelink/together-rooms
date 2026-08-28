@@ -73,6 +73,10 @@ export function ResearchViewer({
   }, [target]);
 
   const browse = async (url: string) => {
+    if (!native) {
+      setEmbedUrl(url);
+      return;
+    }
     setOpening(true);
     const mode = await openResource(url);
     setOpening(false);

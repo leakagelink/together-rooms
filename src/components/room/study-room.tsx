@@ -81,12 +81,18 @@ function unwrap(result: Result) {
  * Phase 6 — the collaborative Study & Research workspace.
  *
  * Everything here is a *reference-first* surface: resources are links the room
- * agreed to look at, and each participant opens them in their own browser. No
- * remote browser control, no scraping, no embedding of sites that did not opt
- * in — YouTube is the only natively embedded provider, and everything else
- * opens externally.
+ * agreed to look at. Surf Mode opens the in-app Research Browser *inside* this
+ * room — the room, its realtime subscriptions and its presence stay mounted
+ * behind it, nothing is broadcast automatically, and the system browser is only
+ * used through an explicit fallback when a site refuses to be displayed.
  */
-export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomProps) {
+export function StudyRoom({
+  roomId,
+  userId,
+  canControl,
+  roomActive,
+  onDiscussInRoom,
+}: StudyRoomProps) {
   const queryClient = useQueryClient();
   const { connected, settings, timer, resources, notes, tasks, loading } = useRoomStudy(roomId);
 

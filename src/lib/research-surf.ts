@@ -170,3 +170,59 @@ export function currentUrl(history: SurfHistory): string {
 export function clearHistory(): SurfHistory | null {
   return null;
 }
+
+/* ------------------------------------------------------------------ */
+/* Embedding policy                                                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Hosts known to refuse framing (X-Frame-Options / frame-ancestors). Loading
+ * them into the research frame produces the platform's raw
+ * `ERR_BLOCKED_BY_RESPONSE` page, so we detect them up front and show the
+ * app's own fallback with an explicit "Open in Browser" action instead.
+ */
+const EMBED_BLOCKED_HOSTS = [
+  "google.com",
+  "google.co.in",
+  "duckduckgo.com",
+  "bing.com",
+  "search.yahoo.com",
+  "yahoo.com",
+  "ecosia.org",
+  "startpage.com",
+  "search.brave.com",
+  "youtube.com",
+  "youtu.be",
+  "facebook.com",
+  "instagram.com",
+  "x.com",
+  "twitter.com",
+  "linkedin.com",
+  "reddit.com",
+  "quora.com",
+  "medium.com",
+  "pinterest.com",
+  "amazon.com",
+  "amazon.in",
+  "github.com",
+  "stackoverflow.com",
+  "wikipedia.org",
+];
+
+/** True when the host is known to reject embedding in any app frame. */
+export function isEmbedBlocked(raw: string): boolean {
+  try {
+    const host = new URL((raw ?? "").trim()).hostname.toLowerCase().replace(/^www\./, "");
+    return EMBED_BLOCKED_HOSTS.some((blocked) => host === blocked || host.endsWith(`.${blocked}`));
+  } catch {
+    return false;
+  }
+}
+
+/** True when the typed input is a search phrase rather than a URL/domain. */
+export function isSearchQuery(input: string): boolean {
+  const raw = (input ?? "").trim();
+  if (!raw) return false;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) return false;
+  return !(/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(raw) && !raw.includes(" "));
+}

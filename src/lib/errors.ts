@@ -56,8 +56,39 @@ export function toAppError(error: unknown): AppError {
   if (message.includes("email not confirmed")) {
     return { code: "auth_email_not_confirmed", message: FRIENDLY.auth_email_not_confirmed };
   }
-  if (message.includes("rate limit") || message.includes("too many")) {
+  if (
+    message.includes("rate limit") ||
+    message.includes("too many") ||
+    code === "over_email_send_rate_limit" ||
+    code === "over_request_rate_limit"
+  ) {
     return { code: "auth_rate_limited", message: FRIENDLY.auth_rate_limited };
+  }
+  if (message.includes("pwned") || message.includes("data breach") || message.includes("leaked")) {
+    return { code: "auth_pwned_password", message: FRIENDLY.auth_pwned_password };
+  }
+  if (
+    code === "weak_password" ||
+    message.includes("password should be") ||
+    message.includes("password is too") ||
+    message.includes("weak password")
+  ) {
+    return { code: "auth_weak_password", message: FRIENDLY.auth_weak_password };
+  }
+  if (
+    code === "user_already_exists" ||
+    code === "email_exists" ||
+    message.includes("already registered") ||
+    message.includes("user already")
+  ) {
+    return { code: "auth_email_taken", message: FRIENDLY.auth_email_taken };
+  }
+  if (
+    code === "email_address_invalid" ||
+    message.includes("invalid email") ||
+    message.includes("unable to validate email")
+  ) {
+    return { code: "auth_invalid_email", message: FRIENDLY.auth_invalid_email };
   }
   if (code === "23505" || message.includes("duplicate key")) {
     return { code: "conflict", message: FRIENDLY.conflict };

@@ -51,8 +51,8 @@ import {
   updateRoomTask,
 } from "@/lib/study.functions";
 import { checkResourceUrl, displayHost, urlRejectionMessage } from "@/lib/url-safety";
-import { EmbeddedBrowser } from "@/components/room/embedded-browser";
-import { isNativeRuntime, openResource, toBrowseUrl } from "@/lib/in-app-browser";
+import { ResearchBrowser } from "@/components/room/research-browser";
+import { toBrowseUrl } from "@/lib/in-app-browser";
 import {
   FOCUS_PRESETS,
   formatDuration,
@@ -66,6 +66,8 @@ interface StudyRoomProps {
   userId: string | undefined;
   canControl: boolean;
   roomActive: boolean;
+  /** Focuses the existing room chat — Surf Mode never creates a second chat. */
+  onDiscussInRoom?: () => void;
 }
 
 type Result = { ok: boolean; reason?: RpcReason } & Record<string, unknown>;

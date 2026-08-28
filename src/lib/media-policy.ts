@@ -195,7 +195,9 @@ export function evaluateYouTubePolicy(videoId: string, item: unknown): MediaPoli
   // Order matters: hard blocks first, then the MFK classification. MFK alone
   // never downgrades an otherwise playable video.
   let policyStatus: MediaPolicyStatus;
-  if (!embeddable) {
+  if (ageRestricted) {
+    policyStatus = "age_restricted";
+  } else if (!embeddable) {
     policyStatus = "not_embeddable";
   } else if (privacyStatus === "private") {
     policyStatus = "privacy_blocked";

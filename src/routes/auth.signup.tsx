@@ -123,18 +123,39 @@ function SignupPage() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            aria-describedby="password-hint"
-          />
-          <p id="password-hint" className="text-xs text-muted-foreground">
-            At least 10 characters, with upper case, lower case and a number.
-          </p>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              aria-describedby="password-hint"
+              className="pr-16"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute inset-y-0 right-0 px-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+              aria-pressed={showPassword}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+          <ul id="password-hint" className="space-y-1 text-xs">
+            {PASSWORD_RULES.map((rule) => {
+              const ok = rule.test(password);
+              return (
+                <li
+                  key={rule.label}
+                  className={ok ? "text-emerald-500" : "text-muted-foreground"}
+                >
+                  <span aria-hidden="true">{ok ? "✓" : "•"}</span> {rule.label}
+                </li>
+              );
+            })}
+          </ul>
         </div>
         <div className="flex items-start gap-2">
           <Checkbox

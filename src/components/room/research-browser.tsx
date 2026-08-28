@@ -6,6 +6,7 @@ import {
   Loader2,
   MessagesSquare,
   RotateCw,
+  Search,
   Share2,
   ShieldCheck,
   X,
@@ -15,6 +16,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toBrowseUrl } from "@/lib/in-app-browser";
+import { researchSearch, type ResearchSearchResult } from "@/lib/research-search.functions";
 import {
   RESEARCH_FRAME_ALLOW,
   RESEARCH_FRAME_SANDBOX,
@@ -28,6 +30,8 @@ import {
   currentUrl,
   goBack,
   goForward,
+  isEmbedBlocked,
+  isSearchQuery,
   pushHistory,
   type SurfHistory,
 } from "@/lib/research-surf";
@@ -70,6 +74,9 @@ export function ResearchBrowser({
   const [loading, setLoading] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [results, setResults] = useState<ResearchSearchResult[] | null>(null);
+  const [query, setQuery] = useState("");
+  const [searching, setSearching] = useState(false);
   const loadedRef = useRef(false);
 
   const active = history ? currentUrl(history) : "";
@@ -83,7 +90,8 @@ export function ResearchBrowser({
       setLoading(false);
       return;
     }
-    if (!canRenderInApp(url)) {
+    setResults(null);
+    if (!canRenderInApp(url) || isEmbedBlocked(url)) {
       setHistory(createHistory(url));
       setAddress(url);
       setBlocked(true);
@@ -108,9 +116,28 @@ export function ResearchBrowser({
     return () => window.clearTimeout(timer);
   }, [active, blocked]);
 
+  const runSearch = useCallback(async (term: string) => {
+    setQuery(term);
+    setSearching(true);
+    setResults([]);
+    try {
+      const data = await researchSearch({ data: { query: term } });
+      setResults(data.results);
+    } catch {
+      setResults([]);
+      toast.error("Search is unavailable right now.");
+    } finally {
+      setSearching(false);
+    }
+  }, []);
+
   const navigate = useCallback((next: string) => {
-    if (!canRenderInApp(next)) {
+    setResults(null);
+    if (!canRenderInApp(next) || isEmbedBlocked(next)) {
+      setHistory((prev) => (prev ? pushHistory(prev, next) : createHistory(next)));
+      setAddress(next);
       setBlocked(true);
+      setLoading(false);
       return;
     }
     setHistory((prev) => (prev ? pushHistory(prev, next) : createHistory(next)));
@@ -198,6 +225,10 @@ export function ResearchBrowser({
             className="flex min-w-0 flex-1 items-center gap-1"
             onSubmit={(event) => {
               event.preventDefault();
+              if (isSearchQuery(address)) {
+                void runSearch(address.trim());
+                return;
+              }
               const next = toBrowseUrl(address);
               if (!next) {
                 toast.error("Enter a search term or a website address.");
@@ -213,10 +244,32 @@ export function ResearchBrowser({
               inputMode="url"
               className="h-9 min-w-0 flex-1 text-xs"
             />
-            <Button type="submit" size="icon" variant="ghost" aria-label="Reload">
-              <RotateCw className="size-4" aria-hidden="true" />
+            <Button
+              type="submit"
+              size="icon"
+              variant="ghost"
+              aria-label={isSearchQuery(address) ? "Search" : "Go to address"}
+            >
+              {isSearchQuery(address) ? (
+                <Search className="size-4" aria-hidden="true" />
+              ) : (
+                <RotateCw className="size-4" aria-hidden="true" />
+              )}
             </Button>
           </form>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Reload"
+            disabled={!active || results !== null}
+            onClick={() => {
+              setBlocked(false);
+              setLoading(true);
+              setHistory((prev) => (prev ? { ...prev } : prev));
+            }}
+          >
+            <RotateCw className="size-4" aria-hidden="true" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close research browser">
             <X className="size-4" aria-hidden="true" />
           </Button>
@@ -252,14 +305,48 @@ export function ResearchBrowser({
         </div>
       </div>
 
-      <div className="relative flex-1">
-        {loading && !blocked ? (
+      <div className="relative flex-1 overflow-y-auto">
+        {results !== null ? (
+          <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 p-4">
+            <p className="text-muted-foreground text-xs">
+              {searching ? "Searching…" : `Results for “${query}”`}
+            </p>
+            {searching ? (
+              <Loader2 className="text-muted-foreground size-4 animate-spin" aria-hidden="true" />
+            ) : results.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                No results. Try different words, or type a website address.
+              </p>
+            ) : (
+              results.map((result) => (
+                <button
+                  key={result.url}
+                  type="button"
+                  onClick={() => navigate(result.url)}
+                  className="border-border hover:bg-muted/60 rounded-xl border p-3 text-left transition"
+                >
+                  <span className="line-clamp-2 text-sm font-medium">{result.title}</span>
+                  <span className="text-muted-foreground mt-0.5 block text-[11px]">
+                    {result.host}
+                  </span>
+                  {result.snippet ? (
+                    <span className="text-muted-foreground mt-1 line-clamp-2 block text-xs">
+                      {result.snippet}
+                    </span>
+                  ) : null}
+                </button>
+              ))
+            )}
+          </div>
+        ) : null}
+
+        {results === null && loading && !blocked ? (
           <div className="text-muted-foreground absolute inset-0 flex items-center justify-center gap-2 text-sm">
             <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Loading…
           </div>
         ) : null}
 
-        {blocked ? (
+        {results === null && blocked ? (
           <div className="mx-auto flex max-w-md flex-col items-center justify-center gap-3 p-8 text-center">
             <ShieldCheck className="text-muted-foreground size-6" aria-hidden="true" />
             <p className="text-sm font-medium">{SURF_BLOCKED_MESSAGE}</p>
@@ -272,7 +359,7 @@ export function ResearchBrowser({
               <ExternalLink className="size-4" aria-hidden="true" /> Open in Browser
             </Button>
           </div>
-        ) : (
+        ) : results === null ? (
           <iframe
             key={active}
             src={active}
@@ -286,7 +373,7 @@ export function ResearchBrowser({
               setLoading(false);
             }}
           />
-        )}
+        ) : null}
       </div>
 
       <p className="text-muted-foreground border-border border-t p-2 text-[11px]">

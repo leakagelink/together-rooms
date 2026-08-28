@@ -46,6 +46,8 @@ export const FORBIDDEN_AD_SURFACES = [
   "music_room",
   "study_room",
   "research_board",
+  // Surf Mode is an interactive research/browsing flow: never monetised.
+  "research_surf",
   "notes",
   "tasks",
   "local_media",

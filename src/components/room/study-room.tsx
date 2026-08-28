@@ -51,8 +51,8 @@ import {
   updateRoomTask,
 } from "@/lib/study.functions";
 import { checkResourceUrl, displayHost, urlRejectionMessage } from "@/lib/url-safety";
-import { EmbeddedBrowser } from "@/components/room/embedded-browser";
-import { isNativeRuntime, openResource, toBrowseUrl } from "@/lib/in-app-browser";
+import { ResearchBrowser } from "@/components/room/research-browser";
+import { toBrowseUrl } from "@/lib/in-app-browser";
 import {
   FOCUS_PRESETS,
   formatDuration,
@@ -66,6 +66,8 @@ interface StudyRoomProps {
   userId: string | undefined;
   canControl: boolean;
   roomActive: boolean;
+  /** Focuses the existing room chat — Surf Mode never creates a second chat. */
+  onDiscussInRoom?: () => void;
 }
 
 type Result = { ok: boolean; reason?: RpcReason } & Record<string, unknown>;
@@ -79,12 +81,18 @@ function unwrap(result: Result) {
  * Phase 6 — the collaborative Study & Research workspace.
  *
  * Everything here is a *reference-first* surface: resources are links the room
- * agreed to look at, and each participant opens them in their own browser. No
- * remote browser control, no scraping, no embedding of sites that did not opt
- * in — YouTube is the only natively embedded provider, and everything else
- * opens externally.
+ * agreed to look at. Surf Mode opens the in-app Research Browser *inside* this
+ * room — the room, its realtime subscriptions and its presence stay mounted
+ * behind it, nothing is broadcast automatically, and the system browser is only
+ * used through an explicit fallback when a site refuses to be displayed.
  */
-export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomProps) {
+export function StudyRoom({
+  roomId,
+  userId,
+  canControl,
+  roomActive,
+  onDiscussInRoom,
+}: StudyRoomProps) {
   const queryClient = useQueryClient();
   const { connected, settings, timer, resources, notes, tasks, loading } = useRoomStudy(roomId);
 
@@ -112,7 +120,6 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
   const [now, setNow] = useState(() => Date.now());
   const [reading, setReading] = useState<ResearchTarget | null>(null);
   const [surfQuery, setSurfQuery] = useState("");
-  const [surfing, setSurfing] = useState(false);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
 
   const canAddResources = roomActive && (settings.resource_mode !== "host_only" || canControl);
@@ -437,24 +444,18 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
 
         {/* ------------------------------------------------------ resources */}
         <TabsContent value="resources" className="mt-4 space-y-4">
-          {/* Surf: search or open any site inside the app's own browser. */}
+          {/* Surf Mode: opens the in-app Research Browser without leaving the
+              room. The external browser is never launched from here. */}
           <form
             className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-muted/30 p-3"
-            onSubmit={async (event) => {
+            onSubmit={(event) => {
               event.preventDefault();
               const next = toBrowseUrl(surfQuery);
               if (!next) {
                 toast.error("Enter a search term or a website address.");
                 return;
               }
-              if (!isNativeRuntime()) {
-                setEmbedUrl(next);
-                return;
-              }
-              setSurfing(true);
-              const mode = await openResource(next);
-              setSurfing(false);
-              if (!mode) toast.error("That address can't be opened.");
+              setEmbedUrl(next);
             }}
           >
             <div className="min-w-[16rem] flex-1">
@@ -467,7 +468,7 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
                 inputMode="url"
               />
             </div>
-            <Button type="submit" variant="outline" disabled={surfing || !surfQuery.trim()}>
+            <Button type="submit" variant="outline" disabled={!surfQuery.trim()}>
               <Compass className="size-4" aria-hidden="true" /> Surf
             </Button>
           </form>
@@ -979,7 +980,28 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
         }}
       />
 
-      <EmbeddedBrowser url={embedUrl} onClose={() => setEmbedUrl(null)} />
+      <ResearchBrowser
+        url={embedUrl}
+        onClose={() => setEmbedUrl(null)}
+        onDiscussInRoom={onDiscussInRoom}
+        onShareWithRoom={
+          canAddResources
+            ? async (sharedUrl, sharedTitle) => {
+                unwrap(
+                  (await addResource({
+                    data: {
+                      room_id: roomId,
+                      resource_type: "web_link",
+                      title: sharedTitle,
+                      url: sharedUrl,
+                    },
+                  })) as Result,
+                );
+                await invalidate(queryKeys.study.resources(roomId));
+              }
+            : undefined
+        }
+      />
     </section>
   );
 }

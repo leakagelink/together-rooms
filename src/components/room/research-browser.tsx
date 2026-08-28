@@ -38,10 +38,10 @@ interface ResearchBrowserProps {
   url: string | null;
   onClose: () => void;
   /** Server-authoritative resource share. Undefined when the member may not add. */
-  onShareWithRoom?: (url: string, title: string) => Promise<void>;
+  onShareWithRoom?: ((url: string, title: string) => Promise<void>) | undefined;
   /** Focuses the existing room chat; no second chat system is created. */
-  onDiscussInRoom?: () => void;
-  roomLabel?: string;
+  onDiscussInRoom?: (() => void) | undefined;
+  roomLabel?: string | undefined;
 }
 
 /**
@@ -217,12 +217,7 @@ export function ResearchBrowser({
               <RotateCw className="size-4" aria-hidden="true" />
             </Button>
           </form>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            aria-label="Close research browser"
-          >
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close research browser">
             <X className="size-4" aria-hidden="true" />
           </Button>
         </div>
@@ -269,9 +264,9 @@ export function ResearchBrowser({
             <ShieldCheck className="text-muted-foreground size-6" aria-hidden="true" />
             <p className="text-sm font-medium">{SURF_BLOCKED_MESSAGE}</p>
             <p className="text-muted-foreground text-xs">
-              {host ? `${host} does not allow` : "This site does not allow"} its pages to load inside
-              other apps. Most reference sites and search results work here; for this one you can
-              open your browser.
+              {host ? `${host} does not allow` : "This site does not allow"} its pages to load
+              inside other apps. Most reference sites and search results work here; for this one you
+              can open your browser.
             </p>
             <Button variant="outline" onClick={openExternally}>
               <ExternalLink className="size-4" aria-hidden="true" /> Open in Browser

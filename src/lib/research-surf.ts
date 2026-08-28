@@ -109,7 +109,8 @@ export interface ShareableResource {
   host: string;
 }
 
-export type ShareCandidate = { ok: true; resource: ShareableResource } | { ok: false; error: string };
+export type ShareCandidate =
+  { ok: true; resource: ShareableResource } | { ok: false; error: string };
 
 /**
  * Builds the payload for "Share with room". Only the URL, the domain and a

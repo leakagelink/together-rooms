@@ -67,7 +67,7 @@ interface StudyRoomProps {
   canControl: boolean;
   roomActive: boolean;
   /** Focuses the existing room chat — Surf Mode never creates a second chat. */
-  onDiscussInRoom?: () => void;
+  onDiscussInRoom?: (() => void) | undefined;
 }
 
 type Result = { ok: boolean; reason?: RpcReason } & Record<string, unknown>;

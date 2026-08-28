@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Compass, ExternalLink, Globe, Loader2, NotebookPen, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,8 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { displayHost } from "@/lib/url-safety";
-import { EmbeddedBrowser } from "@/components/room/embedded-browser";
-import { isNativeRuntime, onBrowserClosed, openResource, toBrowseUrl } from "@/lib/in-app-browser";
+import { ResearchBrowser } from "@/components/room/research-browser";
+import { toBrowseUrl } from "@/lib/in-app-browser";
 
 export interface ResearchTarget {
   id: string;
@@ -47,11 +47,9 @@ export function ResearchViewer({
 }: ResearchViewerProps) {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
-  const [opening, setOpening] = useState(false);
   const [visited, setVisited] = useState(false);
   const [surf, setSurf] = useState("");
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
-  const native = useMemo(() => isNativeRuntime(), []);
 
   useEffect(() => {
     setNotes("");
@@ -74,19 +72,10 @@ export function ResearchViewer({
     };
   }, [target]);
 
-  const browse = async (url: string) => {
-    if (!native) {
-      setEmbedUrl(url);
-      return;
-    }
-    setOpening(true);
-    const mode = await openResource(url);
-    setOpening(false);
-    if (!mode) {
-      toast.error("This link can't be opened.");
-      return;
-    }
-    if (mode !== "web_view") setVisited(true);
+  // Surf Mode always stays inside SyncTogether; the system browser is only
+  // reachable from the in-app browser's explicit "Open in Browser" fallback.
+  const browse = (url: string) => {
+    setEmbedUrl(url);
   };
 
   const save = async () => {
@@ -124,15 +113,11 @@ export function ResearchViewer({
 
           <Button
             onClick={() => target && browse(target.url)}
-            disabled={opening || !target}
+            disabled={!target}
             className="w-full"
           >
-            {opening ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <ExternalLink className="size-4" aria-hidden="true" />
-            )}
-            {native ? "Open in SyncTogether browser" : "Open page"}
+            <ExternalLink className="size-4" aria-hidden="true" />
+            Open in SyncTogether browser
           </Button>
 
           {/* Free surfing from the same sheet: search terms or a bare domain. */}
@@ -155,7 +140,7 @@ export function ResearchViewer({
               inputMode="url"
               aria-label="Search the web or enter a site"
             />
-            <Button type="submit" variant="outline" disabled={opening}>
+            <Button type="submit" variant="outline" >
               <Compass className="size-4" aria-hidden="true" />
               <span className="sr-only sm:not-sr-only">Surf</span>
             </Button>
@@ -163,9 +148,9 @@ export function ResearchViewer({
 
           <p className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
             <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-            {native
-              ? "Pages open inside SyncTogether with the real address shown. Sites load exactly as their owners published them, and your browsing is never recorded or shared with the room."
-              : "Your browser opens this page in a new tab. SyncTogether never reads or records what you browse."}
+            Pages open inside SyncTogether with the real address shown. Sites load exactly as
+            their owners published them, and your browsing is never recorded or shared with the
+            room.
           </p>
 
           {canSaveNotes && onSaveNote ? (
@@ -209,7 +194,7 @@ export function ResearchViewer({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <EmbeddedBrowser
+      <ResearchBrowser
         url={embedUrl}
         onClose={() => {
           setEmbedUrl(null);

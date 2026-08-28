@@ -926,6 +926,18 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
           </TabsContent>
         ) : null}
       </Tabs>
+
+      <ResearchViewer
+        target={reading}
+        onOpenChange={(open) => {
+          if (!open) setReading(null);
+        }}
+        canSaveNotes={canEditNotes}
+        onSaveNote={async (title, content) => {
+          unwrap((await newNote({ data: { room_id: roomId, title, content } })) as Result);
+          await invalidate(queryKeys.study.notes(roomId));
+        }}
+      />
     </section>
   );
 }

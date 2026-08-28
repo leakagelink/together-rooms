@@ -3157,7 +3157,17 @@ export type Database = {
         | "removed"
         | "rejected"
       report_status: "open" | "reviewing" | "actioned" | "dismissed"
-      report_target: "user" | "room" | "message" | "other"
+      report_target:
+        | "user"
+        | "room"
+        | "message"
+        | "other"
+        | "resource"
+        | "note"
+        | "task"
+        | "queue_item"
+        | "playlist"
+        | "local_media_session"
       research_focus_mode: "host_sync" | "free_navigation"
       research_permission_mode: "host_only" | "collaborative" | "host_approval"
       resource_kind: "web_link" | "youtube" | "document_reference" | "note"
@@ -3387,7 +3397,18 @@ export const Constants = {
         "rejected",
       ],
       report_status: ["open", "reviewing", "actioned", "dismissed"],
-      report_target: ["user", "room", "message", "other"],
+      report_target: [
+        "user",
+        "room",
+        "message",
+        "other",
+        "resource",
+        "note",
+        "task",
+        "queue_item",
+        "playlist",
+        "local_media_session",
+      ],
       research_focus_mode: ["host_sync", "free_navigation"],
       research_permission_mode: ["host_only", "collaborative", "host_approval"],
       resource_kind: ["web_link", "youtube", "document_reference", "note"],

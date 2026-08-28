@@ -248,7 +248,7 @@ export function ResearchBrowser({
               type="submit"
               size="icon"
               variant="ghost"
-              aria-label={isSearchQuery(address) ? "Search" : "Go"}
+              aria-label={isSearchQuery(address) ? "Search" : "Go to address"}
             >
               {isSearchQuery(address) ? (
                 <Search className="size-4" aria-hidden="true" />
@@ -257,6 +257,19 @@ export function ResearchBrowser({
               )}
             </Button>
           </form>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Reload"
+            disabled={!active || results !== null}
+            onClick={() => {
+              setBlocked(false);
+              setLoading(true);
+              setHistory((prev) => (prev ? { ...prev } : prev));
+            }}
+          >
+            <RotateCw className="size-4" aria-hidden="true" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close research browser">
             <X className="size-4" aria-hidden="true" />
           </Button>

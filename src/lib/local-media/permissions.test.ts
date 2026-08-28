@@ -38,11 +38,13 @@ describe("buildPreflight", () => {
     expect(blockingReason(noTransport)).toMatch(/peer connection/);
   });
 
-  it("treats an uncertain format as pending rather than a hard block", () => {
+  it("treats an uncertain format as an advisory warning, not a hard block", () => {
     const checks = buildPreflight({ ...base, decode: "maybe" });
     expect(checks.find((c) => c.id === "decode")?.state).toBe("pending");
-    expect(canStartSharing(checks)).toBe(false);
+    expect(canStartSharing(checks)).toBe(true);
+    expect(blockingReason(checks)).toBeNull();
   });
+
 
   it("never requires camera or microphone", () => {
     const checks = buildPreflight(base);

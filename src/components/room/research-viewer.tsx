@@ -201,5 +201,13 @@ export function ResearchViewer({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <EmbeddedBrowser
+      url={embedUrl}
+      onClose={() => {
+        setEmbedUrl(null);
+        setVisited(true);
+      }}
+    />
+    </>
   );
 }

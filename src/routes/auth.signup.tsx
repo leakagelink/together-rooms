@@ -30,6 +30,13 @@ export const Route = createFileRoute("/auth/signup")({
   component: SignupPage,
 });
 
+const PASSWORD_RULES: { label: string; test: (value: string) => boolean }[] = [
+  { label: "At least 10 characters", test: (v) => v.length >= 10 },
+  { label: "One lowercase letter", test: (v) => /[a-z]/.test(v) },
+  { label: "One uppercase letter", test: (v) => /[A-Z]/.test(v) },
+  { label: "One number", test: (v) => /[0-9]/.test(v) },
+];
+
 function SignupPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();

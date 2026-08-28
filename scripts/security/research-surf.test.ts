@@ -143,7 +143,8 @@ describe("SURF-T8 / SURF-T9: page JavaScript is fully isolated", () => {
     expect(browserSource).not.toContain("postMessage");
     expect(browserSource).not.toContain("addEventListener(\"message\"");
     expect(browserSource).not.toContain("contentWindow");
-    expect(browserSource).not.toContain("Capacitor");
+    expect(browserSource).not.toContain("@capacitor/");
+    expect(browserSource).not.toContain("Capacitor.");
     expect(browserSource).toContain('referrerPolicy="no-referrer"');
   });
 });

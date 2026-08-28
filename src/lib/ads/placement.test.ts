@@ -6,7 +6,6 @@ import { evaluateAdPlacement, type AdPlacementContext } from "./placement";
 import { isAdEventSafe, sanitizeAdEvent } from "./analytics-safety";
 
 const BASE: AdPlacementContext = {
-  premium: false,
   consent: "granted_personalized",
   activeCall: false,
   activeVideoPlayback: false,
@@ -22,12 +21,17 @@ const BASE: AdPlacementContext = {
 const CONFIG = { ...DEFAULT_AD_FREQUENCY, app_open_enabled: true };
 
 describe("ad placement policy (ADS-T1..T12)", () => {
-  it("T1: premium users are never eligible for any format", () => {
+  it("T1: PHASE 15 — there is no paid plan, so no placement can be skipped by tier", () => {
+    // The app is free for everyone: eligibility depends only on configuration,
+    // consent, activity and frequency.
     for (const format of ["banner", "interstitial", "app_open"] as const) {
-      const decision = evaluateAdPlacement(format, { ...BASE, premium: true }, CONFIG);
-      expect(decision.eligible).toBe(false);
-      expect(decision.reason).toBe("NO_AD_PREMIUM");
+      const decision = evaluateAdPlacement(format, BASE, CONFIG);
+      expect(decision.reason).not.toBe("NO_AD_PREMIUM");
     }
+    expect(evaluateAdPlacement("banner", { ...BASE, configured: false }, CONFIG)).toMatchObject({
+      eligible: false,
+      reason: "NO_AD_NOT_CONFIGURED",
+    });
   });
 
   it("T2: unresolved consent blocks all ads (no request leaves the device)", () => {
@@ -84,7 +88,6 @@ describe("ad placement policy (ADS-T1..T12)", () => {
       privacy_settings: "NO_AD_PRIVACY_SETTINGS",
       consent: "NO_AD_PRIVACY_SETTINGS",
       payment: "NO_AD_PAYMENT_FLOW",
-      restore_purchases: "NO_AD_PAYMENT_FLOW",
       report: "NO_AD_REPORT_FLOW",
       block: "NO_AD_REPORT_FLOW",
       auth: "NO_AD_SENSITIVE_FLOW",

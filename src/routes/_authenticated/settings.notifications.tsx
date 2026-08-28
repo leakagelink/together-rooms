@@ -91,10 +91,7 @@ function NotificationSettingsPage() {
   async function save() {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("user_settings")
-        .update(form)
-        .eq("user_id", user!.id);
+      const { error } = await supabase.from("user_settings").update(form).eq("user_id", user!.id);
       if (error) throw error;
       // Turning push on is the user gesture that justifies the OS prompt.
       if (form.notify_push) {
@@ -114,8 +111,8 @@ function NotificationSettingsPage() {
     <AppShell>
       <h1 className="text-2xl font-semibold">Notifications</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Pick what you want to hear about. Muted categories are skipped on the server, so they
-        never reach your device or the activity feed.{" "}
+        Pick what you want to hear about. Muted categories are skipped on the server, so they never
+        reach your device or the activity feed.{" "}
         <Link to="/settings" className="text-primary hover:underline">
           Back to settings
         </Link>

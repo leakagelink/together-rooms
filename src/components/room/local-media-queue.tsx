@@ -79,7 +79,10 @@ export function LocalMediaQueue({
                   </span>
                 ) : null}
                 {item.state === "ready" ? (
-                  <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Received" />
+                  <Check
+                    className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+                    aria-label="Received"
+                  />
                 ) : (
                   <Loader2
                     className="size-4 shrink-0 animate-spin text-muted-foreground"

@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  parsePushPayload,
-  resolveNotificationTarget,
-  resolvePushTarget,
-} from "./routing";
+import { parsePushPayload, resolveNotificationTarget, resolvePushTarget } from "./routing";
 
 const ROOM = "11111111-1111-4111-8111-111111111111";
 
@@ -28,7 +24,7 @@ describe("notification routing", () => {
 
   it("subscription opens billing settings", () => {
     expect(resolveNotificationTarget("subscription", { plan: "premium" })).toEqual({
-      to: "/settings/subscription",
+      to: "/settings",
     });
   });
 
@@ -60,7 +56,7 @@ describe("notification routing", () => {
     ).toEqual({ to: "/rooms/$roomId", params: { roomId: ROOM }, search: { tab: "chat" } });
 
     expect(resolvePushTarget({ type: "subscription", payload: "{}" })).toEqual({
-      to: "/settings/subscription",
+      to: "/settings",
     });
   });
 });

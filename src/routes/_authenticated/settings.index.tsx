@@ -1,4 +1,3 @@
-import { useEntitlement } from "@/hooks/useEntitlement";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -18,7 +17,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { describeStatus } from "@/lib/entitlements";
+import { INCLUDED_FEATURES } from "@/lib/entitlements";
 import { errorMessage } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/settings/")({
@@ -169,31 +168,27 @@ function ToggleRow({
   );
 }
 
-const PLAN_LABEL: Record<string, string> = {
-  free: "Free",
-  premium: "Premium",
-};
-
 /**
- * Plan is read from the server-controlled `entitlements` table. Clients have no
- * write path to it, so this is a display of an entitlement, never a grant.
+ * PHASE 15 — SyncTogether is free. There is no plan to display, upgrade or
+ * restore, so this section simply states what every account gets.
  */
 function PlanSummary() {
-  const { plan, snapshot, isLoading } = useEntitlement();
   return (
     <section className="surface-panel mt-6 max-w-xl p-5" aria-labelledby="plan-heading">
       <h2 id="plan-heading" className="text-sm font-semibold">
         Your plan
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        {isLoading ? "Checking your plan…" : PLAN_LABEL[plan]}
+        SyncTogether is free. There are no subscriptions and no in-app purchases.
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        {isLoading ? "" : describeStatus(snapshot)}
-      </p>
-      <Button asChild variant="outline" size="sm" className="mt-3">
-        <Link to="/settings/subscription">Manage subscription</Link>
-      </Button>
+      <dl className="mt-3 space-y-1.5">
+        {INCLUDED_FEATURES.map((row) => (
+          <div key={row.key} className="flex items-baseline justify-between gap-4 text-xs">
+            <dt className="text-muted-foreground">{row.label}</dt>
+            <dd className="shrink-0 font-medium">{row.value}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }

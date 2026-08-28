@@ -114,11 +114,12 @@ export function blockingReason(checks: PreflightCheck[]): string | null {
   return pending ? pending.detail : null;
 }
 
-
 /** Runtime probe: are WebRTC data channels usable here? */
-export function detectTransportSupport(scope: {
-  RTCPeerConnection?: unknown;
-} = globalThis as unknown as { RTCPeerConnection?: unknown }): boolean {
+export function detectTransportSupport(
+  scope: {
+    RTCPeerConnection?: unknown;
+  } = globalThis as unknown as { RTCPeerConnection?: unknown },
+): boolean {
   return typeof scope.RTCPeerConnection === "function";
 }
 
@@ -131,9 +132,7 @@ export async function queryPermission(
   permissions?: { query: (descriptor: { name: PermissionName }) => Promise<{ state: string }> },
 ): Promise<"granted" | "denied" | "prompt" | "unknown"> {
   const api =
-    permissions ??
-    (globalThis.navigator as Navigator | undefined)?.permissions ??
-    undefined;
+    permissions ?? (globalThis.navigator as Navigator | undefined)?.permissions ?? undefined;
   if (!api?.query) return "unknown";
   try {
     const result = await api.query({ name });

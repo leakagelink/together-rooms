@@ -87,7 +87,6 @@ const PROD_UNITS = resolveAdUnits("production", {
 
 function context(overrides: Partial<AdPlacementContext> = {}): AdPlacementContext {
   return {
-    premium: false,
     consent: "granted_personalized",
     configured: true,
     activeCall: false,
@@ -184,16 +183,16 @@ describe("phase 14 native admob bridge", () => {
     expect(nativeAdsInitState()).toBe("idle");
   });
 
-  it("PHASE14-T4: premium suppresses native ad requests entirely", async () => {
+  it("PHASE14-T4: an unconfigured build never reaches the native SDK", async () => {
     const bridge = fakeBridge();
     const provider = warmProvider(createNativeAdSdk(bridge));
     await provider.request(
       { format: "banner", placement: "rooms_list_footer" },
-      context({ premium: true }),
+      context({ configured: false }),
     );
     await provider.request(
       { format: "interstitial", placement: "room_session_ended" },
-      context({ premium: true }),
+      context({ configured: false }),
     );
     expect(bridge.calls).toEqual([]);
   });

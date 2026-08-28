@@ -20,13 +20,7 @@ export type ConsentState = "unresolved" | "granted_personalized" | "granted_limi
  * consent or frequency state.
  */
 export type SensitiveFlow =
-  | "account_deletion"
-  | "privacy_settings"
-  | "consent"
-  | "payment"
-  | "report"
-  | "block"
-  | "auth";
+  "account_deletion" | "privacy_settings" | "consent" | "payment" | "report" | "block" | "auth";
 
 export interface AdPlacementContext {
   /** Ads consent state derived from privacy_settings + the platform CMP. */

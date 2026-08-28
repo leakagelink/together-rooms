@@ -42,8 +42,14 @@ export function isTransferComplete(items: PartialProgress[], count: number): boo
 }
 
 /** Sharer side: never trust a client offset blindly. */
-export function clampResumePoint(point: ResumePoint, fileCount: number, fileSize: number): ResumePoint {
-  const index = Number.isFinite(point.index) ? Math.min(Math.max(0, Math.trunc(point.index)), Math.max(0, fileCount - 1)) : 0;
+export function clampResumePoint(
+  point: ResumePoint,
+  fileCount: number,
+  fileSize: number,
+): ResumePoint {
+  const index = Number.isFinite(point.index)
+    ? Math.min(Math.max(0, Math.trunc(point.index)), Math.max(0, fileCount - 1))
+    : 0;
   const offset = Number.isFinite(point.offset)
     ? Math.min(Math.max(0, Math.trunc(point.offset)), Math.max(0, fileSize))
     : 0;

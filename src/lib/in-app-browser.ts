@@ -55,8 +55,14 @@ export async function openResource(url: string): Promise<OpenMode | null> {
 
   if (isNativeRuntime()) {
     try {
-      const { InAppBrowser, ToolbarPosition, AndroidViewStyle, iOSViewStyle, iOSAnimation, AndroidAnimation } =
-        await import("@capacitor/inappbrowser");
+      const {
+        InAppBrowser,
+        ToolbarPosition,
+        AndroidViewStyle,
+        iOSViewStyle,
+        iOSAnimation,
+        AndroidAnimation,
+      } = await import("@capacitor/inappbrowser");
       await InAppBrowser.openInWebView({
         url,
         options: {

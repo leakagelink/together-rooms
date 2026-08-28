@@ -88,8 +88,7 @@ suite("phase 7 local media realtime", () => {
     if (user !== member || !memberChannel) throw new Error("member realtime channel is not ready");
     const startIndex = memberRows.length;
     let waiter:
-      | { matches: (row: Record<string, unknown>) => boolean; resolve: () => void }
-      | undefined;
+      { matches: (row: Record<string, unknown>) => boolean; resolve: () => void } | undefined;
     const matched = new Promise<void>((resolve) => {
       waiter = { matches, resolve };
       memberWaiters.add(waiter);
@@ -132,7 +131,10 @@ suite("phase 7 local media realtime", () => {
     );
     try {
       await new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error("realtime subscription timed out")), 20_000);
+        const timer = setTimeout(
+          () => reject(new Error("realtime subscription timed out")),
+          20_000,
+        );
         channel.subscribe((status) => {
           if (status === "SUBSCRIBED") {
             clearTimeout(timer);
@@ -178,24 +180,22 @@ suite("phase 7 local media realtime", () => {
     expect(joined.ok).toBe(true);
 
     await member.client.realtime.setAuth(member.token);
-    memberChannel = member.client
-      .channel(`lm-rt-member-${Math.random().toString(36).slice(2)}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "room_local_media_sessions",
-          filter: `room_id=eq.${roomId}`,
-        },
-        (payload) => {
-          const row = payload.new as Record<string, unknown>;
-          memberRows.push(row);
-          for (const waiter of memberWaiters) {
-            if (waiter.matches(row)) waiter.resolve();
-          }
-        },
-      );
+    memberChannel = member.client.channel(`lm-rt-member-${Math.random().toString(36).slice(2)}`).on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "room_local_media_sessions",
+        filter: `room_id=eq.${roomId}`,
+      },
+      (payload) => {
+        const row = payload.new as Record<string, unknown>;
+        memberRows.push(row);
+        for (const waiter of memberWaiters) {
+          if (waiter.matches(row)) waiter.resolve();
+        }
+      },
+    );
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(
         () => reject(new Error("member realtime channel never reached SUBSCRIBED")),
@@ -232,15 +232,19 @@ suite("phase 7 local media realtime", () => {
   });
 
   it("LM-RT2 a member receives the session start as a database change", async () => {
-    const rows = await collectUntil(member, async () => {
-      const started = await rpc(host, "start_local_media_session", {
-        _room_id: roomId,
-        _media_kind: "video",
-        _mime_type: "video/mp4",
-        _item_count: 1,
-      });
-      expect(started.ok).toBe(true);
-    }, (row) => typeof row["id"] === "string");
+    const rows = await collectUntil(
+      member,
+      async () => {
+        const started = await rpc(host, "start_local_media_session", {
+          _room_id: roomId,
+          _media_kind: "video",
+          _mime_type: "video/mp4",
+          _item_count: 1,
+        });
+        expect(started.ok).toBe(true);
+      },
+      (row) => typeof row["id"] === "string",
+    );
     expect(rows.length).toBeGreaterThan(0);
   }, 60_000);
 
@@ -253,15 +257,19 @@ suite("phase 7 local media realtime", () => {
         .eq("status", "active")
         .single()
     ).data!;
-    const rows = await collectUntil(member, async () => {
-      const played = await rpc(host, "control_local_media_playback", {
-        _session_id: before.id,
-        _action: "play",
-        _position_seconds: 3,
-        _expected_version: before.version,
-      });
-      expect(played.ok).toBe(true);
-    }, (row) => Number(row["version"] ?? 0) > Number(before.version));
+    const rows = await collectUntil(
+      member,
+      async () => {
+        const played = await rpc(host, "control_local_media_playback", {
+          _session_id: before.id,
+          _action: "play",
+          _position_seconds: 3,
+          _expected_version: before.version,
+        });
+        expect(played.ok).toBe(true);
+      },
+      (row) => Number(row["version"] ?? 0) > Number(before.version),
+    );
     const versions = rows.map((row) => Number(row["version"] ?? 0));
     expect(Math.max(0, ...versions)).toBeGreaterThan(Number(before.version));
   }, 60_000);
@@ -295,10 +303,14 @@ suite("phase 7 local media realtime", () => {
         .eq("status", "active")
         .single()
     ).data!;
-    const rows = await collectUntil(member, async () => {
-      const ended = await rpc(host, "end_local_media_session", { _session_id: session.id });
-      expect(ended.ok).toBe(true);
-    }, (row) => row["status"] !== "active");
+    const rows = await collectUntil(
+      member,
+      async () => {
+        const ended = await rpc(host, "end_local_media_session", { _session_id: session.id });
+        expect(ended.ok).toBe(true);
+      },
+      (row) => row["status"] !== "active",
+    );
     expect(rows.some((row) => row["status"] !== "active")).toBe(true);
     const { data: active } = await member.client
       .from("room_local_media_sessions")

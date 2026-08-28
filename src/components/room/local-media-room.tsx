@@ -39,7 +39,6 @@ function formatKb(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-
 /**
  * Phase 7 — private local media sharing surface.
  *
@@ -184,7 +183,6 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
     toast.error(transferError);
   }, [isOwner, transferError]);
 
-
   const kind: LocalMediaKind | null = session?.media_kind ?? null;
   const sourceUrls = isOwner ? objectUrls : transfer.urls;
   const sharedIndex = session?.current_index ?? 0;
@@ -218,7 +216,8 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
 
   const transportLabel = useMemo(() => {
     if (!isOwner) {
-      if (transfer.status === "receiving") return `Receiving ${Math.round(transfer.progress * 100)}%`;
+      if (transfer.status === "receiving")
+        return `Receiving ${Math.round(transfer.progress * 100)}%`;
       if (transfer.status === "connecting") return "Connecting to sharer…";
       if (transfer.status === "failed") return "Connection failed";
       if (transfer.status === "ready") return "Direct encrypted connection";
@@ -320,7 +319,6 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
             </Button>
           ) : null}
 
-
           {session.item_count > 1 && kind ? (
             <LocalMediaQueue
               kind={kind}
@@ -348,7 +346,6 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
             {" · "}
             Ends {new Date(session.expires_at).toLocaleTimeString()}
           </p>
-
 
           {isOwner ? (
             <div className="flex flex-wrap gap-2">

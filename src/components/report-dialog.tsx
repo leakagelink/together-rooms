@@ -53,6 +53,29 @@ const LABELS: Record<string, string> = {
   other: "Something else",
 };
 
+export type ReportTargetType =
+  | "user"
+  | "room"
+  | "message"
+  | "resource"
+  | "note"
+  | "task"
+  | "queue_item"
+  | "playlist"
+  | "local_media_session";
+
+const TARGET_NOUN: Record<ReportTargetType, string> = {
+  user: "user",
+  room: "room",
+  message: "message",
+  resource: "link",
+  note: "note",
+  task: "task",
+  queue_item: "queued track",
+  playlist: "playlist",
+  local_media_session: "shared media",
+};
+
 export function ReportDialog({
   targetType,
   targetUserId,
@@ -61,7 +84,7 @@ export function ReportDialog({
   targetRef,
   trigger,
 }: {
-  targetType: "user" | "room" | "message" | "other";
+  targetType: ReportTargetType;
   targetUserId?: string;
   targetRoomId?: string;
   targetMessageId?: string;
@@ -96,18 +119,25 @@ export function ReportDialog({
         });
         if (!result.ok) throw new Error(rpcMessage(result.reason));
       } else {
-        const { data: auth } = await supabase.auth.getUser();
-        if (!auth.user) throw new Error("forbidden");
-        const { error: insertError } = await supabase.from("user_reports").insert({
-          reporter_id: auth.user.id,
-          target_type: targetType,
-          target_user_id: targetUserId ?? null,
-          target_room_id: targetRoomId ?? null,
-          target_ref: targetRef ?? null,
-          category: parsed.data.category,
-          details: parsed.data.details || null,
-        });
-        if (insertError) throw insertError;
+        // Every non-message surface goes through report_content, which
+        // re-checks membership, self-reporting, duplicates and rate limits in
+        // the database. Direct table writes are revoked.
+        const reference = targetRef ?? targetUserId ?? targetRoomId;
+        if (!reference) throw new Error("invalid_request");
+        const { data, error: rpcError } = await supabase.rpc("report_content", {
+          _target_type: targetType,
+          _target_id: reference,
+          _category: parsed.data.category,
+          _details: parsed.data.details || null,
+        } as never);
+        if (rpcError) throw rpcError;
+        const result = data as { ok?: boolean; reason?: string; outcome?: string } | null;
+        if (!result?.ok) throw new Error(rpcMessage((result?.reason ?? "unknown") as never));
+        if (result.outcome === "already_reported") {
+          toast.info("You already reported this. Our team is on it.");
+          setOpen(false);
+          return;
+        }
       }
       void track("report_submitted", { target_type: targetType });
       toast.success("Report received. Our moderation team will review it.");
@@ -132,7 +162,7 @@ export function ReportDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Report {targetType}</DialogTitle>
+          <DialogTitle>Report this {TARGET_NOUN[targetType]}</DialogTitle>
           <DialogDescription>
             Reports are reviewed by our moderation team. Blocking someone is immediate and separate
             from reporting.

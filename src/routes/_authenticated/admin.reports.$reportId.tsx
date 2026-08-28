@@ -23,6 +23,8 @@ import {
   createModerationAction,
   getRemovedMessage,
   getReportDetail,
+  getUserEnforcement,
+  reverseModerationAction,
   setReportStatus,
   type ModerationActionType,
   type ReportStatus,
@@ -50,6 +52,20 @@ export const Route = createFileRoute("/_authenticated/admin/reports/$reportId")(
   ),
 });
 
+const DEFAULT_DURATION = "default";
+
+/** Enforcement windows offered to staff. "default" defers to the RPC. */
+const DURATIONS: { value: string; label: string }[] = [
+  { value: DEFAULT_DURATION, label: "Default (7 days for a suspension)" },
+  { value: "60", label: "1 hour" },
+  { value: "1440", label: "24 hours" },
+  { value: "10080", label: "7 days" },
+  { value: "43200", label: "30 days" },
+];
+
+/** Actions that apply a time-limited restriction. */
+const TIMED_ACTIONS: ModerationActionType[] = ["mute", "suspend"];
+
 const ACTIONS: { value: ModerationActionType; label: string }[] = [
   { value: "warn", label: "Warn user" },
   { value: "mute", label: "Mute user" },
@@ -75,12 +91,15 @@ function ReportReview() {
   const fetchDetail = useServerFn(getReportDetail);
   const updateStatus = useServerFn(setReportStatus);
   const addAction = useServerFn(createModerationAction);
+  const undoAction = useServerFn(reverseModerationAction);
+  const fetchEnforcement = useServerFn(getUserEnforcement);
   const revealMessage = useServerFn(getRemovedMessage);
 
   const [note, setNote] = useState("");
   const [nextStatus, setNextStatus] = useState<ReportStatus>("reviewing");
   const [action, setAction] = useState<ModerationActionType>("warn");
   const [actionReason, setActionReason] = useState("");
+  const [duration, setDuration] = useState<string>(DEFAULT_DURATION);
   // Held in component state only — never written to the query cache.
   const [revealed, setRevealed] = useState<string | null>(null);
 
@@ -116,15 +135,27 @@ function ReportReview() {
     onError: () => toast.error("The status could not be updated."),
   });
 
+  const targetUserId = detail.data?.ok ? str(detail.data.report["target_user_id"]) : null;
+
+  const enforcement = useQuery({
+    queryKey: ["staff", "enforcement", targetUserId],
+    queryFn: () => fetchEnforcement({ data: { user_id: targetUserId! } }),
+    enabled: Boolean(targetUserId),
+  });
+
   const actionMutation = useMutation({
     mutationFn: () => {
       const report = detail.data?.ok ? detail.data.report : {};
+      if (!targetUserId) throw new Error("This report has no account to act on.");
+      const minutes =
+        TIMED_ACTIONS.includes(action) && duration !== DEFAULT_DURATION ? Number(duration) : null;
       return addAction({
         data: {
           action,
           report_id: reportId,
           room_id: str(report["target_room_id"]),
-          target_user_id: str(report["target_user_id"]),
+          target_user_id: targetUserId,
+          ...(minutes ? { duration_minutes: minutes } : {}),
           ...(actionReason.trim() ? { reason: actionReason.trim() } : {}),
         },
       });
@@ -134,11 +165,27 @@ function ReportReview() {
         toast.error(rpcMessage(result.reason));
         return;
       }
-      toast.success("Moderation action recorded.");
+      toast.success("Enforcement applied.");
       setActionReason("");
       invalidate();
+      void enforcement.refetch();
     },
-    onError: () => toast.error("The action could not be recorded."),
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "The action could not be applied."),
+  });
+
+  const reverseMutation = useMutation({
+    mutationFn: (actionId: string) => undoAction({ data: { action_id: actionId } }),
+    onSuccess: (result) => {
+      if (!result.ok) {
+        toast.error(rpcMessage(result.reason));
+        return;
+      }
+      toast.success("Enforcement reversed.");
+      invalidate();
+      void enforcement.refetch();
+    },
+    onError: () => toast.error("The action could not be reversed."),
   });
 
   const revealMutation = useMutation({
@@ -310,7 +357,11 @@ function ReportReview() {
         </div>
 
         <div className="rounded-lg border border-border bg-card p-4">
-          <h2 className="text-lg font-semibold">Record an action</h2>
+          <h2 className="text-lg font-semibold">Apply enforcement</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            This takes effect immediately: mutes, removals, room bans and account suspensions are
+            applied by the database, not just logged.
+          </p>
           <div className="mt-3">
             <Label htmlFor="action">Action</Label>
             <Select value={action} onValueChange={(v) => setAction(v as ModerationActionType)}>
@@ -326,6 +377,23 @@ function ReportReview() {
               </SelectContent>
             </Select>
           </div>
+          {TIMED_ACTIONS.includes(action) ? (
+            <div className="mt-3">
+              <Label htmlFor="duration">Duration</Label>
+              <Select value={duration} onValueChange={setDuration}>
+                <SelectTrigger id="duration" className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DURATIONS.map((d) => (
+                    <SelectItem key={d.value} value={d.value}>
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
           <div className="mt-3">
             <Label htmlFor="reason">Reason</Label>
             <Textarea
@@ -340,13 +408,58 @@ function ReportReview() {
           <Button
             className="mt-3"
             variant="secondary"
-            disabled={actionMutation.isPending}
+            disabled={actionMutation.isPending || !targetUserId}
             onClick={() => actionMutation.mutate()}
           >
-            Record action
+            {actionMutation.isPending ? "Applying…" : "Apply enforcement"}
           </Button>
+          {!targetUserId ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              This report is not linked to an account, so enforcement is unavailable.
+            </p>
+          ) : null}
         </div>
       </section>
+
+      {enforcement.data?.ok ? (
+        <section aria-labelledby="enforcement-heading" className="mt-8">
+          <h2 id="enforcement-heading" className="text-lg font-semibold">
+            Account enforcement
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Status: <strong>{enforcement.data.account_status ?? "unknown"}</strong> ·{" "}
+            {enforcement.data.open_reports} open report(s) from{" "}
+            {enforcement.data.distinct_reporters} reporter(s).
+          </p>
+          {enforcement.data.actions.length === 0 ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              No enforcement has ever been applied to this account.
+            </p>
+          ) : (
+            <ul className="mt-3 divide-y divide-border rounded-lg border border-border bg-card text-sm">
+              {enforcement.data.actions.map((a) => (
+                <li key={a.id} className="flex flex-wrap items-center gap-3 p-3">
+                  <span className="font-medium">{a.action}</span>
+                  <span className="text-muted-foreground">{a.reason ?? "No reason given"}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDate(a.created_at)}
+                    {a.expires_at ? ` · expires ${formatDate(a.expires_at)}` : " · permanent"}
+                  </span>
+                  <Button
+                    className="ml-auto"
+                    size="sm"
+                    variant="outline"
+                    disabled={reverseMutation.isPending}
+                    onClick={() => reverseMutation.mutate(a.id)}
+                  >
+                    Reverse
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
 
       <section aria-labelledby="history-heading" className="mt-8 grid gap-6 lg:grid-cols-2">
         <div>

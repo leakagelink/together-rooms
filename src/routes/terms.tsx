@@ -53,10 +53,11 @@ function TermsPage() {
         We may remove content, restrict features, or suspend accounts that violate these terms or
         our Community Guidelines.
       </p>
-      <h2>6. Subscriptions</h2>
+      <h2>6. Price and advertising</h2>
       <p>
-        Paid plans are not available yet. When they launch, pricing, billing period, auto-renewal
-        and cancellation terms will be disclosed before purchase.
+        SyncTogether is free. There are no paid plans, subscriptions or in-app purchases, and we
+        never ask you for payment details. The app is supported by advertising, and you control ad
+        personalisation from privacy settings.
       </p>
       <h2>7. Changes</h2>
       <p>We will notify users of material changes to these terms before they take effect.</p>

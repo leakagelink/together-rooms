@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  createDiagnostics,
-  type DiagEvent,
-  type PeerDiag,
-} from "@/lib/local-media/diagnostics";
+import { createDiagnostics, type DiagEvent, type PeerDiag } from "@/lib/local-media/diagnostics";
 import { BUFFERED_HIGH_WATER, BUFFERED_LOW_WATER, CHUNK_BYTES } from "@/lib/local-media/limits";
 import {
   clampResumePoint,
@@ -204,7 +200,11 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
         }
         return;
       }
-      const start = clampResumePoint(from, list.length, list[Math.min(from.index, list.length - 1)]!.size);
+      const start = clampResumePoint(
+        from,
+        list.length,
+        list[Math.min(from.index, list.length - 1)]!.size,
+      );
       setStatus("sending");
       diag.log("info", describeResume(start, list[start.index]!.size), peerId);
       for (let index = start.index; index < list.length; index += 1) {
@@ -323,7 +323,9 @@ export function useLocalMediaTransfer(args: TransferArgs): TransferResult {
             if (!event.candidate) return;
             void sendRef.current(peerId, {
               kind: "ice",
-              payload: { candidate: event.candidate.toJSON() as unknown as Record<string, unknown> },
+              payload: {
+                candidate: event.candidate.toJSON() as unknown as Record<string, unknown>,
+              },
             });
           };
           pc.ondatachannel = (event) => attachChannel(event.channel, peerId);

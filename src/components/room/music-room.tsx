@@ -161,7 +161,9 @@ export function MusicRoom({ roomId, roomCode, userId, canManage, roomActive }: M
    */
   const miniQueueStatus = useMemo(() => {
     const items = queue.snapshot?.items ?? [];
-    const playable = items.filter((item) => item.status !== "suggested" && item.status !== "rejected");
+    const playable = items.filter(
+      (item) => item.status !== "suggested" && item.status !== "rejected",
+    );
     const currentIndex = sections.nowPlaying
       ? playable.findIndex((item) => item.id === sections.nowPlaying!.id)
       : -1;

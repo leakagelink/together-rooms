@@ -292,16 +292,7 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       privacyOptionsAvailable: shouldOfferPrivacyOptions(ump),
       showPrivacyOptions,
     }),
-    [
-      evaluate,
-      requestFullscreen,
-      setActivity,
-      
-      resolution.units,
-      consent,
-      ump,
-      showPrivacyOptions,
-    ],
+    [evaluate, requestFullscreen, setActivity, resolution.units, consent, ump, showPrivacyOptions],
   );
 
   return <AdRuntimeContext.Provider value={value}>{children}</AdRuntimeContext.Provider>;

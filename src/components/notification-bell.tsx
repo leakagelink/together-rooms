@@ -72,9 +72,7 @@ export function NotificationBell() {
           variant="ghost"
           size="icon"
           className="relative rounded-xl"
-          aria-label={
-            unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"
-          }
+          aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
         >
           <Bell className="size-5" aria-hidden="true" />
           {unreadCount > 0 ? (
@@ -138,9 +136,7 @@ export function NotificationBell() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
-                          <span className="truncate text-sm font-medium">
-                            {notification.title}
-                          </span>
+                          <span className="truncate text-sm font-medium">{notification.title}</span>
                           {notification.read_at ? null : (
                             <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-[10px]">
                               New

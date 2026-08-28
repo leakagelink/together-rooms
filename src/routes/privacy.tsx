@@ -62,7 +62,17 @@ function PrivacyPage() {
         library, and we do not request microphone or camera access — voice and video calling is not
         part of this release.
       </p>
+      <h2>Research browsing and search</h2>
+      <p>
+        In a research room you can browse pages inside the app. When you type a search query, the
+        query text is sent to our server, which forwards it to the DuckDuckGo search service and
+        returns the results to you. We do not store your search queries or your browsing history,
+        and URLs written into server logs are redacted. Pages you open in the in-app browser are
+        loaded directly from those websites, whose own privacy policies apply. Only links you
+        explicitly share with the room become visible to other members.
+      </p>
       <h2>Advertising</h2>
+
       <p>
         This release integrates Google AdMob. On first launch you are shown Google&apos;s consent
         form (UMP) where required by law, and you can change your choice at any time in privacy

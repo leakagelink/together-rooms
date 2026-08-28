@@ -978,6 +978,8 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
           await invalidate(queryKeys.study.notes(roomId));
         }}
       />
+
+      <EmbeddedBrowser url={embedUrl} onClose={() => setEmbedUrl(null)} />
     </section>
   );
 }

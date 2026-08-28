@@ -170,6 +170,12 @@ export function evaluateYouTubePolicy(videoId: string, item: unknown): MediaPoli
 
   const madeForKids = Boolean(status["madeForKids"]);
   const embeddable = Boolean(status["embeddable"]);
+  // `contentDetails.contentRating.ytRating === "ytAgeRestricted"` is YouTube's
+  // 18+ marker. A pasted link must be blocked exactly like a search result is
+  // by safeSearch=strict, so mature content never reaches a Teen-rated room.
+  const contentDetails = resource["contentDetails"] as Record<string, unknown> | undefined;
+  const contentRating = contentDetails?.["contentRating"] as Record<string, unknown> | undefined;
+  const ageRestricted = String(contentRating?.["ytRating"] ?? "") === "ytAgeRestricted";
   const privacyStatus = String(
     status["privacyStatus"] ?? "unknown",
   ).toLowerCase() as MediaPrivacyStatus;

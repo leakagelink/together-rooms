@@ -34,7 +34,6 @@ import {
 } from "./placement-map";
 
 const context = (patch: Partial<AdPlacementContext> = {}): AdPlacementContext => ({
-  premium: false,
   consent: "granted_personalized",
   configured: true,
   activeCall: false,
@@ -145,19 +144,19 @@ describe("PHASE 13.1 — AdMob production configuration", () => {
     }
   });
 
-  it("ADMOB-PROD-T8: Premium entitlement suppresses ad requests against real units", async () => {
+  it("ADMOB-PROD-T8: a sensitive flow suppresses ad requests against real units", async () => {
     const provider = productionProvider();
     const outcome = provider.evaluate(
       { format: "banner", placement: APPROVED_BANNER_PLACEMENTS[0] },
-      context({ premium: true }),
+      context({ sensitiveFlow: "account_deletion" }),
     );
     expect(outcome.eligible).toBe(false);
-    expect(outcome.reason).toBe("NO_AD_PREMIUM");
+    expect(outcome.reason).toBe("NO_AD_ACCOUNT_DELETION");
     expect(outcome.unitId).toBeNull();
     await expect(
       provider.request(
         { format: "interstitial", placement: APPROVED_INTERSTITIAL_TRANSITIONS[0] },
-        context({ premium: true }),
+        context({ sensitiveFlow: "report" }),
       ),
     ).resolves.toBe(false);
   });

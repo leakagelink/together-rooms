@@ -13,7 +13,6 @@ import type { AdPlacementContext } from "./placement";
 import { createNativeAdSdk, getAdsBridge, type NativeAdsBridge } from "./admob-bridge";
 
 const context = (patch: Partial<AdPlacementContext> = {}): AdPlacementContext => ({
-  premium: false,
   consent: "granted_personalized",
   configured: true,
   activeCall: false,
@@ -67,11 +66,11 @@ describe("ADMOB", () => {
     expect(prod.testMode).toBe(false);
   });
 
-  it("ADMOB-T3: Premium accounts are never eligible for any format", () => {
+  it("ADMOB-T3: an unconfigured build is never eligible for any format", () => {
     const { provider } = makeProvider();
     for (const format of ["banner", "interstitial", "app_open"] as const) {
       expect(
-        provider.evaluate({ format, placement: "rooms_list_footer" }, context({ premium: true }))
+        provider.evaluate({ format, placement: "rooms_list_footer" }, context({ configured: false }))
           .eligible,
       ).toBe(false);
     }

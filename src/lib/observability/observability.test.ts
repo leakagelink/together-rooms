@@ -1,17 +1,11 @@
 /**
  * PHASE 12 — observability, redaction and error-classification tests.
  *
- * OBS-T1..T10 cover the logging boundary; RELIABILITY-T1..T8 cover the error
- * model and the acknowledgement retry state machine.
+ * OBS-T1..T10 cover the logging boundary; RELIABILITY-T1..T5 cover the error
+ * model.
  */
 import { beforeEach, describe, expect, it } from "vitest";
 
-import {
-  ackBackoffMs,
-  isAckDue,
-  MAX_ACK_ATTEMPTS,
-  nextAckState,
-} from "@/lib/billing/acknowledgement";
 import {
   childCorrelationId,
   correlationFromHeaders,
@@ -169,55 +163,6 @@ describe("RELIABILITY — error classification", () => {
     expect(info.errorClass).toBe("SECURITY");
     expect(info.clientMessage).not.toContain("entitlements");
     expect(info.clientMessage).not.toContain("PostgREST");
-  });
-});
-
-describe("RELIABILITY — acknowledgement retry state machine", () => {
-  const now = 1_700_000_000_000;
-
-  it("RELIABILITY-T6: success is terminal and idempotent", () => {
-    const first = nextAckState({ attempts: 0 }, { ok: true, performed: true }, now);
-    expect(first.status).toBe("acknowledged");
-    expect(first.nextAttemptAt).toBeNull();
-    const again = nextAckState({ attempts: first.attempts }, { ok: true, performed: false }, now);
-    expect(again.status).toBe("acknowledged");
-  });
-
-  it("RELIABILITY-T7: retryable failures back off and stay bounded", () => {
-    expect(ackBackoffMs(1)).toBeLessThan(ackBackoffMs(3));
-    let attempts = 0;
-    let state = nextAckState({ attempts }, { ok: false, reason: "request_failed" }, now);
-    while (!state.terminal) {
-      attempts = state.attempts;
-      expect(state.status).toBe("pending");
-      state = nextAckState({ attempts }, { ok: false, reason: "request_failed" }, now);
-    }
-    expect(state.attempts).toBe(MAX_ACK_ATTEMPTS);
-    expect(state.status).toBe("failed_terminal");
-  });
-
-  it("RELIABILITY-T8: non-retryable failures stop immediately and stay visible", () => {
-    const state = nextAckState({ attempts: 0 }, { ok: false, reason: "not_acknowledgeable" }, now);
-    expect(state.status).toBe("not_required");
-    expect(state.nextAttemptAt).toBeNull();
-
-    const due = isAckDue(
-      { status: "pending", attempts: 1, next_attempt_at: new Date(now - 1000).toISOString() },
-      now,
-    );
-    expect(due).toBe(true);
-    expect(
-      isAckDue(
-        { status: "pending", attempts: 1, next_attempt_at: new Date(now + 60_000).toISOString() },
-        now,
-      ),
-    ).toBe(false);
-    expect(
-      isAckDue(
-        { status: "acknowledged", attempts: 1, next_attempt_at: new Date(0).toISOString() },
-        now,
-      ),
-    ).toBe(false);
   });
 });
 

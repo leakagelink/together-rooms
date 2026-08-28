@@ -22,6 +22,7 @@ export type MediaPrivacyStatus = "public" | "unlisted" | "private" | "unknown";
 export type MediaPolicyStatus =
   | "ok"
   | "made_for_kids"
+  | "age_restricted"
   | "not_embeddable"
   | "privacy_blocked"
   | "unavailable"
@@ -169,6 +170,12 @@ export function evaluateYouTubePolicy(videoId: string, item: unknown): MediaPoli
 
   const madeForKids = Boolean(status["madeForKids"]);
   const embeddable = Boolean(status["embeddable"]);
+  // `contentDetails.contentRating.ytRating === "ytAgeRestricted"` is YouTube's
+  // 18+ marker. A pasted link must be blocked exactly like a search result is
+  // by safeSearch=strict, so mature content never reaches a Teen-rated room.
+  const contentDetails = resource["contentDetails"] as Record<string, unknown> | undefined;
+  const contentRating = contentDetails?.["contentRating"] as Record<string, unknown> | undefined;
+  const ageRestricted = String(contentRating?.["ytRating"] ?? "") === "ytAgeRestricted";
   const privacyStatus = String(
     status["privacyStatus"] ?? "unknown",
   ).toLowerCase() as MediaPrivacyStatus;
@@ -188,7 +195,9 @@ export function evaluateYouTubePolicy(videoId: string, item: unknown): MediaPoli
   // Order matters: hard blocks first, then the MFK classification. MFK alone
   // never downgrades an otherwise playable video.
   let policyStatus: MediaPolicyStatus;
-  if (!embeddable) {
+  if (ageRestricted) {
+    policyStatus = "age_restricted";
+  } else if (!embeddable) {
     policyStatus = "not_embeddable";
   } else if (privacyStatus === "private") {
     policyStatus = "privacy_blocked";

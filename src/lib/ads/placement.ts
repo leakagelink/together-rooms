@@ -17,21 +17,18 @@ export type ConsentState = "unresolved" | "granted_personalized" | "granted_limi
 
 /**
  * Sensitive surfaces where monetization ads are never allowed, regardless of
- * plan, consent or frequency state.
+ * consent or frequency state.
  */
 export type SensitiveFlow =
   | "account_deletion"
   | "privacy_settings"
   | "consent"
   | "payment"
-  | "restore_purchases"
   | "report"
   | "block"
   | "auth";
 
 export interface AdPlacementContext {
-  /** Authoritative premium flag from the server snapshot. */
-  premium: boolean;
   /** Ads consent state derived from privacy_settings + the platform CMP. */
   consent: ConsentState;
   /** Live collaborative activity. */
@@ -51,7 +48,6 @@ export interface AdPlacementContext {
 }
 
 export type AdBlockReason =
-  | "NO_AD_PREMIUM"
   | "NO_AD_NOT_CONFIGURED"
   | "NO_AD_DISABLED_REMOTELY"
   | "NO_AD_FORMAT_DISABLED"
@@ -86,7 +82,6 @@ const SENSITIVE_REASON: Record<SensitiveFlow, AdBlockReason> = {
   privacy_settings: "NO_AD_PRIVACY_SETTINGS",
   consent: "NO_AD_PRIVACY_SETTINGS",
   payment: "NO_AD_PAYMENT_FLOW",
-  restore_purchases: "NO_AD_PAYMENT_FLOW",
   report: "NO_AD_REPORT_FLOW",
   block: "NO_AD_REPORT_FLOW",
   auth: "NO_AD_SENSITIVE_FLOW",
@@ -101,8 +96,8 @@ export function evaluateAdPlacement(
   context: AdPlacementContext,
   config: AdFrequencyConfig,
 ): AdPlacementDecision {
-  // 1. Entitlement first: premium users are never sent a monetization ad.
-  if (context.premium) return deny("NO_AD_PREMIUM");
+  // PHASE 15 — the app is free for everyone, so there is no plan check here.
+  // Configuration, consent, activity and frequency are the only gates.
   if (!context.configured) return deny("NO_AD_NOT_CONFIGURED");
   if (!config.ads_enabled) return deny("NO_AD_DISABLED_REMOTELY");
 

@@ -12,7 +12,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { useAuth } from "@/hooks/useAuth";
-import { useEntitlement } from "@/hooks/useEntitlement";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeAdEvent } from "@/lib/ads/analytics-safety";
 import { DEFAULT_AD_FREQUENCY, mergeAdFrequency, resolveAdUnits } from "@/lib/ads/config";
@@ -40,7 +39,7 @@ import {
   type UmpState,
 } from "@/lib/ads/consent";
 import { track } from "@/lib/analytics";
-import { getAdRuntimeConfig } from "@/lib/monetization.functions";
+import { getAdRuntimeConfig } from "@/lib/ads.functions";
 import { queryKeys } from "@/lib/query-keys";
 
 /**
@@ -95,7 +94,6 @@ function environment(): "development" | "production" {
 
 export function AdRuntimeProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const { premium } = useEntitlement();
   const fetchAdConfig = useServerFn(getAdRuntimeConfig);
   const [activity, setActivityState] = useState<ActivityFlags>(EMPTY_ACTIVITY);
   const [appAdsConsent, setAppAdsConsent] = useState<boolean | null>(null);
@@ -151,7 +149,7 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
   );
 
   const configQuery = useQuery({
-    enabled: Boolean(user) && !premium,
+    enabled: Boolean(user),
     queryKey: queryKeys.account.adConfig(user?.id),
     staleTime: 300_000,
     queryFn: async () => {
@@ -223,12 +221,12 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
   }, [config]);
 
   // Initialize the Mobile Ads SDK only once consent allows an ad request at
-  // all, and never for Premium accounts (they see no ads, so no SDK is needed).
+  // all.
   // PHASE 14 — the once-only guard lives in the bridge module, so a remount or
   // an activity recreation replaying this effect cannot initialize twice.
   const sdkReady = useRef(false);
   useEffect(() => {
-    if (sdkReady.current || premium) return;
+    if (sdkReady.current) return;
     if (!mayInitializeAds(ump)) return;
     const bridge = getAdsBridge();
     if (!bridge) return;
@@ -241,14 +239,14 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       if (ok) providerRef.current?.attachSdk(createNativeAdSdk(bridge));
       else sdkReady.current = false;
     });
-  }, [ump, premium, consent, resolution.testMode, testMode.testDeviceIds]);
+  }, [ump, consent, resolution.testMode, testMode.testDeviceIds]);
 
-  // Premium (or a consent withdrawal) must remove any live banner immediately.
+  // A consent withdrawal must remove any live banner immediately.
   useEffect(() => {
-    if (premium || consent === "denied" || consent === "unresolved") {
+    if (consent === "denied" || consent === "unresolved") {
       providerRef.current?.hideBanner();
     }
-  }, [premium, consent]);
+  }, [consent]);
 
   const showPrivacyOptions = useCallback(async () => {
     try {
@@ -260,12 +258,11 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
 
   const context: AdPlacementContext = useMemo(
     () => ({
-      premium,
       consent,
       configured: resolution.units !== null,
       ...activity,
     }),
-    [premium, consent, resolution.units, activity],
+    [consent, resolution.units, activity],
   );
 
   const evaluate = useCallback(
@@ -289,7 +286,7 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       evaluate,
       requestFullscreen,
       setActivity,
-      adsPossible: !premium && resolution.units !== null,
+      adsPossible: resolution.units !== null,
       consent,
       umpState: ump,
       privacyOptionsAvailable: shouldOfferPrivacyOptions(ump),
@@ -299,7 +296,7 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       evaluate,
       requestFullscreen,
       setActivity,
-      premium,
+      
       resolution.units,
       consent,
       ump,

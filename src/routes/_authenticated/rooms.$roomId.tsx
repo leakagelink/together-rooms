@@ -418,6 +418,7 @@ function RoomPage() {
             userId={user?.id}
             canControl={isHost || myMembership?.can_control_playback === true}
             roomActive={lifecycle === "ok"}
+            onDiscussInRoom={() => setTab("chat")}
           />
         ) : room.type === "music" ? (
           <MusicRoom

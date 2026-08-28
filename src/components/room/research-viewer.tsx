@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { displayHost } from "@/lib/url-safety";
+import { EmbeddedBrowser } from "@/components/room/embedded-browser";
 import { isNativeRuntime, onBrowserClosed, openResource, toBrowseUrl } from "@/lib/in-app-browser";
 
 export interface ResearchTarget {

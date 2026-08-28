@@ -432,6 +432,37 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
 
         {/* ------------------------------------------------------ resources */}
         <TabsContent value="resources" className="mt-4 space-y-4">
+          {/* Surf: search or open any site inside the app's own browser. */}
+          <form
+            className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-muted/30 p-3"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const next = toBrowseUrl(surfQuery);
+              if (!next) {
+                toast.error("Enter a search term or a website address.");
+                return;
+              }
+              setSurfing(true);
+              const mode = await openResource(next);
+              setSurfing(false);
+              if (!mode) toast.error("That address can't be opened.");
+            }}
+          >
+            <div className="min-w-[16rem] flex-1">
+              <Label htmlFor="research-surf">Browse the web</Label>
+              <Input
+                id="research-surf"
+                value={surfQuery}
+                onChange={(event) => setSurfQuery(event.target.value)}
+                placeholder="Search or enter a site — opens inside the app"
+                inputMode="url"
+              />
+            </div>
+            <Button type="submit" variant="outline" disabled={surfing || !surfQuery.trim()}>
+              <Compass className="size-4" aria-hidden="true" /> Surf
+            </Button>
+          </form>
+
           {canAddResources ? (
             <form
               className="flex flex-wrap items-end gap-2"

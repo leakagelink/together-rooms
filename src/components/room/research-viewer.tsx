@@ -57,7 +57,6 @@ export function ResearchViewer({
     setSurf("");
   }, [target?.id]);
 
-
   // Surf Mode always stays inside SyncTogether; the system browser is only
   // reachable from the in-app browser's explicit "Open in Browser" fallback.
   const browse = (url: string) => {
@@ -126,7 +125,7 @@ export function ResearchViewer({
               inputMode="url"
               aria-label="Search the web or enter a site"
             />
-            <Button type="submit" variant="outline" >
+            <Button type="submit" variant="outline">
               <Compass className="size-4" aria-hidden="true" />
               <span className="sr-only sm:not-sr-only">Surf</span>
             </Button>
@@ -134,9 +133,8 @@ export function ResearchViewer({
 
           <p className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
             <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-            Pages open inside SyncTogether with the real address shown. Sites load exactly as
-            their owners published them, and your browsing is never recorded or shared with the
-            room.
+            Pages open inside SyncTogether with the real address shown. Sites load exactly as their
+            owners published them, and your browsing is never recorded or shared with the room.
           </p>
 
           {canSaveNotes && onSaveNote ? (

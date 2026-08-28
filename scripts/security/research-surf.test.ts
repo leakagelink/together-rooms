@@ -141,7 +141,7 @@ describe("SURF-T8 / SURF-T9: page JavaScript is fully isolated", () => {
 
   it("exposes no message channel or bridge to the embedded page", () => {
     expect(browserSource).not.toContain("postMessage");
-    expect(browserSource).not.toContain("addEventListener(\"message\"");
+    expect(browserSource).not.toContain('addEventListener("message"');
     expect(browserSource).not.toContain("contentWindow");
     expect(browserSource).not.toContain("@capacitor/");
     expect(browserSource).not.toContain("Capacitor.");
@@ -176,7 +176,10 @@ describe("SURF-T10: unsafe and custom URL schemes are handled safely", () => {
 
 describe("SURF-T11 / SURF-T12: sharing is explicit, browsing is private", () => {
   it("builds a resource from the URL, domain and user title only", () => {
-    const built = buildShareCandidate("https://www.nature.com/articles/x?utm_source=z", " My note ");
+    const built = buildShareCandidate(
+      "https://www.nature.com/articles/x?utm_source=z",
+      " My note ",
+    );
     expect(built.ok).toBe(true);
     if (built.ok) {
       expect(built.resource.url).toContain("nature.com/articles/x");

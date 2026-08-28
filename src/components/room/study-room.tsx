@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ResearchViewer, type ResearchTarget } from "@/components/room/research-viewer";
 import { useRoomStudy, type RoomNote, type RoomResource } from "@/hooks/useRoomStudy";
 import { queryKeys } from "@/lib/query-keys";
 import { rpcMessage, type RpcReason } from "@/lib/rpc-types";

@@ -53,7 +53,8 @@ function SignupPage() {
     }
     const parsed = signUpSchema.safeParse({ email, password, displayName });
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Check your details.");
+      const issues = parsed.error.issues.map((issue) => issue.message);
+      setError(issues.join(" ") || "Check your details.");
       return;
     }
     setSubmitting(true);

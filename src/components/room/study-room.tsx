@@ -387,10 +387,20 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Current focus</p>
             <p className="font-medium">{focused.title}</p>
             {focused.url ? (
-              <Button asChild size="sm" variant="outline" className="mt-2">
-                <a href={focused.url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="size-4" aria-hidden="true" /> Open on my device
-                </a>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-2"
+                onClick={() =>
+                  setReading({
+                    id: focused.id,
+                    title: focused.title,
+                    url: focused.url as string,
+                    host: focused.host,
+                  })
+                }
+              >
+                <ExternalLink className="size-4" aria-hidden="true" /> Read in app
               </Button>
             ) : null}
           </div>

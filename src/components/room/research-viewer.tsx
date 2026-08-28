@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ExternalLink, Globe, Loader2, NotebookPen, ShieldCheck } from "lucide-react";
+import { Compass, ExternalLink, Globe, Loader2, NotebookPen, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { displayHost } from "@/lib/url-safety";
-import { isNativeRuntime, openResource } from "@/lib/in-app-browser";
+import { isNativeRuntime, onBrowserClosed, openResource, toBrowseUrl } from "@/lib/in-app-browser";
 
 export interface ResearchTarget {
   id: string;
@@ -31,11 +32,11 @@ interface ResearchViewerProps {
 }
 
 /**
- * Research reader: opens the resource in an in-app browser surface (Android
- * Custom Tab) instead of throwing the user out into a separate browser app,
- * and keeps a note pad next to it so findings can be captured without leaving
- * the room. Third-party pages render in the platform browser engine — we never
- * re-frame, modify or script them.
+ * Research reader: the resource opens in SyncTogether's own in-app browser —
+ * full screen, with the live URL, toolbar and back/forward controls — so the
+ * user never leaves the app. Pages render unmodified; we inject nothing and
+ * store nothing about the browsing itself. When the browser is dismissed the
+ * note pad is waiting so findings can be captured straight into the room.
  */
 export function ResearchViewer({
   target,
@@ -46,18 +47,40 @@ export function ResearchViewer({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [opening, setOpening] = useState(false);
+  const [visited, setVisited] = useState(false);
+  const [surf, setSurf] = useState("");
   const native = useMemo(() => isNativeRuntime(), []);
 
   useEffect(() => {
     setNotes("");
+    setVisited(false);
+    setSurf("");
   }, [target?.id]);
 
-  const open = async () => {
+  // Reveal the note pad the moment the in-app browser is dismissed.
+  useEffect(() => {
     if (!target) return;
+    let dispose: (() => void) | undefined;
+    let cancelled = false;
+    void onBrowserClosed(() => setVisited(true)).then((off) => {
+      if (cancelled) off();
+      else dispose = off;
+    });
+    return () => {
+      cancelled = true;
+      dispose?.();
+    };
+  }, [target]);
+
+  const browse = async (url: string) => {
     setOpening(true);
-    const mode = await openResource(target.url);
+    const mode = await openResource(url);
     setOpening(false);
-    if (!mode) toast.error("This link can't be opened.");
+    if (!mode) {
+      toast.error("This link can't be opened.");
+      return;
+    }
+    if (mode !== "web_view") setVisited(true);
   };
 
   const save = async () => {
@@ -90,26 +113,56 @@ export function ResearchViewer({
           </DialogDescription>
         </DialogHeader>
 
-        <Button onClick={open} disabled={opening} className="w-full">
+        <Button
+          onClick={() => target && browse(target.url)}
+          disabled={opening || !target}
+          className="w-full"
+        >
           {opening ? (
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
           ) : (
             <ExternalLink className="size-4" aria-hidden="true" />
           )}
-          {native ? "Read inside SyncTogether" : "Open page"}
+          {native ? "Open in SyncTogether browser" : "Open page"}
         </Button>
+
+        {/* Free surfing from the same sheet: search terms or a bare domain. */}
+        <form
+          className="flex gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const url = toBrowseUrl(surf);
+            if (!url) {
+              toast.error("Enter a search term or a website address.");
+              return;
+            }
+            void browse(url);
+          }}
+        >
+          <Input
+            value={surf}
+            onChange={(event) => setSurf(event.target.value)}
+            placeholder="Search the web or enter a site"
+            inputMode="url"
+            aria-label="Search the web or enter a site"
+          />
+          <Button type="submit" variant="outline" disabled={opening}>
+            <Compass className="size-4" aria-hidden="true" />
+            <span className="sr-only sm:not-sr-only">Surf</span>
+          </Button>
+        </form>
 
         <p className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
           <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
           {native
-            ? "The page opens in a secure in-app browser tab with its own address bar. SyncTogether never reads, changes or records what you browse."
+            ? "Pages open inside SyncTogether with the real address shown. Sites load exactly as their owners published them, and your browsing is never recorded or shared with the room."
             : "Your browser opens this page in a new tab. SyncTogether never reads or records what you browse."}
         </p>
 
         {canSaveNotes && onSaveNote ? (
           <div className="space-y-2">
             <label htmlFor="research-note" className="text-sm font-medium">
-              Research notes
+              Research notes {visited ? <span className="text-muted-foreground">· ready</span> : null}
             </label>
             <Textarea
               id="research-note"
@@ -117,6 +170,7 @@ export function ResearchViewer({
               onChange={(event) => setNotes(event.target.value)}
               rows={6}
               placeholder="What did you find on this page?"
+              autoFocus={visited}
             />
             <p className="text-xs text-muted-foreground">
               Saved as a room note with the source link attached.

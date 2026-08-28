@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Archive,
   Check,
+  Compass,
   ExternalLink,
   Eye,
   Pin,
@@ -50,6 +51,7 @@ import {
   updateRoomTask,
 } from "@/lib/study.functions";
 import { checkResourceUrl, displayHost, urlRejectionMessage } from "@/lib/url-safety";
+import { openResource, toBrowseUrl } from "@/lib/in-app-browser";
 import {
   FOCUS_PRESETS,
   formatDuration,
@@ -108,6 +110,8 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
   const [draft, setDraft] = useState<{ revision: number; content: string } | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [reading, setReading] = useState<ResearchTarget | null>(null);
+  const [surfQuery, setSurfQuery] = useState("");
+  const [surfing, setSurfing] = useState(false);
 
   const canAddResources = roomActive && (settings.resource_mode !== "host_only" || canControl);
   const canEditNotes = roomActive && (settings.note_mode !== "host_only" || canControl);
@@ -432,6 +436,37 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
 
         {/* ------------------------------------------------------ resources */}
         <TabsContent value="resources" className="mt-4 space-y-4">
+          {/* Surf: search or open any site inside the app's own browser. */}
+          <form
+            className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-muted/30 p-3"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const next = toBrowseUrl(surfQuery);
+              if (!next) {
+                toast.error("Enter a search term or a website address.");
+                return;
+              }
+              setSurfing(true);
+              const mode = await openResource(next);
+              setSurfing(false);
+              if (!mode) toast.error("That address can't be opened.");
+            }}
+          >
+            <div className="min-w-[16rem] flex-1">
+              <Label htmlFor="research-surf">Browse the web</Label>
+              <Input
+                id="research-surf"
+                value={surfQuery}
+                onChange={(event) => setSurfQuery(event.target.value)}
+                placeholder="Search or enter a site — opens inside the app"
+                inputMode="url"
+              />
+            </div>
+            <Button type="submit" variant="outline" disabled={surfing || !surfQuery.trim()}>
+              <Compass className="size-4" aria-hidden="true" /> Surf
+            </Button>
+          </form>
+
           {canAddResources ? (
             <form
               className="flex flex-wrap items-end gap-2"

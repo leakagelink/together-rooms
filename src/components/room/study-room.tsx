@@ -51,7 +51,8 @@ import {
   updateRoomTask,
 } from "@/lib/study.functions";
 import { checkResourceUrl, displayHost, urlRejectionMessage } from "@/lib/url-safety";
-import { openResource, toBrowseUrl } from "@/lib/in-app-browser";
+import { EmbeddedBrowser } from "@/components/room/embedded-browser";
+import { isNativeRuntime, openResource, toBrowseUrl } from "@/lib/in-app-browser";
 import {
   FOCUS_PRESETS,
   formatDuration,
@@ -112,6 +113,7 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
   const [reading, setReading] = useState<ResearchTarget | null>(null);
   const [surfQuery, setSurfQuery] = useState("");
   const [surfing, setSurfing] = useState(false);
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
 
   const canAddResources = roomActive && (settings.resource_mode !== "host_only" || canControl);
   const canEditNotes = roomActive && (settings.note_mode !== "host_only" || canControl);
@@ -433,7 +435,6 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
           </TabsList>
         </div>
 
-
         {/* ------------------------------------------------------ resources */}
         <TabsContent value="resources" className="mt-4 space-y-4">
           {/* Surf: search or open any site inside the app's own browser. */}
@@ -444,6 +445,10 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
               const next = toBrowseUrl(surfQuery);
               if (!next) {
                 toast.error("Enter a search term or a website address.");
+                return;
+              }
+              if (!isNativeRuntime()) {
+                setEmbedUrl(next);
                 return;
               }
               setSurfing(true);
@@ -973,6 +978,8 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
           await invalidate(queryKeys.study.notes(roomId));
         }}
       />
+
+      <EmbeddedBrowser url={embedUrl} onClose={() => setEmbedUrl(null)} />
     </section>
   );
 }

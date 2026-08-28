@@ -32,11 +32,8 @@ import { Route as AuthenticatedRoomsNewRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
 import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_authenticated/settings.privacy'
-import { Route as AuthenticatedSettingsSubscriptionRouteImport } from './routes/_authenticated/settings.subscription'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as AuthenticatedAdminReportsReportIdRouteImport } from './routes/_authenticated/admin.reports.$reportId'
-import { Route as ApiPublicBillingReconcileRouteImport } from './routes/api.public.billing.reconcile'
-import { Route as ApiPublicBillingRtdnRouteImport } from './routes/api.public.billing.rtdn'
 import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push/dispatch'
 
 const IndexRoute = IndexRouteImport.update({
@@ -157,12 +154,6 @@ const AuthenticatedSettingsPrivacyRoute =
     path: '/settings/privacy',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedSettingsSubscriptionRoute =
-  AuthenticatedSettingsSubscriptionRouteImport.update({
-    id: '/settings/subscription',
-    path: '/settings/subscription',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   id: '/api/public/health',
   path: '/api/public/health',
@@ -174,17 +165,6 @@ const AuthenticatedAdminReportsReportIdRoute =
     path: '/admin/reports/$reportId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicBillingReconcileRoute =
-  ApiPublicBillingReconcileRouteImport.update({
-    id: '/api/public/billing/reconcile',
-    path: '/api/public/billing/reconcile',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicBillingRtdnRoute = ApiPublicBillingRtdnRouteImport.update({
-  id: '/api/public/billing/rtdn',
-  path: '/api/public/billing/rtdn',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicPushDispatchRoute = ApiPublicPushDispatchRouteImport.update({
   id: '/api/public/push/dispatch',
   path: '/api/public/push/dispatch',
@@ -211,14 +191,11 @@ export interface FileRoutesByFullPath {
   '/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
-  '/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
-  '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
-  '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
 }
 export interface FileRoutesByTo {
@@ -241,14 +218,11 @@ export interface FileRoutesByTo {
   '/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
-  '/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/rooms': typeof AuthenticatedRoomsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
-  '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
-  '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
 }
 export interface FileRoutesById {
@@ -273,14 +247,11 @@ export interface FileRoutesById {
   '/_authenticated/rooms/new': typeof AuthenticatedRoomsNewRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
-  '/_authenticated/settings/subscription': typeof AuthenticatedSettingsSubscriptionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/rooms/': typeof AuthenticatedRoomsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
-  '/api/public/billing/reconcile': typeof ApiPublicBillingReconcileRoute
-  '/api/public/billing/rtdn': typeof ApiPublicBillingRtdnRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
 }
 export interface FileRouteTypes {
@@ -305,14 +276,11 @@ export interface FileRouteTypes {
     | '/rooms/new'
     | '/settings/notifications'
     | '/settings/privacy'
-    | '/settings/subscription'
     | '/api/public/health'
     | '/admin/'
     | '/rooms/'
     | '/settings/'
     | '/admin/reports/$reportId'
-    | '/api/public/billing/reconcile'
-    | '/api/public/billing/rtdn'
     | '/api/public/push/dispatch'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -335,14 +303,11 @@ export interface FileRouteTypes {
     | '/rooms/new'
     | '/settings/notifications'
     | '/settings/privacy'
-    | '/settings/subscription'
     | '/api/public/health'
     | '/admin'
     | '/rooms'
     | '/settings'
     | '/admin/reports/$reportId'
-    | '/api/public/billing/reconcile'
-    | '/api/public/billing/rtdn'
     | '/api/public/push/dispatch'
   id:
     | '__root__'
@@ -366,14 +331,11 @@ export interface FileRouteTypes {
     | '/_authenticated/rooms/new'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/privacy'
-    | '/_authenticated/settings/subscription'
     | '/api/public/health'
     | '/_authenticated/admin/'
     | '/_authenticated/rooms/'
     | '/_authenticated/settings/'
     | '/_authenticated/admin/reports/$reportId'
-    | '/api/public/billing/reconcile'
-    | '/api/public/billing/rtdn'
     | '/api/public/push/dispatch'
   fileRoutesById: FileRoutesById
 }
@@ -391,8 +353,6 @@ export interface RootRouteChildren {
   AuthSignupRoute: typeof AuthSignupRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
-  ApiPublicBillingReconcileRoute: typeof ApiPublicBillingReconcileRoute
-  ApiPublicBillingRtdnRoute: typeof ApiPublicBillingRtdnRoute
   ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
 }
 
@@ -559,13 +519,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPrivacyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/settings/subscription': {
-      id: '/_authenticated/settings/subscription'
-      path: '/settings/subscription'
-      fullPath: '/settings/subscription'
-      preLoaderRoute: typeof AuthenticatedSettingsSubscriptionRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/api/public/health': {
       id: '/api/public/health'
       path: '/api/public/health'
@@ -579,20 +532,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/reports/$reportId'
       preLoaderRoute: typeof AuthenticatedAdminReportsReportIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/public/billing/reconcile': {
-      id: '/api/public/billing/reconcile'
-      path: '/api/public/billing/reconcile'
-      fullPath: '/api/public/billing/reconcile'
-      preLoaderRoute: typeof ApiPublicBillingReconcileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/billing/rtdn': {
-      id: '/api/public/billing/rtdn'
-      path: '/api/public/billing/rtdn'
-      fullPath: '/api/public/billing/rtdn'
-      preLoaderRoute: typeof ApiPublicBillingRtdnRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/api/public/push/dispatch': {
       id: '/api/public/push/dispatch'
@@ -613,7 +552,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRoomsNewRoute: typeof AuthenticatedRoomsNewRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsPrivacyRoute: typeof AuthenticatedSettingsPrivacyRoute
-  AuthenticatedSettingsSubscriptionRoute: typeof AuthenticatedSettingsSubscriptionRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedRoomsIndexRoute: typeof AuthenticatedRoomsIndexRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -630,8 +568,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsNotificationsRoute:
     AuthenticatedSettingsNotificationsRoute,
   AuthenticatedSettingsPrivacyRoute: AuthenticatedSettingsPrivacyRoute,
-  AuthenticatedSettingsSubscriptionRoute:
-    AuthenticatedSettingsSubscriptionRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedRoomsIndexRoute: AuthenticatedRoomsIndexRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
@@ -656,8 +592,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignupRoute: AuthSignupRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
-  ApiPublicBillingReconcileRoute: ApiPublicBillingReconcileRoute,
-  ApiPublicBillingRtdnRoute: ApiPublicBillingRtdnRoute,
   ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
 }
 export const routeTree = rootRouteImport

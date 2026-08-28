@@ -3,7 +3,7 @@
  *
  * One pure function that answers: "would this build be safe to upload to a
  * Play testing track?" It composes the checks that already exist (runtime
- * config, billing product config, ad units, scheduler, recovery key) and adds
+ * config, ad units) and adds
  * the artifact-level facts that only exist at packaging time.
  *
  * It audits CONFIGURATION only. It cannot inspect a signed .aab — generating
@@ -12,11 +12,9 @@
 
 import { resolveAdUnits, type AdUnits } from "@/lib/ads/config";
 import { resolveAdMobAppId } from "@/lib/ads/admob-production";
-import { resolveProductConfig, EXPECTED_PACKAGE_NAME } from "@/lib/billing/products";
 import { validateRuntimeConfig, type RuntimeConfigInput } from "@/lib/android/environment";
 
-import { validateRecoveryKeyConfig, type RecoveryKeyInput } from "./recovery-key";
-import { validateSchedulerConfig, type SchedulerConfigInput } from "./scheduler";
+import { EXPECTED_PACKAGE_NAME } from "./app-identity";
 
 export type ReleaseProblem =
   | "package_mismatch"
@@ -31,10 +29,7 @@ export type ReleaseProblem =
   | "min_sdk_too_low"
   | "target_sdk_too_low"
   | `runtime:${string}`
-  | `billing:${string}`
-  | `ads:${string}`
-  | `scheduler:${string}`
-  | `recovery_key:${string}`;
+  | `ads:${string}`;
 
 export interface ArtifactFacts {
   packageName: string;
@@ -54,12 +49,9 @@ export interface ArtifactFacts {
 export interface ReleaseAuditInput {
   artifact: ArtifactFacts;
   runtime: RuntimeConfigInput;
-  billing: { premiumProductId?: string | undefined; packageName?: string | undefined };
   ads: Partial<AdUnits>;
   /** Optional override; defaults to the authoritative production app id. */
   adMobAppId?: string | undefined;
-  scheduler: SchedulerConfigInput;
-  recoveryKey: RecoveryKeyInput;
 }
 
 export interface ReleaseAuditResult {
@@ -97,21 +89,10 @@ export function auditReleaseCandidate(input: ReleaseAuditInput): ReleaseAuditRes
   const runtime = validateRuntimeConfig({ ...input.runtime, mode: "production" });
   for (const problem of runtime.problems) problems.push(`runtime:${problem}` as ReleaseProblem);
 
-  const billing = resolveProductConfig("production", input.billing);
-  for (const problem of billing.problems) problems.push(`billing:${problem}` as ReleaseProblem);
-
   const ads = resolveAdUnits("production", input.ads);
   if (ads.configError) problems.push(`ads:${ads.configError}` as ReleaseProblem);
   const appId = resolveAdMobAppId("production", { appId: input.adMobAppId });
   if (appId.configError) problems.push(`ads:${appId.configError}` as ReleaseProblem);
-
-  const scheduler = validateSchedulerConfig(input.scheduler);
-  for (const problem of scheduler.problems) {
-    problems.push(`scheduler:${problem}` as ReleaseProblem);
-  }
-
-  const key = validateRecoveryKeyConfig(input.recoveryKey);
-  for (const problem of key.problems) problems.push(`recovery_key:${problem}` as ReleaseProblem);
 
   return { ok: problems.length === 0, problems };
 }

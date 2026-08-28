@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ResearchViewer, type ResearchTarget } from "@/components/room/research-viewer";
 import { useRoomStudy, type RoomNote, type RoomResource } from "@/hooks/useRoomStudy";
 import { queryKeys } from "@/lib/query-keys";
 import { rpcMessage, type RpcReason } from "@/lib/rpc-types";
@@ -106,6 +107,7 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ revision: number; content: string } | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [reading, setReading] = useState<ResearchTarget | null>(null);
 
   const canAddResources = roomActive && (settings.resource_mode !== "host_only" || canControl);
   const canEditNotes = roomActive && (settings.note_mode !== "host_only" || canControl);
@@ -280,10 +282,19 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
       </div>
       <div className="flex flex-wrap gap-2">
         {resource.url ? (
-          <Button asChild size="sm" variant="outline">
-            <a href={resource.url} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="size-4" aria-hidden="true" /> Open
-            </a>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              setReading({
+                id: resource.id,
+                title: resource.title,
+                url: resource.url as string,
+                host: resource.host,
+              })
+            }
+          >
+            <ExternalLink className="size-4" aria-hidden="true" /> Read
           </Button>
         ) : null}
         {canControl && resource.status === "active" ? (
@@ -376,10 +387,20 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Current focus</p>
             <p className="font-medium">{focused.title}</p>
             {focused.url ? (
-              <Button asChild size="sm" variant="outline" className="mt-2">
-                <a href={focused.url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="size-4" aria-hidden="true" /> Open on my device
-                </a>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-2"
+                onClick={() =>
+                  setReading({
+                    id: focused.id,
+                    title: focused.title,
+                    url: focused.url as string,
+                    host: focused.host,
+                  })
+                }
+              >
+                <ExternalLink className="size-4" aria-hidden="true" /> Read in app
               </Button>
             ) : null}
           </div>
@@ -905,6 +926,18 @@ export function StudyRoom({ roomId, userId, canControl, roomActive }: StudyRoomP
           </TabsContent>
         ) : null}
       </Tabs>
+
+      <ResearchViewer
+        target={reading}
+        onOpenChange={(open) => {
+          if (!open) setReading(null);
+        }}
+        canSaveNotes={canEditNotes}
+        onSaveNote={async (title, content) => {
+          unwrap((await newNote({ data: { room_id: roomId, title, content } })) as Result);
+          await invalidate(queryKeys.study.notes(roomId));
+        }}
+      />
     </section>
   );
 }

@@ -97,9 +97,9 @@ function PrivacyPage() {
       <h2>Sharing</h2>
       <p>
         We use a managed cloud database and authentication provider to operate the service, Google
-        AdMob for advertising, Firebase Cloud Messaging for notifications and YouTube&apos;s
-        embedded player for shared playback. Your use of the embedded player is also subject to
-        Google&apos;s privacy policy. No data is sold.
+        AdMob for advertising, Firebase Cloud Messaging for notifications, DuckDuckGo for research
+        search results and YouTube&apos;s embedded player for shared playback. Your use of the
+        embedded player is also subject to Google&apos;s privacy policy. No data is sold.
       </p>
       <h2>Children</h2>
       <p>

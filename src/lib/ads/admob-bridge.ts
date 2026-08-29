@@ -37,6 +37,8 @@ export interface NativeAdsBridge {
   /** Optional: warms an interstitial. Never shows one. */
   preloadInterstitial?(unitId: string, nonPersonalized: boolean): Promise<boolean>;
   showAppOpen?(unitId: string, nonPersonalized: boolean): Promise<boolean>;
+  /** Shows a rewarded ad; resolves true ONLY when the SDK reported the reward. */
+  showRewarded?(unitId: string, nonPersonalized: boolean): Promise<boolean>;
   consent: UmpBridge;
 }
 
@@ -156,6 +158,21 @@ export function createNativeAdSdk(bridge: NativeAdsBridge): AdSdk {
       void bridge.hideBanner().catch((error: unknown) => {
         sanitizeBridgeError(error);
       });
+    },
+    async showRewarded(unitId, nonPersonalized) {
+      if (!isValidAdUnitId(unitId)) return false;
+      if (!bridge.showRewarded) return false;
+      if (fullscreenInFlight) return false;
+      fullscreenInFlight = true;
+      try {
+        // The reward is whatever the SDK reports; the server re-checks caps.
+        return await bridge.showRewarded(unitId, nonPersonalized);
+      } catch (error) {
+        sanitizeBridgeError(error);
+        return false;
+      } finally {
+        fullscreenInFlight = false;
+      }
     },
     async showFullscreen(unitId, nonPersonalized) {
       if (!isValidAdUnitId(unitId)) return;

@@ -195,3 +195,31 @@ function PlanSummary() {
     </section>
   );
 }
+
+const LEGAL_LINKS = [
+  { to: "/privacy", label: "Privacy Policy" },
+  { to: "/terms", label: "Terms of Service" },
+  { to: "/guidelines", label: "Community Guidelines" },
+  { to: "/child-safety", label: "Child Safety Standards" },
+  { to: "/delete-account", label: "Account deletion" },
+] as const;
+
+function LegalLinks() {
+  return (
+    <section className="surface-panel mt-6 max-w-xl p-5" aria-labelledby="legal-heading">
+      <h2 id="legal-heading" className="text-sm font-semibold">
+        Legal &amp; safety
+      </h2>
+      <ul className="mt-3 space-y-2 text-sm">
+        {LEGAL_LINKS.map((item) => (
+          <li key={item.to}>
+            <Link to={item.to} className="text-primary hover:underline">
+              {item.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+

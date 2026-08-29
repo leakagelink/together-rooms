@@ -193,6 +193,7 @@ export function WatchTogether({
   onPreviousTrack,
   onNextTrack,
   trackNavBusy = false,
+  onSearchVisibilityChange,
 }: WatchTogetherProps) {
   const playback = useRoomPlayback(roomId, userId);
   const queryClient = useQueryClient();

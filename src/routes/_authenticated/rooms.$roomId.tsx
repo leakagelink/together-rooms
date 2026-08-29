@@ -76,12 +76,12 @@ export const Route = createFileRoute("/_authenticated/rooms/$roomId")({
   }),
   component: RoomPage,
   errorComponent: () => (
-    <AppShell>
+    <AppShell tone="cinema">
       <ErrorState message="This room couldn't be opened." />
     </AppShell>
   ),
   notFoundComponent: () => (
-    <AppShell>
+    <AppShell tone="cinema">
       <EmptyState
         title="Room not found"
         description="It may have ended or you no longer have access."
@@ -250,7 +250,7 @@ function RoomPage() {
 
   if (roomQuery.isPending) {
     return (
-      <AppShell>
+      <AppShell tone="cinema">
         <LoadingState label="Loading room" />
       </AppShell>
     );
@@ -258,7 +258,7 @@ function RoomPage() {
 
   if (roomQuery.isError) {
     return (
-      <AppShell>
+      <AppShell tone="cinema">
         <ErrorState
           message={errorMessage(roomQuery.error)}
           onRetry={() => void roomQuery.refetch()}
@@ -270,7 +270,7 @@ function RoomPage() {
   const room = roomQuery.data;
   if (!room) {
     return (
-      <AppShell>
+      <AppShell tone="cinema">
         <EmptyState
           title="Room not available"
           description="It may have ended, expired, or you no longer have access."
@@ -316,7 +316,7 @@ function RoomPage() {
   ];
 
   return (
-    <AppShell>
+    <AppShell tone="cinema">
       {/* Compact room header. On phones the destructive/session actions live in
           an overflow menu so the title never gets squeezed off-screen. */}
       <header className="surface-panel overflow-hidden bg-card/70 p-3 backdrop-blur-xl sm:p-5">

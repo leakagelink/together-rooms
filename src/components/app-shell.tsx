@@ -27,7 +27,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useStaffContext } from "@/hooks/useStaffContext";
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  tone = "default",
+}: {
+  children: ReactNode;
+  /** "cinema" renders the screen on the dark theme tokens (media rooms). */
+  tone?: "default" | "cinema";
+}) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const router = useRouter();
@@ -55,7 +62,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [online, router]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div
+      className={`flex min-h-screen flex-col bg-background ${tone === "cinema" ? "dark text-foreground" : ""}`}
+    >
       {online ? null : <OfflineBanner />}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto grid h-14 w-full max-w-5xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:px-4">

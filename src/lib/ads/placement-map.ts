@@ -26,6 +26,10 @@ export type ApprovedBannerPlacement = (typeof APPROVED_BANNER_PLACEMENTS)[number
 export const APPROVED_INTERSTITIAL_TRANSITIONS = [
   /** After a room session has fully ended and the user is back on the list. */
   "room_session_ended",
+  /** After a room was successfully created, before the room screen opens. */
+  "room_created_transition",
+  /** After a join code was accepted, before the room screen opens. */
+  "room_joined_transition",
 ] as const;
 
 export type ApprovedInterstitialTransition = (typeof APPROVED_INTERSTITIAL_TRANSITIONS)[number];
@@ -60,6 +64,23 @@ export const FORBIDDEN_AD_SURFACES = [
   "app_launch",
   "app_exit",
 ] as const;
+
+/**
+ * User-initiated rewarded placements. A rewarded ad is only ever shown from an
+ * explicit opt-in surface where the reward is described before the ad starts.
+ */
+export const APPROVED_REWARDED_PLACEMENTS = [
+  /** "Unlock all features for 24 hours" — 3 ads. */
+  "full_access_unlock",
+  /** "Create one more room today" — 1 ad. */
+  "extra_room_unlock",
+] as const;
+
+export type ApprovedRewardedPlacement = (typeof APPROVED_REWARDED_PLACEMENTS)[number];
+
+export function isApprovedRewardedPlacement(placement: string): boolean {
+  return (APPROVED_REWARDED_PLACEMENTS as readonly string[]).includes(placement);
+}
 
 export function isApprovedBannerPlacement(placement: string): boolean {
   return (APPROVED_BANNER_PLACEMENTS as readonly string[]).includes(placement);

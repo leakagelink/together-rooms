@@ -9,12 +9,12 @@ import brandMark from "@/assets/brand-mark.png";
  * Android splash (which is dismissed on first paint) hands over to a branded
  * animation instead of a blank screen.
  */
-export function SplashOverlay({ duration = 1400 }: { duration?: number }) {
+export function SplashOverlay({ duration = 550 }: { duration?: number }) {
   const [phase, setPhase] = useState<"visible" | "leaving" | "gone">("visible");
 
   useEffect(() => {
     const leave = window.setTimeout(() => setPhase("leaving"), duration);
-    const done = window.setTimeout(() => setPhase("gone"), duration + 550);
+    const done = window.setTimeout(() => setPhase("gone"), duration + 300);
     return () => {
       window.clearTimeout(leave);
       window.clearTimeout(done);

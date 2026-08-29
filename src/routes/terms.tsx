@@ -24,43 +24,67 @@ function TermsPage() {
   return (
     <LegalPage
       title="Terms of Service"
-      subtitle="Draft placeholder — must be reviewed by qualified counsel before public release."
+      subtitle="The agreement between you and SyncTogether when you use the app."
     >
       <h2>1. About these terms</h2>
       <p>
-        SyncTogether provides private, invite-only rooms where people can spend time together. This
-        document is a Phase 1 placeholder. It is not legal advice and has not been reviewed by a
-        lawyer.
+        SyncTogether provides private, invite-only rooms where people can spend time together. By
+        creating an account or using the app you agree to these terms and to our Community
+        Guidelines and Child Safety Standards.
       </p>
       <h2>2. Accounts</h2>
       <p>
         You are responsible for your account credentials and for activity in rooms you host. You
-        must be old enough to hold an account under the law where you live.
+        must be old enough to hold an account under the law where you live. You can delete your
+        account at any time from settings or from the delete-account page.
       </p>
       <h2>3. Acceptable use</h2>
       <p>
-        You may not use SyncTogether to share unlawful content, harass others, distribute pirated or
-        DRM-protected material, or attempt to bypass any content provider's restrictions or terms.
+        You may not use SyncTogether to share unlawful content, harass others, exploit or endanger
+        minors, scam or impersonate others, spam, distribute pirated or DRM-protected material, or
+        attempt to bypass any content provider&apos;s restrictions or terms.
       </p>
-      <h2>4. Content and copyright</h2>
+      <h2>4. Your content</h2>
       <p>
-        SyncTogether does not host, stream, or re-stream third-party media. Future content features
-        will use official provider APIs, SDKs and embedded players only. Rights holders will be able
-        to submit takedown requests.
+        You keep ownership of the content you post — messages, notes, tasks, links and queued media
+        titles. You grant us the limited right to store and display that content to the other people
+        in your rooms so the service can work. You are responsible for having the right to share
+        what you share.
       </p>
-      <h2>5. Moderation and enforcement</h2>
+      <h2>5. Reporting and blocking</h2>
       <p>
-        We may remove content, restrict features, or suspend accounts that violate these terms or
-        our Community Guidelines.
+        The app provides in-app reporting on user and room surfaces, and blocking that takes effect
+        immediately. Reports are reviewed by our moderation team; review times vary and we do not
+        guarantee a specific outcome or response time.
       </p>
-      <h2>6. Price and advertising</h2>
+      <h2>6. Moderation and enforcement</h2>
       <p>
-        SyncTogether is free. There are no paid plans, subscriptions or in-app purchases, and we
-        never ask you for payment details. The app is supported by advertising, and you control ad
-        personalisation from privacy settings.
+        Where a violation is identified we may remove content, warn, mute, remove a participant from
+        a room, ban them from a room, suspend an account, or permanently ban an account. Moderation
+        actions are logged.
       </p>
-      <h2>7. Changes</h2>
+      <h2>7. Third-party services</h2>
+      <p>
+        The app uses YouTube&apos;s embedded player for shared playback, Google AdMob for
+        advertising, Firebase Cloud Messaging for notifications and DuckDuckGo for research search
+        results. Their own terms and privacy policies apply to those parts of the experience.
+        SyncTogether does not host, stream, or re-stream third-party media.
+      </p>
+      <h2>8. Price and advertising</h2>
+      <p>
+        SyncTogether is free. There are no paid plans and no in-app purchases, and we never ask you
+        for payment details. The app is supported by advertising, and you control ad personalisation
+        from privacy settings.
+      </p>
+      <h2>9. Disclaimers</h2>
+      <p>
+        The service is provided as-is. We do not guarantee uninterrupted availability, and rooms,
+        peer-to-peer sharing and third-party playback depend on networks and services outside our
+        control. We may suspend or terminate accounts that violate these terms.
+      </p>
+      <h2>10. Changes</h2>
       <p>We will notify users of material changes to these terms before they take effect.</p>
+
     </LegalPage>
   );
 }

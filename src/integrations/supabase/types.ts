@@ -2283,6 +2283,7 @@ export type Database = {
         }
         Returns: Json
       }
+      count_recent_open_rooms: { Args: { _user_id: string }; Returns: number }
       create_moderation_action: {
         Args: {
           _action: Database["public"]["Enums"]["moderation_action_type"]

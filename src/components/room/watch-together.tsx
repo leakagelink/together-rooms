@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  ChevronDown,
+  ChevronUp,
   Copy,
   Maximize2,
   Minimize2,
@@ -10,6 +12,7 @@ import {
   RefreshCw,
   Rewind,
   RotateCcw,
+  Search,
   SkipBack,
   SkipForward,
   Trash2,

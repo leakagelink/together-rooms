@@ -8,6 +8,7 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAds } from "@/hooks/useAds";
 import { track } from "@/lib/analytics";
 import { errorMessage } from "@/lib/errors";
 import { queryKeys } from "@/lib/query-keys";
@@ -32,6 +33,7 @@ function JoinRoomPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const join = useServerFn(joinRoomByCode);
+  const { requestFullscreen } = useAds();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -55,6 +57,8 @@ function JoinRoomPage() {
       if (!result.already_member) void track("room_joined");
       toast.success(result.already_member ? "Opening room." : "You joined the room.");
       navigate({ to: "/rooms/$roomId", params: { roomId: result.room_id } });
+      // Transition ad: shown after the room screen is already open.
+      if (!result.already_member) void requestFullscreen("room_joined_transition");
     } catch (err) {
       setError(errorMessage(err));
     } finally {

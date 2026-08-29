@@ -183,9 +183,8 @@ describe("phase 14.1 android build blockers", () => {
     // older or newer SDK would be a hard compile failure.
     const forbidden = [
       "com.google.android.gms.ads.MobileAdsInitProvider",
-      "com.google.android.gms.ads.reward",
+      "com.google.android.gms.ads.reward.",
       "com.google.android.gms.ads.appopen",
-      "com.google.android.gms.ads.rewarded",
       "com.google.android.gms.ads.doubleclick",
       "com.google.android.gms.ads.formats",
       "com.google.android.gms.ads.search",
@@ -237,14 +236,19 @@ describe("phase 14.1 android build blockers", () => {
     expect(appGradle).not.toMatch(/keyPassword\s+["']/);
   });
 
-  it("ANDROID-BUILD-T13: no rewarded ad path exists natively while rewarded is disabled", () => {
-    expect(REWARDED_ADS_ENABLED).toBe(false);
-    for (const { file, source } of adsSources()) {
-      expect(source, file).not.toContain("RewardedAd");
+  it("ANDROID-BUILD-T13: the native rewarded path exists only as an opt-in surface", () => {
+    expect(REWARDED_ADS_ENABLED).toBe(true);
+    const sources = adsSources();
+    const controller = sources.find((entry) => entry.file.endsWith("RewardedAdController.java"));
+    expect(controller).toBeDefined();
+    // Rewarded is a plain rewarded ad: never a rewarded interstitial, which
+    // can show without an explicit opt-in.
+    for (const { file, source } of sources) {
       expect(source, file).not.toContain("RewardedInterstitialAd");
-      expect(source, file).not.toContain("OnUserEarnedRewardListener");
+      expect(source, file).not.toContain("AppOpenAd");
     }
-    expect(appGradle).not.toContain("rewarded");
+    // The reward is only ever granted from the SDK's own reward callback.
+    expect(controller!.source).toContain("ad.show(activity, rewardItem ->");
   });
 
   it("ANDROID-BUILD-T14: no app-open ad implementation exists anywhere", () => {

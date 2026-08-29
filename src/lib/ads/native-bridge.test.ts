@@ -277,7 +277,12 @@ describe("phase 14 native admob bridge", () => {
     pending.forEach((p) => p.resolve());
     await first;
     // Dismissal is a pure ad event: the sdk contract exposes no navigation.
-    expect(Object.keys(sdk).sort()).toEqual(["hideBanner", "showBanner", "showFullscreen"]);
+    expect(Object.keys(sdk).sort()).toEqual([
+      "hideBanner",
+      "showBanner",
+      "showFullscreen",
+      "showRewarded",
+    ]);
   });
 
   it("PHASE14-T10: banner lifecycle cleans up when the placement becomes ineligible", () => {
@@ -368,8 +373,8 @@ describe("phase 14 native admob bridge", () => {
     expect(toUmpState({ status: "obtained", canRequestAds: "yes" }).canRequestAds).toBe(false);
   });
 
-  it("PHASE14-T14: rewarded remains impossible to request while disabled", async () => {
-    expect(REWARDED_ADS_ENABLED).toBe(false);
+  it("PHASE14-T14: rewarded only runs on the approved opt-in placements", async () => {
+    expect(REWARDED_ADS_ENABLED).toBe(true);
     const bridge = fakeBridge();
     const provider = warmProvider(createNativeAdSdk(bridge));
     for (const placement of ["rooms_list_footer", "room_session_ended", "reward_unlock"]) {
@@ -377,8 +382,7 @@ describe("phase 14 native admob bridge", () => {
         false,
       );
     }
+    // No unapproved placement ever reached the native layer.
     expect(bridge.calls).toEqual([]);
-    // There is no native rewarded entry point on the bridge at all.
-    expect("showRewarded" in bridge).toBe(false);
   });
 });

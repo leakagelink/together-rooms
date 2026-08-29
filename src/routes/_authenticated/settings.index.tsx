@@ -105,6 +105,9 @@ function SettingsPage() {
 
       <PlanSummary />
 
+      <LegalLinks />
+
+
       <div className="mt-8 max-w-xl">
         {settingsQuery.isPending ? (
           <LoadingState label="Loading settings" rows={3} />

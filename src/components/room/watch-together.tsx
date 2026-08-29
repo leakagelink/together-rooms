@@ -171,6 +171,12 @@ export interface WatchTogetherProps {
   onNextTrack?: () => void;
   /** Disables the mini-player controls while a queue mutation is in flight. */
   trackNavBusy?: boolean;
+  /**
+   * Fires whenever the search/filter panel opens or closes. The room shell uses
+   * it to lift the Chat/People/Share tabs right under the video once search
+   * collapses.
+   */
+  onSearchVisibilityChange?: (open: boolean) => void;
 }
 
 export function WatchTogether({

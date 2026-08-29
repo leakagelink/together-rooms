@@ -52,7 +52,8 @@ export type AnalyticsEventName =
   | "entitlement_changed"
   | "ad_requested"
   | "ad_blocked"
-  | "ad_shown";
+  | "ad_shown"
+  | "rewarded_ad_completed";
 
 export type AnalyticsProperties = Record<string, string | number | boolean | null>;
 

@@ -211,11 +211,11 @@ function PrivacySettingsPage() {
               </div>
               <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
                 <div>
-                  <Label htmlFor="ads">Show ads in the free plan</Label>
+                  <Label htmlFor="ads">Show ads</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Turning this off keeps SyncTogether ad-free for you. Premium removes ads
-                    regardless of this setting.
+                    Turning this off keeps SyncTogether ad-free for you.
                   </p>
+
                 </div>
                 <Switch
                   id="ads"

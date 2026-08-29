@@ -159,8 +159,9 @@ function ProfilePage() {
                 {saving ? "Saving…" : "Save profile"}
               </Button>
               <span className="text-xs text-muted-foreground">
-                Plan: {profileQuery.data?.subscription_tier ?? "free"}
+                SyncTogether is free for everyone.
               </span>
+
             </div>
           </form>
         )}

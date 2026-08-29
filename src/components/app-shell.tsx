@@ -189,6 +189,10 @@ export function SiteFooter() {
           <Link to="/guidelines" className="hover:text-foreground">
             Community Guidelines
           </Link>
+          <Link to="/child-safety" className="hover:text-foreground">
+            Child Safety
+          </Link>
+
           <Link to="/delete-account" className="hover:text-foreground">
             Delete Account
           </Link>

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as ChildSafetyRouteImport } from './routes/child-safety'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as GuidelinesRouteImport } from './routes/guidelines'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -43,6 +44,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChildSafetyRoute = ChildSafetyRouteImport.update({
+  id: '/child-safety',
+  path: '/child-safety',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeleteAccountRoute = DeleteAccountRouteImport.update({
@@ -173,6 +179,7 @@ const ApiPublicPushDispatchRoute = ApiPublicPushDispatchRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/child-safety': typeof ChildSafetyRoute
   '/delete-account': typeof DeleteAccountRoute
   '/guidelines': typeof GuidelinesRoute
   '/privacy': typeof PrivacyRoute
@@ -200,6 +207,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/child-safety': typeof ChildSafetyRoute
   '/delete-account': typeof DeleteAccountRoute
   '/guidelines': typeof GuidelinesRoute
   '/privacy': typeof PrivacyRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/child-safety': typeof ChildSafetyRoute
   '/delete-account': typeof DeleteAccountRoute
   '/guidelines': typeof GuidelinesRoute
   '/privacy': typeof PrivacyRoute
@@ -258,6 +267,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/child-safety'
     | '/delete-account'
     | '/guidelines'
     | '/privacy'
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/child-safety'
     | '/delete-account'
     | '/guidelines'
     | '/privacy'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/child-safety'
     | '/delete-account'
     | '/guidelines'
     | '/privacy'
@@ -342,6 +354,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  ChildSafetyRoute: typeof ChildSafetyRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
   GuidelinesRoute: typeof GuidelinesRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -370,6 +383,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/child-safety': {
+      id: '/child-safety'
+      path: '/child-safety'
+      fullPath: '/child-safety'
+      preLoaderRoute: typeof ChildSafetyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/delete-account': {
@@ -581,6 +601,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  ChildSafetyRoute: ChildSafetyRoute,
   DeleteAccountRoute: DeleteAccountRoute,
   GuidelinesRoute: GuidelinesRoute,
   PrivacyRoute: PrivacyRoute,

@@ -968,11 +968,39 @@ export function WatchTogether({
 
       {canControl && roomActive ? (
         <div className="mt-4 space-y-4">
-          <MediaSearchPanel
-            onPick={onPickMedia}
-            disabled={busy}
-            actionLabel={audioMode ? "Play now" : "Play in room"}
-          />
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium">
+              {state?.provider_media_id ? "Add another video" : "Pick a video to play"}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setSearchOpen((v) => !v)}
+              aria-expanded={searchOpen}
+              aria-controls="watch-search-panel"
+            >
+              {searchOpen ? (
+                <>
+                  <ChevronUp className="size-4" aria-hidden="true" /> Hide search
+                </>
+              ) : (
+                <>
+                  <Search className="size-4" aria-hidden="true" /> Search / Add video
+                </>
+              )}
+            </Button>
+          </div>
+
+          {searchOpen ? (
+            <div id="watch-search-panel">
+              <MediaSearchPanel
+                onPick={onPickMedia}
+                disabled={busy}
+                actionLabel={audioMode ? "Play now" : "Play in room"}
+              />
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Button

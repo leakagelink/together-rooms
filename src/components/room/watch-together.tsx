@@ -642,6 +642,18 @@ export function WatchTogether({
     }
   }, [state?.provider_media_id]);
 
+  // Playback actually starting collapses the panel too, so a manually opened
+  // search never covers the video once it is running. The user can reopen it
+  // with the toggle at any time.
+  const lastStatusRef = useRef(state?.playback_status ?? null);
+  useEffect(() => {
+    const status = state?.playback_status ?? null;
+    const previous = lastStatusRef.current;
+    lastStatusRef.current = status;
+    if (status === "playing" && previous !== "playing") setSearchOverride(null);
+  }, [state?.playback_status]);
+
+
   /** Manual resync: refresh authoritative state + clock, then reconcile locally. */
   const onResync = useCallback(() => {
     playback.resync("manual_resync");

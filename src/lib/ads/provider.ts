@@ -114,7 +114,9 @@ export class AdProvider {
     if (!decision.eligible) {
       return { ...decision, unitId: null, testMode: this.options.testMode };
     }
-    if (request.format !== "banner") {
+    // Rewarded ads are user-initiated and exempt from pacing caps: the user
+    // explicitly asked for the ad and the reward is described up front.
+    if (request.format !== "banner" && request.format !== "rewarded") {
       const verdict = checkFrequency(
         request.format,
         this.frequency,
@@ -159,9 +161,7 @@ export class AdProvider {
     }
     if (request.format === "rewarded") {
       if (!sdk.showRewarded) return false;
-      const earned = await sdk.showRewarded(outcome.unitId, outcome.nonPersonalized);
-      this.frequency = recordFullscreenShown(request.format, this.frequency, this.now());
-      return earned;
+      return await sdk.showRewarded(outcome.unitId, outcome.nonPersonalized);
     }
     if (!sdk.showFullscreen) return false;
     await sdk.showFullscreen(outcome.unitId, outcome.nonPersonalized);

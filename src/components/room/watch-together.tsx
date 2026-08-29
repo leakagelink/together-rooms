@@ -660,6 +660,16 @@ export function WatchTogether({
     if (status === "playing" && previous !== "playing") setSearchOverride(null);
   }, [state?.playback_status]);
 
+  // Tell the room shell whether the search surface is taking vertical space, so
+  // it can pull the Chat/People/Share tabs up right under the video.
+  const searchVisible = searchOpen && canControl && roomActive;
+  const searchVisibilityRef = useRef(onSearchVisibilityChange);
+  searchVisibilityRef.current = onSearchVisibilityChange;
+  useEffect(() => {
+    searchVisibilityRef.current?.(searchVisible);
+  }, [searchVisible]);
+
+
 
   /** Manual resync: refresh authoritative state + clock, then reconcile locally. */
   const onResync = useCallback(() => {

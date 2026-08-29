@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { RewardedGate } from "@/components/ads/rewarded-gate";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useAdAccess } from "@/hooks/useAdAccess";
+import { useAds } from "@/hooks/useAds";
 import { supabase } from "@/integrations/supabase/client";
 import { track } from "@/lib/analytics";
 import { errorMessage } from "@/lib/errors";
@@ -55,6 +58,8 @@ function NewRoomPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = Route.useRouteContext();
+  const { state: adAccess, refresh: refreshAdAccess } = useAdAccess();
+  const { requestFullscreen } = useAds();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<(typeof roomTypes)[number]>("friends");
@@ -101,13 +106,26 @@ function NewRoomPage() {
         })
         .select("id")
         .single();
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Quota is enforced in Postgres, so this is the authoritative answer.
+        if (insertError.message.includes("room_quota_exhausted")) {
+          refreshAdAccess();
+          setError(
+            "You have already created a room in the last 24 hours. Watch a short ad below to create another one.",
+          );
+          return;
+        }
+        throw insertError;
+      }
       // The new room must be present in the rooms list the moment the user
       // navigates back, even if the cached list was restored from storage.
       await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.mine() });
       void track("room_created", { type: parsed.data.type, ephemeral: parsed.data.is_ephemeral });
+      refreshAdAccess();
       toast.success("Room created.");
+      // The ad is a transition, never a wait: navigation happens first.
       navigate({ to: "/rooms/$roomId", params: { roomId: room.id } });
+      void requestFullscreen("room_created_transition");
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -119,8 +137,17 @@ function NewRoomPage() {
     <AppShell>
       <h1 className="text-2xl font-semibold">Create a room</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Rooms are private by default. Synchronized playback and voice are not available yet.
+        Rooms are private by default. Everything in SyncTogether is free.
       </p>
+
+      {!adAccess.unlocked ? (
+        <div className="mt-6 max-w-xl space-y-4">
+          {adAccess.can_create_room ? null : (
+            <RewardedGate purpose="extra_room" onRewarded={refreshAdAccess} />
+          )}
+          <RewardedGate purpose="unlock" onRewarded={refreshAdAccess} />
+        </div>
+      ) : null}
 
       <form onSubmit={onSubmit} className="surface-panel mt-8 max-w-xl space-y-5 p-6" noValidate>
         <div className="space-y-2">

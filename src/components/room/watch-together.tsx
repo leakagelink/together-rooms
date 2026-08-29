@@ -628,6 +628,18 @@ export function WatchTogether({
     return () => setPlaybackTrackingRestricted(false);
   }, [policy?.tracking_restricted]);
 
+  // Auto-show search when no video is loaded, auto-hide when a video starts.
+  // The host can still toggle it manually; this only reacts to media changes.
+  useEffect(() => {
+    const hasMedia = Boolean(state?.provider_media_id);
+    if (hasMedia && !hadMediaRef.current) {
+      setSearchOpen(false);
+    } else if (!hasMedia && hadMediaRef.current) {
+      setSearchOpen(true);
+    }
+    hadMediaRef.current = hasMedia;
+  }, [state?.provider_media_id]);
+
   /** Manual resync: refresh authoritative state + clock, then reconcile locally. */
   const onResync = useCallback(() => {
     playback.resync("manual_resync");

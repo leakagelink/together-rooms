@@ -40,6 +40,7 @@ import {
 } from "@/lib/rooms.functions";
 import { rpcMessage } from "@/lib/rpc-types";
 import { RoomChat } from "@/components/room/room-chat";
+import { RoomPresenceRail } from "@/components/room/room-presence-rail";
 import { WatchTogether } from "@/components/room/watch-together";
 import { MusicRoom } from "@/components/room/music-room";
 import { StudyRoom } from "@/components/room/study-room";

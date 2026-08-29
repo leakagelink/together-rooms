@@ -200,16 +200,16 @@ export function RoomChat({
         )}
       </div>
 
-      <div className="border-t border-border p-4">
+      <div className="border-t border-border/60 bg-background/40 p-3 sm:p-4">
         {replyTo ? (
-          <p className="mb-2 flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-xs">
+          <p className="mb-2 flex items-center justify-between gap-2 rounded-2xl border border-border/60 bg-muted/60 py-1.5 pl-3 pr-1 text-xs">
             <span className="truncate">
               Replying to {nameFor(replyTo.sender_id)}: {replyTo.content}
             </span>
             <Button
               variant="ghost"
               size="icon"
-              className="size-8"
+              className="size-8 shrink-0 rounded-full"
               aria-label="Cancel reply"
               onClick={() => setReplyTo(null)}
             >
@@ -219,41 +219,44 @@ export function RoomChat({
         ) : null}
 
         {canInteract ? (
-          <div className="flex items-end gap-2">
-            <Textarea
-              ref={inputRef}
-              aria-label="Message"
-              placeholder="Type a message…"
-              value={draft}
-              maxLength={MAX_MESSAGE_LENGTH}
-              rows={1}
-              className="min-h-11 resize-none rounded-2xl bg-muted/50 px-4 py-3"
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  submit();
-                }
-              }}
-            />
-            <Button
-              onClick={submit}
-              disabled={sendMutation.isPending}
-              aria-label="Send message"
-              className="size-11 shrink-0 rounded-full p-0 shadow-md"
-            >
-              <Send className="size-4" aria-hidden="true" />
-            </Button>
-          </div>
+          <>
+            {/* One pill holds the field and the send affordance so the composer
+                reads as a single target on small screens. */}
+            <div className="flex items-end gap-2 rounded-[1.75rem] border border-border/70 bg-muted/40 p-1.5 focus-within:border-primary/60">
+              <Textarea
+                ref={inputRef}
+                aria-label="Message"
+                placeholder="Type a message…"
+                value={draft}
+                maxLength={MAX_MESSAGE_LENGTH}
+                rows={1}
+                className="max-h-32 min-h-10 resize-none border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 dark:bg-transparent"
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    submit();
+                  }
+                }}
+              />
+              <Button
+                onClick={submit}
+                disabled={sendMutation.isPending || draft.trim().length === 0}
+                aria-label="Send message"
+                className="size-10 shrink-0 rounded-full p-0 shadow-lg shadow-primary/25"
+              >
+                <Send className="size-4" aria-hidden="true" />
+              </Button>
+            </div>
+            <p className="mt-1.5 px-2 text-[11px] text-muted-foreground">
+              {draft.length}/{MAX_MESSAGE_LENGTH} · Enter sends, Shift+Enter adds a line.
+            </p>
+          </>
         ) : (
-          <p role="status" className="text-sm text-muted-foreground">
+          <p role="status" className="px-1 text-sm text-muted-foreground">
             {disabledReason ?? "You can't post in this room."}
           </p>
         )}
-        <p className="mt-2 text-xs text-muted-foreground">
-          {draft.length}/{MAX_MESSAGE_LENGTH} · Enter sends, Shift+Enter adds a line.
-        </p>
-
       </div>
     </section>
   );

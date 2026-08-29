@@ -446,9 +446,11 @@ function RoomPage() {
           single endless scroll. */}
       <nav
         aria-label="Room sections"
-        className="sticky top-14 z-20 -mx-3 mt-4 overflow-x-auto border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl sm:mx-0"
+        className="sticky top-14 z-20 -mx-3 mt-4 border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl sm:mx-0"
       >
-        <div className="flex min-w-max gap-1">
+        {/* Equal-width columns instead of a scrolling row: four fixed targets
+            fit every phone width without horizontal scrolling. */}
+        <div className="grid grid-cols-4">
           {tabs.map((item) => {
             const Icon = item.icon;
             const active = tab === item.id;
@@ -458,15 +460,15 @@ function RoomPage() {
                 type="button"
                 onClick={() => setTab(item.id)}
                 aria-current={active ? "page" : undefined}
-                className={`relative inline-flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                className={`relative flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-2.5 text-xs font-semibold transition-colors sm:flex-row sm:gap-2 sm:py-3 sm:text-sm ${
                   active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Icon className="size-4" aria-hidden="true" />
-                {item.label}
+                <Icon className="size-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">{item.label}</span>
                 <span
                   aria-hidden="true"
-                  className={`absolute inset-x-2 bottom-0 h-0.5 rounded-full transition-opacity ${
+                  className={`absolute inset-x-3 bottom-0 h-0.5 rounded-full transition-opacity ${
                     active ? "bg-primary opacity-100" : "opacity-0"
                   }`}
                 />

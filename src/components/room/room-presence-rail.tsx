@@ -40,7 +40,7 @@ export function RoomPresenceRail({ members, presence, onOpenPeople, max = 5 }: P
       type="button"
       onClick={onOpenPeople}
       aria-label={`${members.length} members in this room. Open the People section.`}
-      className="mt-3 flex w-full items-center gap-2 overflow-x-auto rounded-2xl border border-border/60 bg-card/50 px-3 py-2 text-left transition-colors hover:bg-card"
+      className="mt-3 flex w-full items-center gap-2.5 overflow-x-auto px-0.5 py-1 text-left [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {shown.map((member) => {
         const status: PresenceStatus = presence[member.user_id] ?? "offline";
@@ -50,23 +50,23 @@ export function RoomPresenceRail({ members, presence, onOpenPeople, max = 5 }: P
               <img
                 src={member.avatar_url}
                 alt=""
-                className="size-10 rounded-full border border-border/70 object-cover"
+                className="size-11 rounded-full object-cover ring-2 ring-primary/45 ring-offset-2 ring-offset-card"
                 loading="lazy"
               />
             ) : (
-              <span className="grid size-10 place-items-center rounded-full border border-border/70 bg-muted text-xs font-bold text-muted-foreground">
+              <span className="grid size-11 place-items-center rounded-full bg-primary/12 text-sm font-black text-primary ring-2 ring-primary/45 ring-offset-2 ring-offset-card">
                 {initials(member.display_name)}
               </span>
             )}
             <span
               aria-hidden="true"
-              className={`absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-background ${DOT[status]}`}
+              className={`absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-card ${DOT[status]}`}
             />
           </span>
         );
       })}
       {overflow > 0 ? (
-        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
+        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-xs font-black text-muted-foreground">
           +{overflow}
         </span>
       ) : null}

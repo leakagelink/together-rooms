@@ -311,8 +311,9 @@ function RoomPage() {
         ? "Listen"
         : "Watch";
 
+  // The stage (Watch/Listen/Study) is pinned above, so the switcher only
+  // carries the secondary surfaces.
   const tabs: { id: RoomTab; label: string; icon: typeof Users }[] = [
-    { id: "stage", label: stageLabel, icon: MonitorPlay },
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "people", label: "People", icon: Users },
     { id: "share", label: "Share", icon: Share2 },

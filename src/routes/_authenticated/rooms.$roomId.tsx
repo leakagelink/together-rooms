@@ -8,7 +8,6 @@ import {
   LogIn,
   LogOut,
   MessageSquare,
-  MonitorPlay,
   MoreVertical,
   PowerOff,
   Share2,
@@ -99,7 +98,10 @@ function RoomPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   // The stage (watch/listen/study) is always the landing surface of a room.
-  const [tab, setTab] = useState<RoomTab>(initialTab ?? "stage");
+  // The media stage is now pinned above the tabs, so "stage" resolves to chat.
+  const [tab, setTab] = useState<RoomTab>(
+    initialTab && initialTab !== "stage" ? initialTab : "chat",
+  );
 
   // Android/browser lifecycle: on foreground or reconnect every authoritative
   // query is refetched instead of trusting the suspended snapshot.
@@ -107,7 +109,7 @@ function RoomPage() {
 
   // Deep links (notification taps) can change the requested tab while mounted.
   useEffect(() => {
-    if (initialTab) setTab(initialTab);
+    if (initialTab && initialTab !== "stage") setTab(initialTab);
   }, [initialTab]);
 
   const fetchMembers = useServerFn(listRoomMembers);
@@ -308,8 +310,9 @@ function RoomPage() {
         ? "Listen"
         : "Watch";
 
+  // The stage (Watch/Listen/Study) is pinned above, so the switcher only
+  // carries the secondary surfaces.
   const tabs: { id: RoomTab; label: string; icon: typeof Users }[] = [
-    { id: "stage", label: stageLabel, icon: MonitorPlay },
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "people", label: "People", icon: Users },
     { id: "share", label: "Share", icon: Share2 },
@@ -435,22 +438,52 @@ function RoomPage() {
           </p>
         ) : null}
 
-        <RoomPresenceRail
-          members={membersQuery.data ?? []}
-          presence={presence}
-          onOpenPeople={() => setTab("people")}
-        />
       </header>
 
-      {/* Sticky section switcher — one focused surface at a time instead of a
-          single endless scroll. */}
+      {/* Stage first: the player is the reason people are here, so it sits
+          directly under the header on every screen size. */}
+      <section className="mt-3" aria-label={`${stageLabel} together`}>
+        {room.type === "study" || room.type === "research" ? (
+          <StudyRoom
+            roomId={room.id}
+            userId={user?.id}
+            canControl={isHost || myMembership?.can_control_playback === true}
+            roomActive={lifecycle === "ok"}
+            onDiscussInRoom={() => setTab("chat")}
+          />
+        ) : room.type === "music" ? (
+          <MusicRoom
+            roomId={room.id}
+            roomCode={room.join_code}
+            userId={user?.id}
+            canManage={isHost || myMembership?.can_control_playback === true}
+            roomActive={lifecycle === "ok"}
+          />
+        ) : (
+          <WatchTogether
+            roomId={room.id}
+            roomCode={room.join_code}
+            userId={user?.id}
+            canControl={isHost || myMembership?.can_control_playback === true}
+            roomActive={lifecycle === "ok"}
+          />
+        )}
+
+      </section>
+
+      {/* Who is here — oval avatars right under the stage, like the mock. */}
+      <RoomPresenceRail
+        members={membersQuery.data ?? []}
+        presence={presence}
+        onOpenPeople={() => setTab("people")}
+      />
+
+      {/* Sticky section switcher — one focused surface at a time. */}
       <nav
         aria-label="Room sections"
-        className="sticky top-14 z-20 -mx-3 mt-4 border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl sm:mx-0"
+        className="sticky top-14 z-20 -mx-3 mt-3 border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl sm:mx-0"
       >
-        {/* Equal-width columns instead of a scrolling row: four fixed targets
-            fit every phone width without horizontal scrolling. */}
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-3">
           {tabs.map((item) => {
             const Icon = item.icon;
             const active = tab === item.id;
@@ -478,46 +511,8 @@ function RoomPage() {
         </div>
       </nav>
 
-
-      {/* Every panel stays mounted so realtime subscriptions, playback and call
-          state survive tab switches; only visibility changes. */}
-      <div className={tab === "stage" ? "pb-8" : "hidden"}>
-        {room.type === "study" || room.type === "research" ? (
-          <StudyRoom
-            roomId={room.id}
-            userId={user?.id}
-            canControl={isHost || myMembership?.can_control_playback === true}
-            roomActive={lifecycle === "ok"}
-            onDiscussInRoom={() => setTab("chat")}
-          />
-        ) : room.type === "music" ? (
-          <MusicRoom
-            roomId={room.id}
-            roomCode={room.join_code}
-            userId={user?.id}
-            canManage={isHost || myMembership?.can_control_playback === true}
-            roomActive={lifecycle === "ok"}
-          />
-        ) : (
-          <WatchTogether
-            roomId={room.id}
-            roomCode={room.join_code}
-            userId={user?.id}
-            canControl={isHost || myMembership?.can_control_playback === true}
-            roomActive={lifecycle === "ok"}
-          />
-        )}
-
-        {room.privacy === "private" || room.privacy === "invite_only" ? (
-          <LocalMediaRoom
-            roomId={room.id}
-            userId={user?.id}
-            canShare={isHost || myMembership?.can_control_playback === true}
-            roomActive={lifecycle === "ok"}
-          />
-        ) : null}
-      </div>
-
+      {/* Every panel stays mounted so realtime subscriptions and playback
+          survive tab switches; only visibility changes. */}
       <div className={tab === "chat" ? "pb-8" : "hidden"}>
         <RoomChat
           roomId={room.id}
@@ -592,6 +587,17 @@ function RoomPage() {
         ) : null}
 
         {isHost ? <RoomInvitePanel roomId={room.id} /> : null}
+
+        {/* Device sharing lives with the other sharing tools now that the
+            stage is reserved for the synchronized player. */}
+        {room.privacy === "private" || room.privacy === "invite_only" ? (
+          <LocalMediaRoom
+            roomId={room.id}
+            userId={user?.id}
+            canShare={isHost || myMembership?.can_control_playback === true}
+            roomActive={lifecycle === "ok"}
+          />
+        ) : null}
 
         {!isHost && !room.description ? (
           <p className="mt-6 text-sm text-muted-foreground">

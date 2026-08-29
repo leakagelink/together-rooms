@@ -2389,6 +2389,7 @@ export type Database = {
       entitlement_precheck: { Args: { _feature: string }; Returns: Json }
       entitlement_snapshot: { Args: { _user_id: string }; Returns: Json }
       expire_account_suspensions: { Args: never; Returns: number }
+      expire_due_rooms: { Args: never; Returns: number }
       export_user_data: { Args: never; Returns: Json }
       fetch_local_media_signals: {
         Args: { _session_id: string; _token: string }

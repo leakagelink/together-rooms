@@ -496,6 +496,7 @@ function RoomPage() {
             userId={user?.id}
             canControl={isHost || myMembership?.can_control_playback === true}
             roomActive={lifecycle === "ok"}
+            onSearchVisibilityChange={onStageSearchVisibilityChange}
           />
         )}
 
@@ -508,10 +509,14 @@ function RoomPage() {
         onOpenPeople={() => setTab("people")}
       />
 
-      {/* Sticky section switcher — one focused surface at a time. */}
+      {/* Sticky section switcher — one focused surface at a time. With search
+          collapsed it hugs the video so chat is reachable without scrolling. */}
       <nav
+        ref={tabsNavRef}
         aria-label="Room sections"
-        className="sticky top-14 z-20 -mx-3 mt-3 border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl sm:mx-0"
+        className={`sticky top-14 z-20 -mx-3 border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl transition-all duration-300 sm:mx-0 ${
+          stageSearchOpen ? "mt-3" : "mt-1"
+        }`}
       >
         <div className="grid grid-cols-3">
           {tabs.map((item) => {

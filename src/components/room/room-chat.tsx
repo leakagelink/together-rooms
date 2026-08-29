@@ -131,12 +131,18 @@ export function RoomChat({
   const ordered = [...chat.messages].reverse();
 
   return (
-    <section className="surface-panel mt-8 flex flex-col p-0" aria-labelledby="chat-heading">
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-4">
-        <h2 id="chat-heading" className="text-lg font-semibold">
+    <section
+      className="surface-panel mt-4 flex flex-col overflow-hidden bg-card/70 p-0 backdrop-blur-xl"
+      aria-labelledby="chat-heading"
+    >
+      <header className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2.5">
+        <h2 id="chat-heading" className="text-sm font-black tracking-tight">
           Chat
         </h2>
-        <p className="flex items-center gap-1 text-xs text-muted-foreground" role="status">
+        <p
+          className="flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
+          role="status"
+        >
           <Radio className={chat.connected ? "size-3 text-primary" : "size-3"} aria-hidden="true" />
           {!chat.authorized
             ? "Live updates unavailable"
@@ -146,7 +152,7 @@ export function RoomChat({
         </p>
       </header>
 
-      <div className="flex max-h-[60dvh] min-h-64 flex-col-reverse overflow-y-auto p-4">
+      <div className="flex max-h-[58dvh] min-h-64 flex-col-reverse overflow-y-auto px-3 py-4 sm:px-4">
         {chat.isPending ? (
           <LoadingState label="Loading messages" rows={3} />
         ) : chat.isError ? (

@@ -110,7 +110,7 @@ function RoomPage() {
 
   // Deep links (notification taps) can change the requested tab while mounted.
   useEffect(() => {
-    if (initialTab) setTab(initialTab);
+    if (initialTab && initialTab !== "stage") setTab(initialTab);
   }, [initialTab]);
 
   const fetchMembers = useServerFn(listRoomMembers);

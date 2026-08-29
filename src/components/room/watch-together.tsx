@@ -214,10 +214,13 @@ export function WatchTogether({
   const stateRef = useRef<PlaybackState | null>(null);
   stateRef.current = state;
 
-  // Search panel: open by default when nothing is loaded, auto-collapse once
-  // a video starts playing, and the host can reopen it at any time.
-  const [searchOpen, setSearchOpen] = useState(!state?.provider_media_id);
-  const hadMediaRef = useRef(Boolean(state?.provider_media_id));
+  // Search panel: derived from playback so it is hidden whenever a video is
+  // loaded, regardless of mount order. A manual toggle overrides the default
+  // until the media changes again.
+  const hasMedia = Boolean(state?.provider_media_id);
+  const [searchOverride, setSearchOverride] = useState<boolean | null>(null);
+  const searchOpen = searchOverride ?? !hasMedia;
+  const lastMediaRef = useRef<string | null>(state?.provider_media_id ?? null);
 
   const endedRef = useRef(onTrackEnded);
   endedRef.current = onTrackEnded;
@@ -629,16 +632,14 @@ export function WatchTogether({
     return () => setPlaybackTrackingRestricted(false);
   }, [policy?.tracking_restricted]);
 
-  // Auto-show search when no video is loaded, auto-hide when a video starts.
-  // The host can still toggle it manually; this only reacts to media changes.
+  // Drop any manual override whenever the loaded video changes, so the panel
+  // falls back to "hidden while playing / shown when empty".
   useEffect(() => {
-    const hasMedia = Boolean(state?.provider_media_id);
-    if (hasMedia && !hadMediaRef.current) {
-      setSearchOpen(false);
-    } else if (!hasMedia && hadMediaRef.current) {
-      setSearchOpen(true);
+    const current = state?.provider_media_id ?? null;
+    if (current !== lastMediaRef.current) {
+      lastMediaRef.current = current;
+      setSearchOverride(null);
     }
-    hadMediaRef.current = hasMedia;
   }, [state?.provider_media_id]);
 
   /** Manual resync: refresh authoritative state + clock, then reconcile locally. */
@@ -954,30 +955,17 @@ export function WatchTogether({
 
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
 
-      <details className="mt-3 rounded-md border border-border bg-muted/20 p-2">
-        <summary className="cursor-pointer text-xs text-muted-foreground">
-          YouTube playback limits
-        </summary>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
-          {YOUTUBE_COMPLIANCE_LIMITS.map((limit) => (
-            <li key={limit}>{limit}</li>
-          ))}
-        </ul>
-      </details>
-
-      {transport ? <div className="mt-4">{transport}</div> : null}
-
       {canControl && roomActive ? (
-        <div className="mt-4 space-y-4">
+        <div className="mt-3 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium">
-              {state?.provider_media_id ? "Add another video" : "Pick a video to play"}
+              {hasMedia ? "Add another video" : "Pick a video to play"}
             </p>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setSearchOpen((v) => !v)}
+              onClick={() => setSearchOverride(!searchOpen)}
               aria-expanded={searchOpen}
               aria-controls="watch-search-panel"
             >
@@ -1002,8 +990,26 @@ export function WatchTogether({
               />
             </div>
           ) : null}
+        </div>
+      ) : null}
 
+      <details className="mt-3 rounded-md border border-border bg-muted/20 p-2">
+        <summary className="cursor-pointer text-xs text-muted-foreground">
+          YouTube playback limits
+        </summary>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+          {YOUTUBE_COMPLIANCE_LIMITS.map((limit) => (
+            <li key={limit}>{limit}</li>
+          ))}
+        </ul>
+      </details>
+
+      {transport ? <div className="mt-4">{transport}</div> : null}
+
+      {canControl && roomActive ? (
+        <div className="mt-4 space-y-4">
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+
             <Button
               variant="outline"
               size="sm"

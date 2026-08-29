@@ -994,9 +994,10 @@ export function WatchTogether({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setSearchOverride(!searchOpen)}
+              onClick={toggleSearch}
               aria-expanded={searchOpen}
               aria-controls="watch-search-panel"
+              aria-label={searchOpen ? "Hide search" : "Search or add a video"}
             >
               {searchOpen ? (
                 <>

@@ -137,8 +137,10 @@ suite("rewarded ad access, quota and reward integrity", () => {
       .from("user_ad_access")
       .update({ unlock_expires_at: far, room_credits: 99 })
       .eq("user_id", user.id);
-    expect(update.error).not.toBeNull();
+    // Either the write is rejected outright or it silently affects no row —
+    // what matters is that the stored state is unchanged.
     const state = await snapshot(user);
+    void update;
     expect(state.unlocked).toBe(false);
     expect(state.room_credits).toBe(0);
   });

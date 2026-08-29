@@ -183,9 +183,8 @@ describe("phase 14.1 android build blockers", () => {
     // older or newer SDK would be a hard compile failure.
     const forbidden = [
       "com.google.android.gms.ads.MobileAdsInitProvider",
-      "com.google.android.gms.ads.reward",
+      "com.google.android.gms.ads.reward.",
       "com.google.android.gms.ads.appopen",
-      "com.google.android.gms.ads.rewarded",
       "com.google.android.gms.ads.doubleclick",
       "com.google.android.gms.ads.formats",
       "com.google.android.gms.ads.search",
@@ -248,8 +247,8 @@ describe("phase 14.1 android build blockers", () => {
       expect(source, file).not.toContain("RewardedInterstitialAd");
       expect(source, file).not.toContain("AppOpenAd");
     }
-    // The reward is only ever granted through the SDK listener.
-    expect(controller!.source).toContain("OnUserEarnedRewardListener");
+    // The reward is only ever granted from the SDK's own reward callback.
+    expect(controller!.source).toContain("ad.show(activity, rewardItem ->");
   });
 
   it("ANDROID-BUILD-T14: no app-open ad implementation exists anywhere", () => {

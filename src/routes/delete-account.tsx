@@ -75,10 +75,7 @@ function DeleteAccountPage() {
           anonymised form for up to 12 months to protect other users and meet legal obligations.
         </li>
         <li>
-          Purchase and billing records required for tax, accounting and refund handling are retained
-          for up to 7 years, as required by law. These are held by Google Play; we keep only the
-          purchase token reference.
-        </li>
+
         <li>Backups are rotated out within 30 days.</li>
       </ul>
 

@@ -214,10 +214,13 @@ export function WatchTogether({
   const stateRef = useRef<PlaybackState | null>(null);
   stateRef.current = state;
 
-  // Search panel: open by default when nothing is loaded, auto-collapse once
-  // a video starts playing, and the host can reopen it at any time.
-  const [searchOpen, setSearchOpen] = useState(!state?.provider_media_id);
-  const hadMediaRef = useRef(Boolean(state?.provider_media_id));
+  // Search panel: derived from playback so it is hidden whenever a video is
+  // loaded, regardless of mount order. A manual toggle overrides the default
+  // until the media changes again.
+  const hasMedia = Boolean(state?.provider_media_id);
+  const [searchOverride, setSearchOverride] = useState<boolean | null>(null);
+  const searchOpen = searchOverride ?? !hasMedia;
+  const lastMediaRef = useRef<string | null>(state?.provider_media_id ?? null);
 
   const endedRef = useRef(onTrackEnded);
   endedRef.current = onTrackEnded;

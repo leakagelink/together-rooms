@@ -4,12 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
 import {
   Copy,
+  Flag,
   LogIn,
   LogOut,
   MessageSquare,
   MonitorPlay,
+  MoreVertical,
   PowerOff,
-  Radio,
   Share2,
   Users,
 } from "lucide-react";
@@ -20,8 +21,13 @@ import { ReportDialog } from "@/components/report-dialog";
 import { RoomInvitePanel } from "@/components/room/room-invite-panel";
 import { RoomMembersPanel } from "@/components/room/room-members-panel";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { useAuth } from "@/hooks/useAuth";
 import { useAds } from "@/hooks/useAds";

@@ -8,7 +8,6 @@ import {
   LogIn,
   LogOut,
   MessageSquare,
-  MonitorPlay,
   MoreVertical,
   PowerOff,
   Share2,

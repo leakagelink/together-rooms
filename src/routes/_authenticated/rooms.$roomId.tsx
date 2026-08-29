@@ -470,16 +470,50 @@ function RoomPage() {
           />
         )}
 
-        {room.privacy === "private" || room.privacy === "invite_only" ? (
-          <LocalMediaRoom
-            roomId={room.id}
-            userId={user?.id}
-            canShare={isHost || myMembership?.can_control_playback === true}
-            roomActive={lifecycle === "ok"}
-          />
-        ) : null}
-      </div>
+      </section>
 
+      {/* Who is here — oval avatars right under the stage, like the mock. */}
+      <RoomPresenceRail
+        members={membersQuery.data ?? []}
+        presence={presence}
+        onOpenPeople={() => setTab("people")}
+      />
+
+      {/* Sticky section switcher — one focused surface at a time. */}
+      <nav
+        aria-label="Room sections"
+        className="sticky top-14 z-20 -mx-3 mt-3 border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl sm:mx-0"
+      >
+        <div className="grid grid-cols-3">
+          {tabs.map((item) => {
+            const Icon = item.icon;
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setTab(item.id)}
+                aria-current={active ? "page" : undefined}
+                className={`relative flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-2.5 text-xs font-semibold transition-colors sm:flex-row sm:gap-2 sm:py-3 sm:text-sm ${
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="size-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">{item.label}</span>
+                <span
+                  aria-hidden="true"
+                  className={`absolute inset-x-3 bottom-0 h-0.5 rounded-full transition-opacity ${
+                    active ? "bg-primary opacity-100" : "opacity-0"
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* Every panel stays mounted so realtime subscriptions and playback
+          survive tab switches; only visibility changes. */}
       <div className={tab === "chat" ? "pb-8" : "hidden"}>
         <RoomChat
           roomId={room.id}

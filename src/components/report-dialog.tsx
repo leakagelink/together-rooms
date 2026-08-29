@@ -76,6 +76,21 @@ const TARGET_NOUN: Record<ReportTargetType, string> = {
   local_media_session: "shared media",
 };
 
+/**
+ * The RPCs collapse "you're reporting your own content" and "malformed input"
+ * into invalid_request; the generic copy reads like a bug to the reporter, so
+ * spell out both possibilities here.
+ */
+function reasonMessage(reason: Parameters<typeof rpcMessage>[0]): string {
+  if (reason === "invalid_request") {
+    return "You can't report your own content. Pick a different item, or choose a reason and try again.";
+  }
+  if (reason === "not_found") {
+    return "This content is no longer available, so it can't be reported.";
+  }
+  return rpcMessage(reason);
+}
+
 export function ReportDialog({
   targetType,
   targetUserId,
@@ -117,7 +132,12 @@ export function ReportDialog({
             ...(parsed.data.details ? { details: parsed.data.details } : {}),
           },
         });
-        if (!result.ok) throw new Error(rpcMessage(result.reason));
+        if (!result.ok) throw new Error(reasonMessage(result.reason));
+        if (result.outcome === "already_reported") {
+          toast.info("You already reported this. Our team is on it.");
+          setOpen(false);
+          return;
+        }
       } else {
         // Every non-message surface goes through report_content, which
         // re-checks membership, self-reporting, duplicates and rate limits in
@@ -132,7 +152,7 @@ export function ReportDialog({
         } as never);
         if (rpcError) throw rpcError;
         const result = data as { ok?: boolean; reason?: string; outcome?: string } | null;
-        if (!result?.ok) throw new Error(rpcMessage((result?.reason ?? "unknown") as never));
+        if (!result?.ok) throw new Error(reasonMessage((result?.reason ?? "server_error") as never));
         if (result.outcome === "already_reported") {
           toast.info("You already reported this. Our team is on it.");
           setOpen(false);

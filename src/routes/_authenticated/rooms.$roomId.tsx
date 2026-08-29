@@ -343,7 +343,9 @@ function RoomPage() {
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap justify-end gap-2">
-            <ReportDialog targetType="room" targetRoomId={room.id} />
+            {/* Self-reporting is rejected server-side, so the host never sees
+                a Report action for their own room. */}
+            {!isHost ? <ReportDialog targetType="room" targetRoomId={room.id} /> : null}
             {isHost && lifecycle === "ok" ? (
               <Button
                 variant="outline"

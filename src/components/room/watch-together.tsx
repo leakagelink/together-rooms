@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  ChevronDown,
+  ChevronUp,
   Copy,
   Maximize2,
   Minimize2,
@@ -10,6 +12,7 @@ import {
   RefreshCw,
   Rewind,
   RotateCcw,
+  Search,
   SkipBack,
   SkipForward,
   Trash2,
@@ -210,6 +213,11 @@ export function WatchTogether({
   const state = playback.state;
   const stateRef = useRef<PlaybackState | null>(null);
   stateRef.current = state;
+
+  // Search panel: open by default when nothing is loaded, auto-collapse once
+  // a video starts playing, and the host can reopen it at any time.
+  const [searchOpen, setSearchOpen] = useState(!state?.provider_media_id);
+  const hadMediaRef = useRef(Boolean(state?.provider_media_id));
 
   const endedRef = useRef(onTrackEnded);
   endedRef.current = onTrackEnded;
@@ -621,6 +629,18 @@ export function WatchTogether({
     return () => setPlaybackTrackingRestricted(false);
   }, [policy?.tracking_restricted]);
 
+  // Auto-show search when no video is loaded, auto-hide when a video starts.
+  // The host can still toggle it manually; this only reacts to media changes.
+  useEffect(() => {
+    const hasMedia = Boolean(state?.provider_media_id);
+    if (hasMedia && !hadMediaRef.current) {
+      setSearchOpen(false);
+    } else if (!hasMedia && hadMediaRef.current) {
+      setSearchOpen(true);
+    }
+    hadMediaRef.current = hasMedia;
+  }, [state?.provider_media_id]);
+
   /** Manual resync: refresh authoritative state + clock, then reconcile locally. */
   const onResync = useCallback(() => {
     playback.resync("manual_resync");
@@ -949,11 +969,39 @@ export function WatchTogether({
 
       {canControl && roomActive ? (
         <div className="mt-4 space-y-4">
-          <MediaSearchPanel
-            onPick={onPickMedia}
-            disabled={busy}
-            actionLabel={audioMode ? "Play now" : "Play in room"}
-          />
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium">
+              {state?.provider_media_id ? "Add another video" : "Pick a video to play"}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setSearchOpen((v) => !v)}
+              aria-expanded={searchOpen}
+              aria-controls="watch-search-panel"
+            >
+              {searchOpen ? (
+                <>
+                  <ChevronUp className="size-4" aria-hidden="true" /> Hide search
+                </>
+              ) : (
+                <>
+                  <Search className="size-4" aria-hidden="true" /> Search / Add video
+                </>
+              )}
+            </Button>
+          </div>
+
+          {searchOpen ? (
+            <div id="watch-search-panel">
+              <MediaSearchPanel
+                onPick={onPickMedia}
+                disabled={busy}
+                actionLabel={audioMode ? "Play now" : "Play in room"}
+              />
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Button

@@ -140,14 +140,13 @@ function NewRoomPage() {
         Rooms are private by default. Everything in SyncTogether is free.
       </p>
 
-      {!adAccess.unlocked ? (
-        <div className="mt-6 max-w-xl space-y-4">
-          {adAccess.can_create_room ? null : (
-            <RewardedGate purpose="extra_room" onRewarded={refreshAdAccess} />
-          )}
+      <div className="mt-6 max-w-xl space-y-4">
+        {adAccess.unlocked ? (
+          <RewardedGate purpose="extra_room" onRewarded={refreshAdAccess} />
+        ) : (
           <RewardedGate purpose="unlock" onRewarded={refreshAdAccess} />
-        </div>
-      ) : null}
+        )}
+      </div>
 
       <form onSubmit={onSubmit} className="surface-panel mt-8 max-w-xl space-y-5 p-6" noValidate>
         <div className="space-y-2">

@@ -85,12 +85,12 @@ describe("PHASE 13.1 — AdMob production configuration", () => {
     expect(resolved.units?.appOpen).toBeNull();
   });
 
-  it("ADMOB-PROD-T4: the rewarded unit is configured but disabled by default", () => {
+  it("ADMOB-PROD-T4: the rewarded unit is configured and opt-in only", () => {
     expect(PRODUCTION_AD_UNITS.rewarded).toBe("ca-app-pub-1475323931624357/5045675599");
-    expect(REWARDED_ADS_ENABLED).toBe(false);
-    expect(DEFAULT_AD_FREQUENCY.rewarded_enabled).toBe(false);
-    // Remote config cannot switch it on while the build flag is false.
-    expect(mergeAdFrequency({ rewarded_enabled: true }).rewarded_enabled).toBe(false);
+    expect(REWARDED_ADS_ENABLED).toBe(true);
+    expect(DEFAULT_AD_FREQUENCY.rewarded_enabled).toBe(true);
+    // Remote config can still switch rewarded off entirely.
+    expect(mergeAdFrequency({ rewarded_enabled: false }).rewarded_enabled).toBe(false);
   });
 
   it("ADMOB-PROD-T5: a development build cannot silently use production inventory", () => {
@@ -233,7 +233,7 @@ describe("PHASE 13.1 — AdMob production configuration", () => {
     expect(allowed.unitId).toBe(PRODUCTION_AD_UNITS.banner);
   });
 
-  it("ADMOB-PROD-T13: rewarded ads cannot load unless explicitly enabled", async () => {
+  it("ADMOB-PROD-T13: rewarded ads only run on approved opt-in placements", async () => {
     const shown: string[] = [];
     const resolution = resolveAdUnits("production", resolveConfiguredAdUnits("production"));
     const provider = new AdProvider({
@@ -247,15 +247,20 @@ describe("PHASE 13.1 — AdMob production configuration", () => {
         },
       },
     });
+    // "room_session_ended" is not an approved rewarded opt-in surface.
     const outcome = provider.evaluate(
       { format: "rewarded", placement: "room_session_ended" },
       context(),
     );
-    expect(outcome.eligible).toBe(REWARDED_ADS_ENABLED);
-    expect(outcome.reason).toBe("NO_AD_REWARDED_DISABLED");
+    expect(outcome.eligible).toBe(false);
     await expect(
       provider.request({ format: "rewarded", placement: "room_session_ended" }, context()),
     ).resolves.toBe(false);
     expect(shown).toEqual([]);
+    // The approved opt-in surfaces are eligible.
+    expect(
+      provider.evaluate({ format: "rewarded", placement: "full_access_unlock" }, context())
+        .eligible,
+    ).toBe(true);
   });
 });

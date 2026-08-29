@@ -237,14 +237,19 @@ describe("phase 14.1 android build blockers", () => {
     expect(appGradle).not.toMatch(/keyPassword\s+["']/);
   });
 
-  it("ANDROID-BUILD-T13: no rewarded ad path exists natively while rewarded is disabled", () => {
-    expect(REWARDED_ADS_ENABLED).toBe(false);
-    for (const { file, source } of adsSources()) {
-      expect(source, file).not.toContain("RewardedAd");
+  it("ANDROID-BUILD-T13: the native rewarded path exists only as an opt-in surface", () => {
+    expect(REWARDED_ADS_ENABLED).toBe(true);
+    const sources = adsSources();
+    const controller = sources.find((entry) => entry.file.endsWith("RewardedAdController.java"));
+    expect(controller).toBeDefined();
+    // Rewarded is a plain rewarded ad: never a rewarded interstitial, which
+    // can show without an explicit opt-in.
+    for (const { file, source } of sources) {
       expect(source, file).not.toContain("RewardedInterstitialAd");
-      expect(source, file).not.toContain("OnUserEarnedRewardListener");
+      expect(source, file).not.toContain("AppOpenAd");
     }
-    expect(appGradle).not.toContain("rewarded");
+    // The reward is only ever granted through the SDK listener.
+    expect(controller!.source).toContain("OnUserEarnedRewardListener");
   });
 
   it("ANDROID-BUILD-T14: no app-open ad implementation exists anywhere", () => {

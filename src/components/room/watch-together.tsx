@@ -955,30 +955,17 @@ export function WatchTogether({
 
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
 
-      <details className="mt-3 rounded-md border border-border bg-muted/20 p-2">
-        <summary className="cursor-pointer text-xs text-muted-foreground">
-          YouTube playback limits
-        </summary>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
-          {YOUTUBE_COMPLIANCE_LIMITS.map((limit) => (
-            <li key={limit}>{limit}</li>
-          ))}
-        </ul>
-      </details>
-
-      {transport ? <div className="mt-4">{transport}</div> : null}
-
       {canControl && roomActive ? (
-        <div className="mt-4 space-y-4">
+        <div className="mt-3 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium">
-              {state?.provider_media_id ? "Add another video" : "Pick a video to play"}
+              {hasMedia ? "Add another video" : "Pick a video to play"}
             </p>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setSearchOpen((v) => !v)}
+              onClick={() => setSearchOverride(!searchOpen)}
               aria-expanded={searchOpen}
               aria-controls="watch-search-panel"
             >
@@ -1003,8 +990,26 @@ export function WatchTogether({
               />
             </div>
           ) : null}
+        </div>
+      ) : null}
 
+      <details className="mt-3 rounded-md border border-border bg-muted/20 p-2">
+        <summary className="cursor-pointer text-xs text-muted-foreground">
+          YouTube playback limits
+        </summary>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+          {YOUTUBE_COMPLIANCE_LIMITS.map((limit) => (
+            <li key={limit}>{limit}</li>
+          ))}
+        </ul>
+      </details>
+
+      {transport ? <div className="mt-4">{transport}</div> : null}
+
+      {canControl && roomActive ? (
+        <div className="mt-4 space-y-4">
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+
             <Button
               variant="outline"
               size="sm"

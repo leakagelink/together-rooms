@@ -112,6 +112,35 @@ function RoomPage() {
     if (initialTab && initialTab !== "stage") setTab(initialTab);
   }, [initialTab]);
 
+  // When the watch search/filter panel collapses, the secondary surfaces get
+  // pulled up right under the video: spacing tightens and, if the tabs were
+  // pushed below the fold by the open panel, they scroll back into view.
+  // These hooks live above every early return so hook order stays stable.
+  const [stageSearchOpen, setStageSearchOpen] = useState(false);
+  const tabsNavRef = useRef<HTMLElement | null>(null);
+  const previousSearchOpenRef = useRef(false);
+
+  const onStageSearchVisibilityChange = useCallback((open: boolean) => {
+    setStageSearchOpen(open);
+  }, []);
+
+  useEffect(() => {
+    const wasOpen = previousSearchOpenRef.current;
+    previousSearchOpenRef.current = stageSearchOpen;
+    if (!wasOpen || stageSearchOpen) return undefined;
+    const node = tabsNavRef.current;
+    if (!node) return undefined;
+    const id = window.requestAnimationFrame(() => {
+      const top = node.getBoundingClientRect().top;
+      // Only correct the scroll position when the switcher drifted off the
+      // visible area; otherwise leave the user's scroll untouched.
+      if (top < 0 || top > window.innerHeight * 0.8) {
+        node.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [stageSearchOpen]);
+
   const fetchMembers = useServerFn(listRoomMembers);
   const leave = useServerFn(leaveRoom);
   const rejoin = useServerFn(joinRoomByCode);

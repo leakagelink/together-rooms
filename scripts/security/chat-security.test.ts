@@ -46,6 +46,11 @@ suite("phase 3.1 chat security (database / RLS)", () => {
       email_confirm: true,
     });
     if (error) throw error;
+    // Test fixtures create several rooms per user: lift the rewarded-ad room quota.
+    await admin.from("user_ad_access").upsert({
+      user_id: data.user!.id,
+      unlock_expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+    });
     const client = createClient(url!, anonKey!, { auth: { persistSession: false } });
     const signIn = await client.auth.signInWithPassword({ email, password });
     if (signIn.error) throw signIn.error;

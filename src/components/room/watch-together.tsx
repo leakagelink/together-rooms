@@ -632,16 +632,14 @@ export function WatchTogether({
     return () => setPlaybackTrackingRestricted(false);
   }, [policy?.tracking_restricted]);
 
-  // Auto-show search when no video is loaded, auto-hide when a video starts.
-  // The host can still toggle it manually; this only reacts to media changes.
+  // Drop any manual override whenever the loaded video changes, so the panel
+  // falls back to "hidden while playing / shown when empty".
   useEffect(() => {
-    const hasMedia = Boolean(state?.provider_media_id);
-    if (hasMedia && !hadMediaRef.current) {
-      setSearchOpen(false);
-    } else if (!hasMedia && hadMediaRef.current) {
-      setSearchOpen(true);
+    const current = state?.provider_media_id ?? null;
+    if (current !== lastMediaRef.current) {
+      lastMediaRef.current = current;
+      setSearchOverride(null);
     }
-    hadMediaRef.current = hasMedia;
   }, [state?.provider_media_id]);
 
   /** Manual resync: refresh authoritative state + clock, then reconcile locally. */

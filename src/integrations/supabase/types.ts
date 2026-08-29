@@ -1914,6 +1914,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_ad_access: {
+        Row: {
+          created_at: string
+          day: string
+          last_reward_at: string | null
+          rewarded_today: number
+          room_credits: number
+          unlock_expires_at: string | null
+          unlock_progress: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day?: string
+          last_reward_at?: string | null
+          rewarded_today?: number
+          room_credits?: number
+          unlock_expires_at?: string | null
+          unlock_progress?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          last_reward_at?: string | null
+          rewarded_today?: number
+          room_credits?: number
+          unlock_expires_at?: string | null
+          unlock_progress?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_blocks: {
         Row: {
           blocked_id: string
@@ -2070,6 +2106,27 @@ export type Database = {
     }
     Functions: {
       account_is_active: { Args: { _user_id?: string }; Returns: boolean }
+      ad_access_refresh: {
+        Args: { _user_id: string }
+        Returns: {
+          created_at: string
+          day: string
+          last_reward_at: string | null
+          rewarded_today: number
+          room_credits: number
+          unlock_expires_at: string | null
+          unlock_progress: number
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_ad_access"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      ad_access_snapshot: { Args: never; Returns: Json }
       add_playlist_item: {
         Args: { _media_id: string; _playlist_id: string; _provider: string }
         Returns: Json
@@ -2179,6 +2236,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      claim_rewarded_view: { Args: { _purpose: string }; Returns: Json }
       clear_notifications: { Args: never; Returns: number }
       clear_queue: {
         Args: { _expected_queue_version?: number; _room_id: string }

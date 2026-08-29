@@ -13,7 +13,11 @@ import {
   recordFullscreenShown,
   type FrequencyState,
 } from "./frequency";
-import { isApprovedBannerPlacement, isApprovedInterstitialTransition } from "./placement-map";
+import {
+  isApprovedBannerPlacement,
+  isApprovedInterstitialTransition,
+  isApprovedRewardedPlacement,
+} from "./placement-map";
 import {
   evaluateAdPlacement,
   type AdFormat,
@@ -38,6 +42,8 @@ export interface AdSdk {
   showBanner?(unitId: string, nonPersonalized: boolean): void;
   hideBanner?(): void;
   showFullscreen?(unitId: string, nonPersonalized: boolean): Promise<void>;
+  /** Shows a rewarded ad. Resolves true ONLY when the SDK reported the reward. */
+  showRewarded?(unitId: string, nonPersonalized: boolean): Promise<boolean>;
 }
 
 export interface AdProviderOptions {
@@ -95,11 +101,22 @@ export class AdProvider {
         testMode: this.options.testMode,
       };
     }
+    if (request.format === "rewarded" && !isApprovedRewardedPlacement(request.placement)) {
+      return {
+        eligible: false,
+        reason: "NO_AD_PLACEMENT_NOT_APPROVED",
+        nonPersonalized: false,
+        unitId: null,
+        testMode: this.options.testMode,
+      };
+    }
     const decision = evaluateAdPlacement(request.format, context, this.options.config);
     if (!decision.eligible) {
       return { ...decision, unitId: null, testMode: this.options.testMode };
     }
-    if (request.format !== "banner") {
+    // Rewarded ads are user-initiated and exempt from pacing caps: the user
+    // explicitly asked for the ad and the reward is described up front.
+    if (request.format !== "banner" && request.format !== "rewarded") {
       const verdict = checkFrequency(
         request.format,
         this.frequency,
@@ -141,6 +158,10 @@ export class AdProvider {
     if (request.format === "banner") {
       sdk.showBanner?.(outcome.unitId, outcome.nonPersonalized);
       return true;
+    }
+    if (request.format === "rewarded") {
+      if (!sdk.showRewarded) return false;
+      return await sdk.showRewarded(outcome.unitId, outcome.nonPersonalized);
     }
     if (!sdk.showFullscreen) return false;
     await sdk.showFullscreen(outcome.unitId, outcome.nonPersonalized);

@@ -36,6 +36,10 @@ export interface SyncTogetherAdsPlugin {
     unitId: string;
     nonPersonalized: boolean;
   }): Promise<{ shown: boolean; reason?: string }>;
+  showRewarded(options: {
+    unitId: string;
+    nonPersonalized: boolean;
+  }): Promise<{ earned: boolean; reason?: string }>;
   requestConsentInfoUpdate(): Promise<UmpState>;
   showConsentFormIfRequired(): Promise<UmpState>;
   showPrivacyOptionsForm(): Promise<UmpState>;
@@ -87,6 +91,11 @@ export function adaptAdsPlugin(plugin: SyncTogetherAdsPlugin, available: boolean
     async showInterstitial(unitId, nonPersonalized) {
       const result = await plugin.showInterstitial({ unitId, nonPersonalized });
       return result?.shown === true;
+    },
+    async showRewarded(unitId, nonPersonalized) {
+      const result = await plugin.showRewarded({ unitId, nonPersonalized });
+      // Only an explicit native reward callback counts.
+      return result?.earned === true;
     },
     async preloadInterstitial(unitId, nonPersonalized) {
       const result = await plugin.preloadInterstitial({ unitId, nonPersonalized });

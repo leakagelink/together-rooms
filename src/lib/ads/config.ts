@@ -129,16 +129,16 @@ export interface AdFrequencyConfig {
   app_open_enabled: boolean;
   interstitial_enabled: boolean;
   /**
-   * PHASE 13.1 — rewarded ads are CONFIGURED but not activated. There is no
-   * legitimate, user-visible reward defined yet, so the format stays off and
-   * cannot be enabled by remote config alone (see REWARDED_ADS_ENABLED).
+   * Rewarded ads are ACTIVE: the reward is explicit and user-visible — the
+   * user opts in to watch an ad and receives 24h full access (3 ads) or one
+   * extra room (1 ad). The server is the authority on the reward itself.
    */
   rewarded_enabled: boolean;
 }
 
-/** Build-level kill switch for rewarded ads. Must stay false until a product
- *  decision defines an explicit, user-visible reward. */
-export const REWARDED_ADS_ENABLED = false;
+/** Build-level kill switch for rewarded ads. Enabled now that an explicit,
+ *  user-visible, opt-in reward exists (see public.claim_rewarded_view). */
+export const REWARDED_ADS_ENABLED = true;
 
 /** Conservative defaults, documented in the Phase 9 report. Server-overridable. */
 export const DEFAULT_AD_FREQUENCY: AdFrequencyConfig = {
@@ -150,7 +150,7 @@ export const DEFAULT_AD_FREQUENCY: AdFrequencyConfig = {
   banner_enabled: true,
   app_open_enabled: false,
   interstitial_enabled: true,
-  rewarded_enabled: false,
+  rewarded_enabled: true,
 };
 
 /** Merges a remote config row over the conservative defaults. */
@@ -187,6 +187,6 @@ export function mergeAdFrequency(remote: unknown): AdFrequencyConfig {
     interstitial_enabled: bool("interstitial_enabled", DEFAULT_AD_FREQUENCY.interstitial_enabled),
     // Remote config can only ever turn rewarded ads further OFF: the build
     // flag is authoritative while no reward exists.
-    rewarded_enabled: REWARDED_ADS_ENABLED && bool("rewarded_enabled", false),
+    rewarded_enabled: REWARDED_ADS_ENABLED && bool("rewarded_enabled", true),
   };
 }

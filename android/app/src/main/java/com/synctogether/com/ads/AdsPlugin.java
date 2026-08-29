@@ -34,6 +34,7 @@ public class AdsPlugin extends Plugin {
 
     private final BannerAdController banner = new BannerAdController();
     private final InterstitialAdController interstitial = new InterstitialAdController();
+    private final RewardedAdController rewarded = new RewardedAdController();
     private ConsentController consent;
 
     /** Guarded so the SDK is initialized exactly once per process. */
@@ -220,6 +221,33 @@ public class AdsPlugin extends Plugin {
         );
     }
 
+    /**
+     * Shows a rewarded ad. Only ever called from an explicit, user-initiated
+     * opt-in surface; `earned` is true only when the SDK granted the reward.
+     */
+    @PluginMethod
+    public void showRewarded(PluginCall call) {
+        final Activity activity = getActivity();
+        final String unitId = call.getString("unitId");
+        if (activity == null || !AdUnitIds.isValidUnitId(unitId)) {
+            call.reject("invalid_request");
+            return;
+        }
+        if (!initialized) {
+            call.reject("sdk_init_failed");
+            return;
+        }
+        final boolean nonPersonalized = Boolean.TRUE.equals(call.getBoolean("nonPersonalized", true));
+        activity.runOnUiThread(() ->
+            rewarded.show(activity, unitId, nonPersonalized, (earned, reason) -> {
+                JSObject result = new JSObject();
+                result.put("earned", earned);
+                result.put("reason", reason);
+                call.resolve(result);
+            })
+        );
+    }
+
     @PluginMethod
     public void requestConsentInfoUpdate(PluginCall call) {
         final Activity activity = getActivity();
@@ -255,6 +283,7 @@ public class AdsPlugin extends Plugin {
     protected void handleOnDestroy() {
         banner.destroy();
         interstitial.clear();
+        rewarded.clear();
         super.handleOnDestroy();
     }
 
@@ -298,5 +327,10 @@ public class AdsPlugin extends Plugin {
         void onShown();
 
         void onSkipped(@NonNull String reason);
+    }
+
+    /** Rewarded ads always resolve; `earned` is the SDK's reward callback. */
+    public interface RewardedResult {
+        void onFinished(boolean earned, @NonNull String reason);
     }
 }

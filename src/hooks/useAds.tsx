@@ -76,6 +76,8 @@ interface AdContextValue {
   /** Evaluate without requesting; used by slots to reserve or skip space. */
   evaluate: (format: AdFormat, placement: string) => AdOutcome;
   requestFullscreen: (placement: string) => Promise<boolean>;
+  /** Shows a user-initiated rewarded ad. True only when the reward was earned. */
+  requestRewarded: (placement: string) => Promise<boolean>;
   setActivity: (patch: Partial<ActivityFlags>) => void;
   adsPossible: boolean;
   consent: ConsentState;
@@ -277,6 +279,12 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     [context],
   );
 
+  const requestRewarded = useCallback(
+    (placement: string) =>
+      providerRef.current!.request({ format: "rewarded", placement }, context),
+    [context],
+  );
+
   const setActivity = useCallback((patch: Partial<ActivityFlags>) => {
     setActivityState((prev) => ({ ...prev, ...patch }));
   }, []);
@@ -285,6 +293,7 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     () => ({
       evaluate,
       requestFullscreen,
+      requestRewarded,
       setActivity,
       adsPossible: resolution.units !== null,
       consent,
@@ -292,7 +301,7 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       privacyOptionsAvailable: shouldOfferPrivacyOptions(ump),
       showPrivacyOptions,
     }),
-    [evaluate, requestFullscreen, setActivity, resolution.units, consent, ump, showPrivacyOptions],
+    [evaluate, requestFullscreen, requestRewarded, setActivity, resolution.units, consent, ump, showPrivacyOptions],
   );
 
   return <AdRuntimeContext.Provider value={value}>{children}</AdRuntimeContext.Provider>;
@@ -311,6 +320,7 @@ export function useAds(): AdContextValue {
       testMode: false,
     }),
     requestFullscreen: async () => false,
+    requestRewarded: async () => false,
     setActivity: () => {},
     adsPossible: false,
     consent: "unresolved",

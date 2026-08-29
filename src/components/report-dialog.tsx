@@ -117,7 +117,12 @@ export function ReportDialog({
             ...(parsed.data.details ? { details: parsed.data.details } : {}),
           },
         });
-        if (!result.ok) throw new Error(rpcMessage(result.reason));
+        if (!result.ok) throw new Error(reasonMessage(result.reason));
+        if (result.outcome === "already_reported") {
+          toast.info("You already reported this. Our team is on it.");
+          setOpen(false);
+          return;
+        }
       } else {
         // Every non-message surface goes through report_content, which
         // re-checks membership, self-reporting, duplicates and rate limits in

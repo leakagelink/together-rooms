@@ -74,7 +74,6 @@ function DeleteAccountPage() {
           Moderation and safety records (reports, blocks, enforcement actions) are retained in
           anonymised form for up to 12 months to protect other users and meet legal obligations.
         </li>
-        <li>
 
         <li>Backups are rotated out within 30 days.</li>
       </ul>

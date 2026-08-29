@@ -26,7 +26,7 @@ export function SplashOverlay({ duration = 550 }: { duration?: number }) {
   return (
     <div
       aria-hidden="true"
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-background transition-all duration-500 ${
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-background transition-all duration-300 ${
         phase === "leaving" ? "pointer-events-none scale-105 opacity-0" : "opacity-100"
       }`}
     >

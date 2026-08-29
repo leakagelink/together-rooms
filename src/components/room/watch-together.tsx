@@ -209,6 +209,10 @@ export function WatchTogether({
   const [drifting, setDrifting] = useState(false);
   const [awaitingGesture, setAwaitingGesture] = useState(false);
   const [backgroundPaused, setBackgroundPaused] = useState(false);
+  // Search panel: open by default when nothing is loaded, auto-collapse once
+  // a video starts playing, and the host can reopen it at any time.
+  const [searchOpen, setSearchOpen] = useState(!state?.provider_media_id);
+  const hadMediaRef = useRef(Boolean(state?.provider_media_id));
 
   const state = playback.state;
   const stateRef = useRef<PlaybackState | null>(null);

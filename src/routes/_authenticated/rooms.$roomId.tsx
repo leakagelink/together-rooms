@@ -4,12 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
 import {
   Copy,
+  Flag,
   LogIn,
   LogOut,
   MessageSquare,
   MonitorPlay,
+  MoreVertical,
   PowerOff,
-  Radio,
   Share2,
   Users,
 } from "lucide-react";
@@ -20,8 +21,13 @@ import { ReportDialog } from "@/components/report-dialog";
 import { RoomInvitePanel } from "@/components/room/room-invite-panel";
 import { RoomMembersPanel } from "@/components/room/room-members-panel";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { useAuth } from "@/hooks/useAuth";
 import { useAds } from "@/hooks/useAds";
@@ -302,7 +308,7 @@ function RoomPage() {
         ? "Listen"
         : "Watch";
 
-  const tabs: { id: RoomTab; label: string; icon: typeof Radio }[] = [
+  const tabs: { id: RoomTab; label: string; icon: typeof Users }[] = [
     { id: "stage", label: stageLabel, icon: MonitorPlay },
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "people", label: "People", icon: Users },
@@ -311,70 +317,110 @@ function RoomPage() {
 
   return (
     <AppShell>
-      {/* Compact room header: identity + live state + session actions only. */}
-      <header className="surface-panel overflow-hidden p-3 sm:p-5">
+      {/* Compact room header. On phones the destructive/session actions live in
+          an overflow menu so the title never gets squeezed off-screen. */}
+      <header className="surface-panel overflow-hidden bg-card/70 p-3 backdrop-blur-xl sm:p-5">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary/12 text-primary">
-              <Users className="size-5" aria-hidden="true" />
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary sm:size-10">
+              <Users className="size-4 sm:size-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <h1 className="truncate text-lg font-black tracking-tight sm:text-2xl">
+              <h1 className="truncate text-base font-black tracking-tight sm:text-2xl">
                 {room.name}
               </h1>
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-                <Badge variant="secondary" className="h-5 px-2 capitalize">
-                  {room.type}
-                </Badge>
-                <span className="capitalize">{room.privacy.replace("_", " ")}</span>
-                {room.is_ephemeral ? <span>· ephemeral</span> : null}
-                <span>· {membersQuery.data?.length ?? 0} members</span>
+              <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span
                   className={
                     connected && authorized
-                      ? "inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 font-semibold text-primary"
-                      : "inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-semibold"
+                      ? "inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 font-semibold text-primary"
+                      : "inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-semibold"
                   }
                 >
-                  <Radio className="size-3" aria-hidden="true" />
+                  <span
+                    aria-hidden="true"
+                    className={`size-1.5 rounded-full ${
+                      connected && authorized ? "animate-pulse bg-primary" : "bg-muted-foreground"
+                    }`}
+                  />
                   {!authorized ? "Live off" : connected ? "Live" : "Reconnecting"}
+                </span>
+                <span className="truncate capitalize">
+                  {room.type} · {room.privacy.replace("_", " ")}
+                  {room.is_ephemeral ? " · ephemeral" : ""}
                 </span>
               </div>
             </div>
           </div>
-          <div className="flex shrink-0 flex-wrap justify-end gap-2">
-            {/* Self-reporting is rejected server-side, so the host never sees
-                a Report action for their own room. */}
-            {!isHost ? <ReportDialog targetType="room" targetRoomId={room.id} /> : null}
-            {isHost && lifecycle === "ok" ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => endMutation.mutate()}
-                disabled={endMutation.isPending}
-              >
-                <PowerOff className="size-4" aria-hidden="true" />
-                <span className="hidden sm:inline">End room</span>
-              </Button>
-            ) : null}
-            {isJoined ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => leaveMutation.mutate()}
-                disabled={leaveMutation.isPending}
-              >
-                <LogOut className="size-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Leave</span>
-              </Button>
-            ) : lifecycle === "ok" && room.join_code ? (
+
+          <div className="flex shrink-0 items-center gap-1.5">
+            {!isJoined && lifecycle === "ok" && room.join_code ? (
               <Button
                 size="sm"
+                className="rounded-full"
                 onClick={() => rejoinMutation.mutate(room.join_code as string)}
                 disabled={rejoinMutation.isPending}
               >
                 <LogIn className="size-4" aria-hidden="true" /> Rejoin
               </Button>
+            ) : null}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-10 rounded-full"
+                  aria-label="Room actions"
+                >
+                  <MoreVertical className="size-5" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onSelect={() => setTab("people")}>
+                  <Users className="size-4" aria-hidden="true" /> Members (
+                  {membersQuery.data?.length ?? 0})
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setTab("share")}>
+                  <Share2 className="size-4" aria-hidden="true" /> Invite &amp; join code
+                </DropdownMenuItem>
+                {isJoined ? (
+                  <DropdownMenuItem
+                    onSelect={() => leaveMutation.mutate()}
+                    disabled={leaveMutation.isPending}
+                  >
+                    <LogOut className="size-4" aria-hidden="true" /> Leave room
+                  </DropdownMenuItem>
+                ) : null}
+                {isHost && lifecycle === "ok" ? (
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onSelect={() => endMutation.mutate()}
+                    disabled={endMutation.isPending}
+                  >
+                    <PowerOff className="size-4" aria-hidden="true" /> End room
+                  </DropdownMenuItem>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {/* Self-reporting is rejected server-side, so the host never sees
+                a Report action for their own room. Play policy requires the
+                report path to stay one tap away from the content itself. */}
+            {!isHost ? (
+              <ReportDialog
+                targetType="room"
+                targetRoomId={room.id}
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-10 rounded-full"
+                    aria-label="Report this room"
+                    title="Report this room"
+                  >
+                    <Flag className="size-4" aria-hidden="true" />
+                  </Button>
+                }
+              />
             ) : null}
           </div>
         </div>
@@ -400,9 +446,11 @@ function RoomPage() {
           single endless scroll. */}
       <nav
         aria-label="Room sections"
-        className="sticky top-14 z-20 -mx-3 mt-4 overflow-x-auto border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl sm:mx-0"
+        className="sticky top-14 z-20 -mx-3 mt-4 border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl sm:mx-0"
       >
-        <div className="flex min-w-max gap-1">
+        {/* Equal-width columns instead of a scrolling row: four fixed targets
+            fit every phone width without horizontal scrolling. */}
+        <div className="grid grid-cols-4">
           {tabs.map((item) => {
             const Icon = item.icon;
             const active = tab === item.id;
@@ -412,15 +460,15 @@ function RoomPage() {
                 type="button"
                 onClick={() => setTab(item.id)}
                 aria-current={active ? "page" : undefined}
-                className={`relative inline-flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                className={`relative flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-2.5 text-xs font-semibold transition-colors sm:flex-row sm:gap-2 sm:py-3 sm:text-sm ${
                   active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Icon className="size-4" aria-hidden="true" />
-                {item.label}
+                <Icon className="size-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">{item.label}</span>
                 <span
                   aria-hidden="true"
-                  className={`absolute inset-x-2 bottom-0 h-0.5 rounded-full transition-opacity ${
+                  className={`absolute inset-x-3 bottom-0 h-0.5 rounded-full transition-opacity ${
                     active ? "bg-primary opacity-100" : "opacity-0"
                   }`}
                 />

@@ -227,6 +227,14 @@ export function WatchTogether({
   const hasMedia = Boolean(state?.provider_media_id);
   const [searchOverride, setSearchOverride] = useState<boolean | null>(null);
   const searchOpen = searchOverride ?? !hasMedia;
+  // Functional toggle: it always flips the *currently rendered* state, even if
+  // an auto-collapse (media change or playback start) reset the override
+  // between the render and the click.
+  const hasMediaRef = useRef(hasMedia);
+  hasMediaRef.current = hasMedia;
+  const toggleSearch = useCallback(() => {
+    setSearchOverride((previous) => !(previous ?? !hasMediaRef.current));
+  }, []);
   const lastMediaRef = useRef<string | null>(state?.provider_media_id ?? null);
 
   const endedRef = useRef(onTrackEnded);
@@ -994,9 +1002,10 @@ export function WatchTogether({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setSearchOverride(!searchOpen)}
+              onClick={toggleSearch}
               aria-expanded={searchOpen}
               aria-controls="watch-search-panel"
+              aria-label={searchOpen ? "Hide search" : "Search or add a video"}
             >
               {searchOpen ? (
                 <>

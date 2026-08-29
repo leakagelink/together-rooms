@@ -171,6 +171,12 @@ export interface WatchTogetherProps {
   onNextTrack?: () => void;
   /** Disables the mini-player controls while a queue mutation is in flight. */
   trackNavBusy?: boolean;
+  /**
+   * Fires whenever the search/filter panel opens or closes. The room shell uses
+   * it to lift the Chat/People/Share tabs right under the video once search
+   * collapses.
+   */
+  onSearchVisibilityChange?: (open: boolean) => void;
 }
 
 export function WatchTogether({
@@ -187,6 +193,7 @@ export function WatchTogether({
   onPreviousTrack,
   onNextTrack,
   trackNavBusy = false,
+  onSearchVisibilityChange,
 }: WatchTogetherProps) {
   const playback = useRoomPlayback(roomId, userId);
   const queryClient = useQueryClient();
@@ -652,6 +659,16 @@ export function WatchTogether({
     lastStatusRef.current = status;
     if (status === "playing" && previous !== "playing") setSearchOverride(null);
   }, [state?.playback_status]);
+
+  // Tell the room shell whether the search surface is taking vertical space, so
+  // it can pull the Chat/People/Share tabs up right under the video.
+  const searchVisible = searchOpen && canControl && roomActive;
+  const searchVisibilityRef = useRef(onSearchVisibilityChange);
+  searchVisibilityRef.current = onSearchVisibilityChange;
+  useEffect(() => {
+    searchVisibilityRef.current?.(searchVisible);
+  }, [searchVisible]);
+
 
 
   /** Manual resync: refresh authoritative state + clock, then reconcile locally. */

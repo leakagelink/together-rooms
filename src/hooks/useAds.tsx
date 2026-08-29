@@ -320,6 +320,7 @@ export function useAds(): AdContextValue {
       testMode: false,
     }),
     requestFullscreen: async () => false,
+    requestRewarded: async () => false,
     setActivity: () => {},
     adsPossible: false,
     consent: "unresolved",

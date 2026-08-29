@@ -7,8 +7,7 @@
       "namespace": "android_app",
       "package_name": "com.synctogether.com",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_RELEASE_SIGNING_SHA256",
-        "REPLACE_WITH_PLAY_APP_SIGNING_SHA256"
+        "9C:41:A6:69:FE:19:74:AF:B5:77:07:D1:3E:20:38:4A:A3:62:EE:3F:F5:2A:99:D6:D9:41:AB:55:EB:98:46:9A"
       ]
     }
   }

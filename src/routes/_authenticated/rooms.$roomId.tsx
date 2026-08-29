@@ -308,7 +308,7 @@ function RoomPage() {
         ? "Listen"
         : "Watch";
 
-  const tabs: { id: RoomTab; label: string; icon: typeof Radio }[] = [
+  const tabs: { id: RoomTab; label: string; icon: typeof Users }[] = [
     { id: "stage", label: stageLabel, icon: MonitorPlay },
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "people", label: "People", icon: Users },
@@ -393,7 +393,7 @@ function RoomPage() {
                 ) : null}
                 {isHost && lifecycle === "ok" ? (
                   <DropdownMenuItem
-                    variant="destructive"
+                    className="text-destructive focus:text-destructive"
                     onSelect={() => endMutation.mutate()}
                     disabled={endMutation.isPending}
                   >

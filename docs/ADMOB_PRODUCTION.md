@@ -206,3 +206,24 @@ google.com, pub-1475323931624357, DIRECT, f08c47fec0942fa0
 8. Test device ids registered for anyone doing pre-launch testing.
 9. Full regression green; lint, typecheck and build clean.
 
+
+## Ad placement map (live policy)
+
+| Surface | Format | Rule |
+| --- | --- | --- |
+| Rooms list footer (`rooms_list_footer`) | Banner | Static, below the list, never over content |
+| After creating a room (`room_created_transition`) | Interstitial | Shown after navigation, never before the room opens |
+| After joining a room (`room_joined_transition`) | Interstitial | Only on a real join, not on re-entry |
+| "Unlock everything for 24h" (`full_access_unlock`) | Rewarded | 3 opt-in views → all features for 24 hours |
+| "Create one more room" (`extra_room_unlock`) | Rewarded | 1 opt-in view → 1 extra room credit |
+
+Never place ads on: playback surfaces, chat, local-media sharing, reporting,
+blocking, moderation, account deletion, privacy, auth or child-safety screens.
+
+### Free-usage rules (enforced in Postgres, not on device)
+
+- 1 free room per rolling 24 hours; ended/expired rooms do not count.
+- 3 rewarded views unlock every feature (unlimited rooms) for 24 hours.
+- 1 rewarded view = 1 extra room credit.
+- Hard cap of 10 rewarded views per user per day.
+- The device can only report "reward earned"; `claim_rewarded_view()` decides.

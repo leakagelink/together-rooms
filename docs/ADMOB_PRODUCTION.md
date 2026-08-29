@@ -176,13 +176,33 @@ Run on a physical Android device with a release-configured build, using AdMob
     chat — no ad appears or persists in any of them.
 13. Privacy Options entry point opens the UMP form from Privacy settings.
 
-## 12. Production release checklist
+## 12. app-ads.txt
+
+File: `public/app-ads.txt`
+
+```
+google.com, pub-1475323931624357, DIRECT, f08c47fec0942fa0
+```
+
+- Publish this file at the root of the developer website listed in Google Play
+  Console, e.g. `https://<your-domain>/app-ads.txt`.
+- The domain must match exactly what is entered in Play Console under
+  **Store presence → Store listing → Website**.
+- AdMob will crawl the file automatically; verification usually takes a few
+  moments but can take longer.
+- Do not add extra entries, comments or blank lines unless required by another
+  ad network.
+
+## 13. Production release checklist
 
 1. AdMob app linked to `com.synctogether.com` in the AdMob console.
 2. `admob_app_id` string resource matches the AdMob console value exactly.
 3. Banner and interstitial units active in the AdMob console.
 4. Rewarded unit exists but remains unused; `REWARDED_ADS_ENABLED` is `false`.
 5. UMP consent message published and live.
-6. `auditReleaseCandidate` reports no `ads:*` problems.
-7. Test device ids registered for anyone doing pre-launch testing.
-8. Full regression green; lint, typecheck and build clean.
+6. `app-ads.txt` is live on the developer website root and matches the snippet
+   in `public/app-ads.txt` exactly.
+7. `auditReleaseCandidate` reports no `ads:*` problems.
+8. Test device ids registered for anyone doing pre-launch testing.
+9. Full regression green; lint, typecheck and build clean.
+

@@ -280,6 +280,54 @@
   animation: st-drift 18s ease-in-out infinite;
 }
 
+@keyframes st-splash-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.7) rotate(-8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.06) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes st-splash-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
+@keyframes st-splash-sweep {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@utility animate-splash-pop {
+  animation: st-splash-pop 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-splash-ring {
+  animation: st-splash-ring 2s ease-out infinite;
+}
+
+@utility animate-splash-sweep {
+  animation: st-splash-sweep 1.3s ease-in-out infinite;
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

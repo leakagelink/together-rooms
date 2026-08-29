@@ -217,10 +217,11 @@ export function RoomChat({
             <Textarea
               ref={inputRef}
               aria-label="Message"
-              placeholder="Write a message"
+              placeholder="Type a message…"
               value={draft}
               maxLength={MAX_MESSAGE_LENGTH}
-              rows={2}
+              rows={1}
+              className="min-h-11 resize-none rounded-2xl bg-muted/50 px-4 py-3"
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -229,7 +230,12 @@ export function RoomChat({
                 }
               }}
             />
-            <Button onClick={submit} disabled={sendMutation.isPending} aria-label="Send message">
+            <Button
+              onClick={submit}
+              disabled={sendMutation.isPending}
+              aria-label="Send message"
+              className="size-11 shrink-0 rounded-full p-0 shadow-md"
+            >
               <Send className="size-4" aria-hidden="true" />
             </Button>
           </div>
@@ -241,6 +247,7 @@ export function RoomChat({
         <p className="mt-2 text-xs text-muted-foreground">
           {draft.length}/{MAX_MESSAGE_LENGTH} · Enter sends, Shift+Enter adds a line.
         </p>
+
       </div>
     </section>
   );

@@ -40,6 +40,7 @@ import {
 } from "@/lib/rooms.functions";
 import { rpcMessage } from "@/lib/rpc-types";
 import { RoomChat } from "@/components/room/room-chat";
+import { RoomPresenceRail } from "@/components/room/room-presence-rail";
 import { WatchTogether } from "@/components/room/watch-together";
 import { MusicRoom } from "@/components/room/music-room";
 import { StudyRoom } from "@/components/room/study-room";
@@ -311,26 +312,34 @@ function RoomPage() {
   return (
     <AppShell>
       {/* Compact room header: identity + live state + session actions only. */}
-      <header className="surface-panel overflow-hidden p-4 sm:p-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-black tracking-tight sm:text-2xl">{room.name}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <Badge variant="secondary" className="capitalize">
-                {room.type}
-              </Badge>
-              <span className="capitalize">{room.privacy.replace("_", " ")}</span>
-              {room.is_ephemeral ? <span>· ephemeral</span> : null}
-              <span
-                className={
-                  connected && authorized
-                    ? "inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary"
-                    : "inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-medium"
-                }
-              >
-                <Radio className="size-3" aria-hidden="true" />
-                {!authorized ? "Live off" : connected ? "Live" : "Reconnecting"}
-              </span>
+      <header className="surface-panel overflow-hidden p-3 sm:p-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary/12 text-primary">
+              <Users className="size-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-black tracking-tight sm:text-2xl">
+                {room.name}
+              </h1>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                <Badge variant="secondary" className="h-5 px-2 capitalize">
+                  {room.type}
+                </Badge>
+                <span className="capitalize">{room.privacy.replace("_", " ")}</span>
+                {room.is_ephemeral ? <span>· ephemeral</span> : null}
+                <span>· {membersQuery.data?.length ?? 0} members</span>
+                <span
+                  className={
+                    connected && authorized
+                      ? "inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 font-semibold text-primary"
+                      : "inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-semibold"
+                  }
+                >
+                  <Radio className="size-3" aria-hidden="true" />
+                  {!authorized ? "Live off" : connected ? "Live" : "Reconnecting"}
+                </span>
+              </div>
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap justify-end gap-2">
@@ -377,15 +386,21 @@ function RoomPage() {
                 : "This room isn't open yet."}
           </p>
         ) : null}
+
+        <RoomPresenceRail
+          members={membersQuery.data ?? []}
+          presence={presence}
+          onOpenPeople={() => setTab("people")}
+        />
       </header>
 
       {/* Sticky section switcher — one focused surface at a time instead of a
           single endless scroll. */}
       <nav
         aria-label="Room sections"
-        className="sticky top-14 z-20 -mx-3 mt-4 overflow-x-auto border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl sm:mx-0 sm:rounded-xl sm:border sm:px-2"
+        className="sticky top-14 z-20 -mx-3 mt-4 overflow-x-auto border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl sm:mx-0"
       >
-        <div className="flex min-w-max gap-1 py-2">
+        <div className="flex min-w-max gap-1">
           {tabs.map((item) => {
             const Icon = item.icon;
             const active = tab === item.id;
@@ -395,19 +410,24 @@ function RoomPage() {
                 type="button"
                 onClick={() => setTab(item.id)}
                 aria-current={active ? "page" : undefined}
-                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                  active
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                className={`relative inline-flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon className="size-4" aria-hidden="true" />
                 {item.label}
+                <span
+                  aria-hidden="true"
+                  className={`absolute inset-x-2 bottom-0 h-0.5 rounded-full transition-opacity ${
+                    active ? "bg-primary opacity-100" : "opacity-0"
+                  }`}
+                />
               </button>
             );
           })}
         </div>
       </nav>
+
 
       {/* Every panel stays mounted so realtime subscriptions, playback and call
           state survive tab switches; only visibility changes. */}

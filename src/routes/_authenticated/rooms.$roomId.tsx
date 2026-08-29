@@ -99,7 +99,10 @@ function RoomPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   // The stage (watch/listen/study) is always the landing surface of a room.
-  const [tab, setTab] = useState<RoomTab>(initialTab ?? "stage");
+  // The media stage is now pinned above the tabs, so "stage" resolves to chat.
+  const [tab, setTab] = useState<RoomTab>(
+    initialTab && initialTab !== "stage" ? initialTab : "chat",
+  );
 
   // Android/browser lifecycle: on foreground or reconnect every authoritative
   // query is refetched instead of trusting the suspended snapshot.

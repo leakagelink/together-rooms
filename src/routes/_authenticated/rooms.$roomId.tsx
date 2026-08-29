@@ -589,6 +589,17 @@ function RoomPage() {
 
         {isHost ? <RoomInvitePanel roomId={room.id} /> : null}
 
+        {/* Device sharing lives with the other sharing tools now that the
+            stage is reserved for the synchronized player. */}
+        {room.privacy === "private" || room.privacy === "invite_only" ? (
+          <LocalMediaRoom
+            roomId={room.id}
+            userId={user?.id}
+            canShare={isHost || myMembership?.can_control_playback === true}
+            roomActive={lifecycle === "ok"}
+          />
+        ) : null}
+
         {!isHost && !room.description ? (
           <p className="mt-6 text-sm text-muted-foreground">
             Only the host can invite people to this room.

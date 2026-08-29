@@ -80,8 +80,8 @@ const MESSAGES: Record<RpcReason, string> = {
   not_embeddable: "The owner doesn't allow this video to be played outside YouTube.",
   privacy_blocked: "This video is private.",
   unavailable: "This video is unavailable on YouTube.",
-  premium_required: "Premium is needed for this. Everything else stays available.",
-  plan_limit_reached: "You've reached your plan's limit. Close a room or upgrade to raise it.",
+  premium_required: "This action isn't available right now. Everything else stays available.",
+  plan_limit_reached: "You've reached the limit for this. Close or remove something to free up space.",
   verification_unavailable:
     "We couldn't confirm your purchase right now. Nothing was charged twice — try again shortly.",
   verification_failed: "We couldn't confirm this purchase with Google Play.",

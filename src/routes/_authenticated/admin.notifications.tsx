@@ -37,7 +37,8 @@ export const Route = createFileRoute("/_authenticated/admin/notifications")({
       { title: "Send announcements — SyncTogether admin" },
       {
         name: "description",
-        content: "Compose and send custom in-app announcements to all users, staff, a room or selected accounts.",
+        content:
+          "Compose and send custom in-app announcements to all users, staff, a room or selected accounts.",
       },
       { property: "og:title", content: "Send announcements — SyncTogether admin" },
       {
@@ -146,7 +147,10 @@ function AdminNotifications() {
       </div>
       <AdminNav />
 
-      <section aria-labelledby="compose" className="mt-6 rounded-lg border border-border bg-card p-5">
+      <section
+        aria-labelledby="compose"
+        className="mt-6 rounded-lg border border-border bg-card p-5"
+      >
         <h2 id="compose" className="flex items-center gap-2 text-lg font-semibold">
           <BellRing className="size-4" aria-hidden="true" /> Compose
         </h2>

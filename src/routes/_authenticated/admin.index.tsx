@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ShieldCheck, Users } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { StaffGate } from "@/components/admin/staff-gate";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ import {
 import { useStaffContext } from "@/hooks/useStaffContext";
 import {
   getModerationOverview,
+  getPlatformStats,
   getReportQueue,
   type ReportRow,
   type ReportStatus,
@@ -68,6 +70,7 @@ function AdminDashboard() {
   const { isAdmin } = useStaffContext();
   const fetchOverview = useServerFn(getModerationOverview);
   const fetchQueue = useServerFn(getReportQueue);
+  const fetchStats = useServerFn(getPlatformStats);
 
   const [status, setStatus] = useState<string>("open");
   const [targetType, setTargetType] = useState<string>(ANY);
@@ -105,12 +108,20 @@ function AdminDashboard() {
     staleTime: 15_000,
   });
 
+  const stats = useQuery({
+    queryKey: queryKeys.staff.stats(),
+    queryFn: () => fetchStats(),
+    enabled: isAdmin,
+    staleTime: 30_000,
+  });
+
   const queue = useQuery({
     queryKey: queryKeys.staff.reports(filters),
     queryFn: () => fetchQueue({ data: filters }),
     placeholderData: keepPreviousData,
   });
 
+  const platform = stats.data?.ok ? stats.data : null;
   const counts = overview.data?.ok ? overview.data.counts : null;
   const recent = overview.data?.ok ? overview.data.recent_actions : [];
 
@@ -122,7 +133,7 @@ function AdminDashboard() {
     <AppShell>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Moderation console</h1>
+          <h1 className="text-2xl font-semibold">Admin control center</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Internal tool. Every action here is recorded in the audit trail.
           </p>
@@ -136,16 +147,53 @@ function AdminDashboard() {
         ) : null}
       </div>
 
-      <section aria-labelledby="overview-heading" className="mt-6">
-        <h2 id="overview-heading" className="sr-only">
-          Overview
+      <AdminNav />
+
+      {isAdmin ? (
+        <section aria-labelledby="platform-heading" className="mt-6">
+          <h2 id="platform-heading" className="text-lg font-semibold">
+            Platform at a glance
+          </h2>
+          {stats.isPending ? (
+            <LoadingState label="Loading platform stats" rows={1} />
+          ) : stats.data && !stats.data.ok ? (
+            <ErrorState message={rpcMessage(stats.data.reason)} />
+          ) : (
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {(
+                [
+                  ["Users", platform?.users_total ?? 0],
+                  ["New (24h)", platform?.users_new_24h ?? 0],
+                  ["Suspended", platform?.users_suspended ?? 0],
+                  ["Live rooms", platform?.rooms_active ?? 0],
+                  ["Rooms (24h)", platform?.rooms_new_24h ?? 0],
+                  ["Messages (24h)", platform?.messages_24h ?? 0],
+                  ["Open reports", platform?.reports_open ?? 0],
+                  ["Rewarded ads today", platform?.ads_today ?? 0],
+                  ["Notifications (24h)", platform?.notifications_24h ?? 0],
+                  ["Rooms total", platform?.rooms_total ?? 0],
+                ] as const
+              ).map(([label, value]) => (
+                <div key={label} className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
+
+      <section aria-labelledby="overview-heading" className="mt-8">
+        <h2 id="overview-heading" className="text-lg font-semibold">
+          Reports overview
         </h2>
         {overview.isPending ? (
           <LoadingState label="Loading overview" rows={1} />
         ) : overview.data && !overview.data.ok ? (
           <ErrorState message={rpcMessage(overview.data.reason)} />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {(
               [
                 ["Open", counts?.open ?? 0],

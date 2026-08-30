@@ -28,7 +28,11 @@ export const Route = createFileRoute("/_authenticated/admin/rooms")({
   head: () => ({
     meta: [
       { title: "Room management — SyncTogether admin" },
-      { name: "description", content: "Monitor live SyncTogether rooms, review activity and shut down rooms that break the rules." },
+      {
+        name: "description",
+        content:
+          "Monitor live SyncTogether rooms, review activity and shut down rooms that break the rules.",
+      },
       { property: "og:title", content: "Room management — SyncTogether admin" },
       {
         property: "og:description",
@@ -112,7 +116,8 @@ function AdminRooms() {
       <div>
         <h1 className="text-2xl font-semibold">Rooms</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Every room on the platform, with owner, participants and activity. Ending a room is audited.
+          Every room on the platform, with owner, participants and activity. Ending a room is
+          audited.
         </p>
       </div>
       <AdminNav />

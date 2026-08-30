@@ -4,6 +4,7 @@ import {
   Gavel,
   ListMusic,
   PlusCircle,
+  Scale,
   LogOut,
   Settings,
   ShieldCheck,
@@ -122,6 +123,11 @@ export function AppShell({
                     <ShieldCheck className="size-4" aria-hidden="true" /> Privacy
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" hash="legal">
+                    <Scale className="size-4" aria-hidden="true" /> Legal &amp; safety
+                  </Link>
+                </DropdownMenuItem>
                 {isStaff ? (
                   <DropdownMenuItem asChild className="sm:hidden">
                     <Link to="/admin">
@@ -147,7 +153,6 @@ export function AppShell({
         {children}
       </main>
       <MobileTabBar />
-      <SiteFooter />
     </div>
   );
 }

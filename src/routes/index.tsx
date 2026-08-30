@@ -142,16 +142,18 @@ function Index() {
 
       <main className="flex-1">
         <section className="mx-auto w-full max-w-6xl px-4 pt-12 pb-8 text-center sm:pt-24">
-          <span className="animate-rise inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary uppercase">
+          <span className="animate-rise inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary uppercase">
             <Sparkles className="size-3.5" aria-hidden="true" />
             Invite-only private rooms
+            <Heart className="size-3.5 animate-heartbeat text-accent-pink" aria-hidden="true" />
           </span>
-          <h1 className="animate-rise mx-auto mt-7 max-w-4xl text-[2rem] leading-[1.05] font-extrabold text-balance sm:text-6xl lg:text-7xl [animation-delay:80ms]">
-            Sync life with <span className="text-sunset">SyncTogether</span>
+          <h1 className="animate-rise mx-auto mt-7 max-w-4xl text-[2.25rem] leading-[1.05] font-normal text-balance sm:text-6xl lg:text-7xl [animation-delay:80ms]">
+            Close, even when you're apart —{" "}
+            <span className="text-romance italic">SyncTogether</span>
           </h1>
           <p className="animate-rise mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground sm:text-xl [animation-delay:160ms]">
-            The private space for couples, friends, families and students to watch, listen, study
-            and talk together in real time. Secure, simple and shared. 💛
+            A private space for couples, friends, families and students to watch, listen, study and
+            talk together in real time. Secure, simple and shared. 💜
           </p>
           <div className="animate-rise mt-9 flex flex-col items-center justify-center gap-4 [animation-delay:240ms] sm:flex-row">
             <Button

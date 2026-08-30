@@ -104,15 +104,14 @@ export const DATA_SAFETY_INVENTORY: readonly DataSafetyEntry[] = [
   },
   {
     category: "purchase_history",
-    collected: true,
-    stored: true,
-    processed: true,
-    sharedWith: ["Google Play Billing"],
-    retention:
-      "Entitlement and subscription events retained for the life of the account; purchase-token recovery material at most 7 days.",
-    purpose: "Subscription entitlement, verification and acknowledgement recovery.",
-    protection:
-      "Service-role-only tables; token hashed for identity; AES-256-GCM recovery envelope.",
+    collected: false,
+    stored: false,
+    processed: false,
+    sharedWith: [],
+    retention: "Not applicable; nothing is collected.",
+    purpose:
+      "Not used. The app is free: no subscriptions, no in-app purchases and no Google Play Billing integration.",
+    protection: "Not applicable; no purchase data reaches the app or its backend.",
     requiresOwnerReview: false,
   },
   {
@@ -122,7 +121,7 @@ export const DATA_SAFETY_INVENTORY: readonly DataSafetyEntry[] = [
     processed: true,
     sharedWith: ["Google AdMob"],
     retention: "Not retained by this application.",
-    purpose: "Serving ads to non-premium users.",
+    purpose: "Serving ads to all users (banner and interstitial).",
     protection: "UMP consent gating; personalisation refused when consent is not granted.",
     requiresOwnerReview: true,
   },

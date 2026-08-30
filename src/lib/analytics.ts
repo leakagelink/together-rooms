@@ -41,15 +41,9 @@ export type AnalyticsEventName =
   | "call_left"
   | "call_ended"
   | "call_connection_failed"
-  // Phase 9: monetization + ads. Operational only — never prices paid, payment
-  // identifiers, purchase tokens, ad content or behavioural profiles
-  // (see ads/analytics-safety).
-  | "subscription_screen_viewed"
-  | "purchase_started"
-  | "purchase_verified"
-  | "purchase_failed"
-  | "restore_requested"
-  | "entitlement_changed"
+  // Ads only. The product is free: there are no paid plans, purchases or
+  // subscriptions, so no purchase/entitlement events exist. Operational only —
+  // never ad content or behavioural profiles (see ads/analytics-safety).
   | "ad_requested"
   | "ad_blocked"
   | "ad_shown"

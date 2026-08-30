@@ -2148,6 +2148,21 @@ export type Database = {
         Args: { _media_id: string; _provider: string; _room_id: string }
         Returns: Json
       }
+      admin_broadcast_notification: {
+        Args: {
+          _audience?: string
+          _body?: string
+          _link?: string
+          _room_id?: string
+          _title: string
+          _user_ids?: string[]
+        }
+        Returns: Json
+      }
+      admin_force_end_room: {
+        Args: { _reason?: string; _room_id: string }
+        Returns: Json
+      }
       admin_grant_entitlement: {
         Args: {
           _expires_at?: string
@@ -2158,7 +2173,31 @@ export type Database = {
         Returns: Json
       }
       admin_list_roles: { Args: never; Returns: Json }
+      admin_list_rooms: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _q?: string
+          _status?: string
+        }
+        Returns: Json
+      }
+      admin_list_users: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _q?: string
+          _status?: string
+        }
+        Returns: Json
+      }
+      admin_platform_stats: { Args: never; Returns: Json }
+      admin_recent_broadcasts: { Args: { _limit?: number }; Returns: Json }
       admin_search_users: { Args: { _q: string }; Returns: Json }
+      admin_set_account_status: {
+        Args: { _reason?: string; _status: string; _user_id: string }
+        Returns: Json
+      }
       admin_subscription_overview: { Args: { _user_id: string }; Returns: Json }
       admit_member: {
         Args: {

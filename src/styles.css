@@ -186,11 +186,16 @@
   }
 
   h1,
-  h2,
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+  }
+
   h3,
   h4 {
-    font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em;
   }
 
   :focus-visible {

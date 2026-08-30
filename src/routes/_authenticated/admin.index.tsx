@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ShieldCheck, Users } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { StaffGate } from "@/components/admin/staff-gate";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ import {
 import { useStaffContext } from "@/hooks/useStaffContext";
 import {
   getModerationOverview,
+  getPlatformStats,
   getReportQueue,
   type ReportRow,
   type ReportStatus,
@@ -68,6 +70,7 @@ function AdminDashboard() {
   const { isAdmin } = useStaffContext();
   const fetchOverview = useServerFn(getModerationOverview);
   const fetchQueue = useServerFn(getReportQueue);
+  const fetchStats = useServerFn(getPlatformStats);
 
   const [status, setStatus] = useState<string>("open");
   const [targetType, setTargetType] = useState<string>(ANY);
@@ -105,12 +108,20 @@ function AdminDashboard() {
     staleTime: 15_000,
   });
 
+  const stats = useQuery({
+    queryKey: queryKeys.staff.stats(),
+    queryFn: () => fetchStats(),
+    enabled: isAdmin,
+    staleTime: 30_000,
+  });
+
   const queue = useQuery({
     queryKey: queryKeys.staff.reports(filters),
     queryFn: () => fetchQueue({ data: filters }),
     placeholderData: keepPreviousData,
   });
 
+  const platform = stats.data?.ok ? stats.data : null;
   const counts = overview.data?.ok ? overview.data.counts : null;
   const recent = overview.data?.ok ? overview.data.recent_actions : [];
 

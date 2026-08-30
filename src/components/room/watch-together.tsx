@@ -786,10 +786,10 @@ export function WatchTogether({
         ref={stageRef}
         className={
           isFullscreen
-            ? "fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black"
+            ? "fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-stage"
             : compact
               ? "group mt-4 flex items-center gap-3 overflow-hidden rounded-xl border border-border bg-card p-2"
-              : "group mt-4 overflow-hidden rounded-lg border border-border bg-black/90"
+              : "group mt-4 overflow-hidden rounded-xl border border-border bg-stage"
         }
       >
         <div
@@ -797,7 +797,7 @@ export function WatchTogether({
             isFullscreen
               ? "relative h-full max-h-full w-full"
               : compact
-                ? "relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-black sm:w-36"
+                ? "relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-stage sm:w-36"
                 : "relative aspect-video w-full"
           }
         >

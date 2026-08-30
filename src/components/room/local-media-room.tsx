@@ -280,7 +280,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
                 src={currentUrl}
                 controls={isOwner}
                 playsInline
-                className="max-h-[60dvh] w-full bg-black"
+                className="max-h-[60dvh] w-full bg-stage"
                 // Background playback is allowed for device-shared media only:
                 // it is the user's own file, not third-party embedded content.
               />

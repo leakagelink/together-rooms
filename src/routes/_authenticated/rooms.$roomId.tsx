@@ -513,6 +513,8 @@ function RoomPage() {
           collapsed it hugs the video so chat is reachable without scrolling. */}
       <nav
         ref={tabsNavRef}
+        data-testid="room-tabs-nav"
+        data-search-open={stageSearchOpen ? "true" : "false"}
         aria-label="Room sections"
         className={`sticky top-14 z-20 -mx-3 border-b border-border/60 bg-background/85 px-3 backdrop-blur-xl transition-all duration-300 sm:mx-0 ${
           stageSearchOpen ? "mt-3" : "mt-1"

@@ -34,6 +34,7 @@ public class AdsPlugin extends Plugin {
 
     private final BannerAdController banner = new BannerAdController();
     private final InterstitialAdController interstitial = new InterstitialAdController();
+    private final RewardedAdController rewarded = new RewardedAdController();
     private ConsentController consent;
 
     /** Guarded so the SDK is initialized exactly once per process. */
@@ -221,6 +222,72 @@ public class AdsPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void preloadRewarded(PluginCall call) {
+        final Activity activity = getActivity();
+        final String unitId = call.getString("unitId");
+        if (activity == null || !AdUnitIds.isValidUnitId(unitId)) {
+            call.reject("invalid_request");
+            return;
+        }
+        if (!initialized) {
+            call.reject("sdk_init_failed");
+            return;
+        }
+        final boolean nonPersonalized = Boolean.TRUE.equals(call.getBoolean("nonPersonalized", true));
+        activity.runOnUiThread(() ->
+            rewarded.preload(activity, unitId, nonPersonalized, new AdCallback() {
+                @Override
+                public void onSuccess() {
+                    JSObject result = new JSObject();
+                    result.put("loaded", true);
+                    call.resolve(result);
+                }
+
+                @Override
+                public void onFailure(@NonNull String reason) {
+                    JSObject result = new JSObject();
+                    result.put("loaded", false);
+                    result.put("reason", reason);
+                    call.resolve(result);
+                }
+            })
+        );
+    }
+
+    @PluginMethod
+    public void showRewarded(PluginCall call) {
+        final Activity activity = getActivity();
+        final String unitId = call.getString("unitId");
+        if (activity == null || !AdUnitIds.isValidUnitId(unitId)) {
+            call.reject("invalid_request");
+            return;
+        }
+        if (!initialized) {
+            call.reject("sdk_init_failed");
+            return;
+        }
+        final boolean nonPersonalized = Boolean.TRUE.equals(call.getBoolean("nonPersonalized", true));
+        activity.runOnUiThread(() ->
+            rewarded.show(activity, unitId, nonPersonalized, new InterstitialResult() {
+                @Override
+                public void onShown() {
+                    JSObject result = new JSObject();
+                    result.put("shown", true);
+                    call.resolve(result);
+                }
+
+                @Override
+                public void onSkipped(@NonNull String reason) {
+                    JSObject result = new JSObject();
+                    result.put("shown", false);
+                    result.put("reason", reason);
+                    call.resolve(result);
+                }
+            })
+        );
+    }
+
+    @PluginMethod
     public void requestConsentInfoUpdate(PluginCall call) {
         final Activity activity = getActivity();
         if (activity == null) {
@@ -255,6 +322,7 @@ public class AdsPlugin extends Plugin {
     protected void handleOnDestroy() {
         banner.destroy();
         interstitial.clear();
+        rewarded.clear();
         super.handleOnDestroy();
     }
 

@@ -14,7 +14,6 @@ Definitions used: **Collected** = transmitted off the device. **Shared** = trans
 | **Email address** | Yes | No | **Required** | Account management, App functionality | No | Supabase Auth, `auth.signup.tsx` |
 | **User IDs** | Yes | No | Required | App functionality, Account management, Fraud prevention | No | `auth.users.id` used as FK across all tables |
 | **Other personal info** (bio, avatar URL) | Yes | No | Optional | App functionality | No | `profiles.bio`, `profiles.avatar_url` |
-| **Purchase history** | Yes | No | Optional | App functionality, Fraud prevention | No | `entitlements`, `billing_events`, `verification.server.ts` |
 | **In-app messages** (room chat, reactions, notes, tasks, resource links, playlist names) | Yes | No | Optional | App functionality | No | `room_messages`, `room_notes`, `room_tasks`, `room_resources` |
 | **Photos** | **No** | No | — | — | — | Device-to-device WebRTC data channel only; **never uploaded to our servers**. No storage bucket exists |
 | **Videos** | **No** | No | — | — | — | same as above (`useLocalMediaTransfer.ts`) |
@@ -34,7 +33,7 @@ Definitions used: **Collected** = transmitted off the device. **Shared** = trans
 |---|---|---|
 | Is data encrypted in transit? | **Yes** | HTTPS-only; `usesCleartextTraffic="false"`, `network_security_config.xml` system CAs only; WebRTC DTLS/SRTP for P2P |
 | Can users request data deletion? | **Yes** | In-app `settings` → delete account (`account.functions.ts`), plus the public page `https://together-rooms.lovable.app/delete-account` |
-| Do you follow the Play Families policy? | **No** — app is not targeted at children | Content rating should be Teen+; MFK YouTube videos are playable but tracking-restricted (`media-policy.ts`) |
+| Do you follow the Play Families policy? | **No** — app is targeted at users 18+ | Content rating is 18+. Not "Designed for Families". |
 | Independent security review | **No** | none conducted |
 | Committed to Play's Data Safety accuracy | Yes | — |
 
@@ -42,18 +41,14 @@ Definitions used: **Collected** = transmitted off the device. **Shared** = trans
 
 `https://together-rooms.lovable.app/delete-account`
 
-The page is reachable without signing in (linked from the app footer, `app-shell.tsx`). It must state clearly:
+The page is reachable without signing in (linked from the app footer, `app-shell.tsx`). It states clearly:
 - what is deleted immediately (profile, memberships, messages, notes, tasks, playlists, push tokens, settings),
-- what is retained and for how long (moderation records, audit logs, and billing records retained for legal/fraud purposes — **owner must set an explicit retention period; none is currently documented**).
+- what is retained for legal/safety purposes (moderation records and audit logs).
 
 ## 4. Declarations the owner must also complete
 
 - **Advertising ID declaration**: Yes — the app uses the Advertising ID for advertising/marketing. `com.google.android.gms.permission.AD_ID` is merged in by the ads SDK.
 - **Ads presence**: Yes — the app contains ads (banner + interstitial).
-- **Target audience**: 13+ / Teen. Not "Designed for Families".
+- **Target audience**: 18+. Not "Designed for Families".
 - **Content rating questionnaire**: must declare **user-generated content with user-to-user communication** (chat, notes, resource links, shared media).
 - **Data Safety "shared" section**: name Google (advertising) as the recipient.
-
-## 5. Known inconsistency to fix before submission
-
-`src/routes/privacy.tsx` currently states that no advertising SDK is integrated and does not describe subscriptions, the Advertising ID, FCM tokens, or the YouTube embed. Submitting this Data Safety form against that policy text would be a **mismatch and a likely rejection**. The policy must be rewritten to match this table first.

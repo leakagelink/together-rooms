@@ -16,4 +16,6 @@ ext {
     // PHASE 14 — Google Mobile Ads SDK + User Messaging Platform (UMP).
     playServicesAdsVersion = '24.4.0'
     userMessagingPlatformVersion = '3.2.0'
+    // PHASE 15 — Firebase Cloud Messaging.
+    firebaseMessagingVersion = '24.1.0'
 }

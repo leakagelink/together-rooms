@@ -101,10 +101,11 @@ function PrivacyPage() {
         search results and YouTube&apos;s embedded player for shared playback. Your use of the
         embedded player is also subject to Google&apos;s privacy policy. No data is sold.
       </p>
-      <h2>Children</h2>
+      <h2>Age Requirement</h2>
       <p>
-        SyncTogether is not directed to children under 13 (or the minimum age in your country).
-        Accounts we identify as belonging to a child are removed.
+        SyncTogether is intended for users aged 18 and over, or the minimum age of digital consent
+        in their country, whichever is higher. Accounts we identify as belonging to a user below
+        this threshold are removed.
       </p>
       <h2>Contact</h2>
       <p>

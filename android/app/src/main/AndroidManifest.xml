@@ -69,12 +69,23 @@
 
     <!-- Permissions.
          INTERNET      : required, the entire product is networked.
+         CAMERA        : requested at runtime only when a member enables video.
+         RECORD_AUDIO  : requested at runtime only when a member joins a call
+                         with the microphone.
+         POST_NOTIFICATIONS : required for Android 13+ to show notifications.
          No storage/media permissions are declared: local media sharing uses the
          system file picker (SAF), which grants per-file access without any
-         permission. POST_NOTIFICATIONS is runtime-requested (Android 13+) and
-         only used for activity notifications the user can disable in settings. -->
+         permission. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Devices without a camera or microphone must still install and use every
+         non-call feature. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 </manifest>

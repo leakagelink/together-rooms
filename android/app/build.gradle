@@ -114,6 +114,8 @@ dependencies {
     // after the UMP consent state machine permits an ad request.
     implementation "com.google.android.gms:play-services-ads:$playServicesAdsVersion"
     implementation "com.google.android.ump:user-messaging-platform:$userMessagingPlatformVersion"
+    // PHASE 15 — Firebase Cloud Messaging.
+    implementation "com.google.firebase:firebase-messaging:$firebaseMessagingVersion"
 }
 
 apply from: 'capacitor.build.gradle'

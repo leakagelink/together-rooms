@@ -19,7 +19,7 @@ const profileQueryOptions = (userId: string) =>
     queryFn: async () => {
       const { data, error: queryError } = await supabase
         .from("profiles")
-        .select("id, username, display_name, bio, status, subscription_tier")
+        .select("id, username, display_name, bio, status")
         .eq("id", userId)
         .maybeSingle();
       if (queryError) throw queryError;

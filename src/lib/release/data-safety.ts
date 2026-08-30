@@ -1,13 +1,9 @@
 /**
- * PHASE 13 — Play Data Safety inventory, derived from actual behaviour.
+ * PHASE 15 — Play Data Safety inventory, derived from actual behaviour.
  *
  * Every entry below corresponds to something the implementation demonstrably
- * does. `validateDataSafetyInventory` refuses inventories that make claims the
- * codebase does not support (for example "shared with third parties" without a
- * named recipient, or "not collected" for data that is stored).
- *
- * Answers marked `requiresOwnerReview` are business/legal statements that this
- * project cannot decide on its own.
+ * does. SyncTogether is a free-only product with no subscriptions or
+ * in-app purchases.
  */
 
 export type DataCategory =
@@ -17,7 +13,6 @@ export type DataCategory =
   | "photos_videos_audio"
   | "voice_video_streams"
   | "app_activity"
-  | "purchase_history"
   | "advertising_id"
   | "diagnostics";
 
@@ -103,26 +98,13 @@ export const DATA_SAFETY_INVENTORY: readonly DataSafetyEntry[] = [
     requiresOwnerReview: false,
   },
   {
-    category: "purchase_history",
-    collected: true,
-    stored: true,
-    processed: true,
-    sharedWith: ["Google Play Billing"],
-    retention:
-      "Entitlement and subscription events retained for the life of the account; purchase-token recovery material at most 7 days.",
-    purpose: "Subscription entitlement, verification and acknowledgement recovery.",
-    protection:
-      "Service-role-only tables; token hashed for identity; AES-256-GCM recovery envelope.",
-    requiresOwnerReview: false,
-  },
-  {
     category: "advertising_id",
     collected: true,
     stored: false,
     processed: true,
     sharedWith: ["Google AdMob"],
     retention: "Not retained by this application.",
-    purpose: "Serving ads to non-premium users.",
+    purpose: "Serving ads to users.",
     protection: "UMP consent gating; personalisation refused when consent is not granted.",
     requiresOwnerReview: true,
   },
@@ -138,45 +120,3 @@ export const DATA_SAFETY_INVENTORY: readonly DataSafetyEntry[] = [
     requiresOwnerReview: true,
   },
 ];
-
-export type InventoryProblem =
-  | "stored_but_not_collected"
-  | "shared_without_recipient"
-  | "recipient_without_sharing"
-  | "missing_retention"
-  | "missing_purpose"
-  | "missing_protection";
-
-export function validateDataSafetyInventory(
-  entries: readonly DataSafetyEntry[] = DATA_SAFETY_INVENTORY,
-): { ok: boolean; problems: { category: DataCategory; problem: InventoryProblem }[] } {
-  const problems: { category: DataCategory; problem: InventoryProblem }[] = [];
-  for (const entry of entries) {
-    if (entry.stored && !entry.collected) {
-      problems.push({ category: entry.category, problem: "stored_but_not_collected" });
-    }
-    if (entry.sharedWith.length > 0 && entry.sharedWith.some((r) => !r.trim())) {
-      problems.push({ category: entry.category, problem: "shared_without_recipient" });
-    }
-    if (!entry.collected && !entry.processed && entry.sharedWith.length > 0) {
-      problems.push({ category: entry.category, problem: "recipient_without_sharing" });
-    }
-    if (!entry.retention.trim()) {
-      problems.push({ category: entry.category, problem: "missing_retention" });
-    }
-    if (!entry.purpose.trim()) {
-      problems.push({ category: entry.category, problem: "missing_purpose" });
-    }
-    if (!entry.protection.trim()) {
-      problems.push({ category: entry.category, problem: "missing_protection" });
-    }
-  }
-  return { ok: problems.length === 0, problems };
-}
-
-/** Categories whose Play Console answer needs a human decision before submission. */
-export function ownerReviewRequired(
-  entries: readonly DataSafetyEntry[] = DATA_SAFETY_INVENTORY,
-): DataCategory[] {
-  return entries.filter((e) => e.requiresOwnerReview).map((e) => e.category);
-}

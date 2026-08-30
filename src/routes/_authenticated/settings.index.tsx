@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { BadgeAlert, ChevronRight, Scale, ShieldCheck, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -197,28 +198,65 @@ function PlanSummary() {
 }
 
 const LEGAL_LINKS = [
-  { to: "/privacy", label: "Privacy Policy" },
-  { to: "/terms", label: "Terms of Service" },
-  { to: "/guidelines", label: "Community Guidelines" },
-  { to: "/child-safety", label: "Child Safety Standards" },
-  { to: "/delete-account", label: "Account deletion" },
+  {
+    to: "/privacy",
+    label: "Privacy Policy",
+    description: "What data we collect and how it is used.",
+    icon: ShieldCheck,
+  },
+  {
+    to: "/terms",
+    label: "Terms of Service",
+    description: "The rules for using SyncTogether.",
+    icon: Scale,
+  },
+  {
+    to: "/guidelines",
+    label: "Community Guidelines",
+    description: "What is allowed in rooms and chat.",
+    icon: Users,
+  },
+  {
+    to: "/child-safety",
+    label: "Child Safety Standards",
+    description: "Our CSAE policy and reporting channel.",
+    icon: BadgeAlert,
+  },
+  {
+    to: "/delete-account",
+    label: "Delete my account",
+    description: "Permanently remove your account and data.",
+    icon: Trash2,
+  },
 ] as const;
 
 function LegalLinks() {
   return (
-    <section className="surface-panel mt-6 max-w-xl p-5" aria-labelledby="legal-heading">
+    <section id="legal" className="mt-8 max-w-xl scroll-mt-20" aria-labelledby="legal-heading">
       <h2 id="legal-heading" className="text-sm font-semibold">
         Legal &amp; safety
       </h2>
-      <ul className="mt-3 space-y-2 text-sm">
-        {LEGAL_LINKS.map((item) => (
-          <li key={item.to}>
-            <Link to={item.to} className="text-primary hover:underline">
-              {item.label}
+      <p className="mt-1 text-xs text-muted-foreground">
+        Policies, community rules and account deletion.
+      </p>
+      <ul className="surface-panel mt-3 divide-y divide-border/70 overflow-hidden p-0">
+        {LEGAL_LINKS.map(({ to, label, description, icon: Icon }) => (
+          <li key={to}>
+            <Link
+              to={to}
+              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+            >
+              <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium">{label}</span>
+                <span className="block text-xs text-muted-foreground">{description}</span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             </Link>
           </li>
         ))}
       </ul>
+      <p className="mt-3 text-xs text-muted-foreground">© {new Date().getFullYear()} SyncTogether</p>
     </section>
   );
 }

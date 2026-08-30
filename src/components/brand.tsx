@@ -25,7 +25,7 @@ export function BrandLogo({ withTagline = false }: { withTagline?: boolean }) {
     <Link to="/" className="group inline-flex items-center gap-2.5" aria-label="SyncTogether home">
       <BrandMark className="transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3" />
       <span className="flex flex-col leading-none">
-        <span className="font-display text-lg font-extrabold tracking-tight">SyncTogether</span>
+        <span className="font-display text-xl font-normal tracking-tight">SyncTogether</span>
         {withTagline ? (
           <span className="mt-1 text-[11px] text-muted-foreground">
             Watch. Listen. Study. Connect. Together.

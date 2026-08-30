@@ -18,7 +18,7 @@ describe("assetlinks", () => {
 
   it("declares the production package with the real Play App Signing fingerprint", () => {
     expect(statements).toHaveLength(1);
-    const [statement] = statements;
+    const statement = statements[0]!;
     expect(statement.relation).toEqual(["delegate_permission/common.handle_all_urls"]);
     expect(statement.target.namespace).toBe("android_app");
     expect(statement.target.package_name).toBe("com.synctogether.com");

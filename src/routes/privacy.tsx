@@ -103,8 +103,9 @@ function PrivacyPage() {
       </p>
       <h2>Children</h2>
       <p>
-        SyncTogether is not directed to children under 13 (or the minimum age in your country).
-        Accounts we identify as belonging to a child are removed.
+        SyncTogether is intended for users aged 18 and over, or the minimum age of digital consent
+        in their country, whichever is higher. Accounts we identify as belonging to a minor are
+        removed.
       </p>
       <h2>Contact</h2>
       <p>

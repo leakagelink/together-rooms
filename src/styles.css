@@ -48,6 +48,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-stage: var(--stage);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -78,6 +79,7 @@
 
 :root {
   --radius: 1rem;
+  --stage: oklch(0.24 0.05 315);
   --background: oklch(0.985 0.012 340);
   --foreground: oklch(0.26 0.045 315);
   --card: oklch(1 0 0);
@@ -127,6 +129,7 @@
 
 .dark {
   --background: oklch(0.17 0.035 315);
+  --stage: oklch(0.14 0.035 315);
   --foreground: oklch(0.96 0.012 340);
   --card: oklch(0.22 0.04 315);
   --card-foreground: oklch(0.96 0.012 340);

@@ -388,15 +388,14 @@ export const listPlatformUsers = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc(
       "admin_list_users",
-      rpcArgs({ _q: data.q ?? "", _limit: data.limit, _offset: data.offset }, {
-        _status: data.status,
-      }),
+      rpcArgs(
+        { _q: data.q ?? "", _limit: data.limit, _offset: data.offset },
+        {
+          _status: data.status,
+        },
+      ),
     );
-    return normalizeRpc<{ rows: AdminUserRow[]; total: number }>(
-      "admin_list_users",
-      result,
-      error,
-    );
+    return normalizeRpc<{ rows: AdminUserRow[]; total: number }>("admin_list_users", result, error);
   });
 
 export const setAccountStatus = createServerFn({ method: "POST" })
@@ -434,15 +433,14 @@ export const listPlatformRooms = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc(
       "admin_list_rooms",
-      rpcArgs({ _q: data.q ?? "", _limit: data.limit, _offset: data.offset }, {
-        _status: data.status,
-      }),
+      rpcArgs(
+        { _q: data.q ?? "", _limit: data.limit, _offset: data.offset },
+        {
+          _status: data.status,
+        },
+      ),
     );
-    return normalizeRpc<{ rows: AdminRoomRow[]; total: number }>(
-      "admin_list_rooms",
-      result,
-      error,
-    );
+    return normalizeRpc<{ rows: AdminRoomRow[]; total: number }>("admin_list_rooms", result, error);
   });
 
 export const forceEndRoom = createServerFn({ method: "POST" })

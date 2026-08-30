@@ -20,11 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  listPlatformUsers,
-  setAccountStatus,
-  type AdminUserRow,
-} from "@/lib/admin.functions";
+import { listPlatformUsers, setAccountStatus, type AdminUserRow } from "@/lib/admin.functions";
 import { queryKeys } from "@/lib/query-keys";
 import { rpcMessage } from "@/lib/rpc-types";
 
@@ -32,7 +28,10 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
   head: () => ({
     meta: [
       { title: "User management — SyncTogether admin" },
-      { name: "description", content: "Search SyncTogether accounts, review activity and suspend or restore users." },
+      {
+        name: "description",
+        content: "Search SyncTogether accounts, review activity and suspend or restore users.",
+      },
       { property: "og:title", content: "User management — SyncTogether admin" },
       {
         property: "og:description",
@@ -169,7 +168,10 @@ function AdminUsers() {
               const suspended = u.status === "suspended";
               const isAdmin = u.roles.includes("admin");
               return (
-                <li key={u.user_id} className="flex flex-wrap items-start justify-between gap-3 p-4">
+                <li
+                  key={u.user_id}
+                  className="flex flex-wrap items-start justify-between gap-3 p-4"
+                >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-medium">
@@ -184,8 +186,8 @@ function AdminUsers() {
                     </div>
                     <p className="mt-1 truncate text-sm text-muted-foreground">{u.email ?? "—"}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Joined {formatDate(u.created_at)} · Last sign-in {formatDate(u.last_sign_in_at)} ·{" "}
-                      {u.rooms_owned} room(s)
+                      Joined {formatDate(u.created_at)} · Last sign-in{" "}
+                      {formatDate(u.last_sign_in_at)} · {u.rooms_owned} room(s)
                     </p>
                   </div>
                   <Button

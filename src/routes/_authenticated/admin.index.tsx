@@ -211,7 +211,6 @@ function AdminDashboard() {
         )}
       </section>
 
-
       <section aria-labelledby="queue-heading" className="mt-8">
         <h2 id="queue-heading" className="text-lg font-semibold">
           Reports queue

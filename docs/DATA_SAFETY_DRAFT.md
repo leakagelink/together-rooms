@@ -34,7 +34,7 @@ Definitions used: **Collected** = transmitted off the device. **Shared** = trans
 |---|---|---|
 | Is data encrypted in transit? | **Yes** | HTTPS-only; `usesCleartextTraffic="false"`, `network_security_config.xml` system CAs only; WebRTC DTLS/SRTP for P2P |
 | Can users request data deletion? | **Yes** | In-app `settings` → delete account (`account.functions.ts`), plus the public page `https://together-rooms.lovable.app/delete-account` |
-| Do you follow the Play Families policy? | **No** — app is not targeted at children | Content rating should be Teen+; MFK YouTube videos are playable but tracking-restricted (`media-policy.ts`) |
+| Do you follow the Play Families policy? | **No** — app is not targeted at children | Content rating is 18 and over; MFK YouTube videos are playable but tracking-restricted (`media-policy.ts`) |
 | Independent security review | **No** | none conducted |
 | Committed to Play's Data Safety accuracy | Yes | — |
 
@@ -50,7 +50,7 @@ The page is reachable without signing in (linked from the app footer, `app-shell
 
 - **Advertising ID declaration**: Yes — the app uses the Advertising ID for advertising/marketing. `com.google.android.gms.permission.AD_ID` is merged in by the ads SDK.
 - **Ads presence**: Yes — the app contains ads (banner + interstitial).
-- **Target audience**: 13+ / Teen. Not "Designed for Families".
+- **Target audience**: 18 and over. Not "Designed for Families".
 - **Content rating questionnaire**: must declare **user-generated content with user-to-user communication** (chat, notes, resource links, shared media).
 - **Data Safety "shared" section**: name Google (advertising) as the recipient.
 

@@ -54,6 +54,10 @@ export const queryKeys = {
     reports: (filters: unknown) => ["staff", "reports", filters] as const,
     report: (reportId: string) => ["staff", "report", reportId] as const,
     roles: () => ["staff", "roles"] as const,
+    stats: () => ["staff", "stats"] as const,
+    users: (filters: unknown) => ["staff", "users", filters] as const,
+    rooms: (filters: unknown) => ["staff", "rooms", filters] as const,
+    broadcasts: () => ["staff", "broadcasts"] as const,
     // Removed-message plaintext is never given a query key: it is fetched
     // imperatively and held in component state so it cannot land in the cache.
   },

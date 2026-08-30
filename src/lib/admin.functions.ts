@@ -313,3 +313,180 @@ export const revokeAppRole = createServerFn({ method: "POST" })
     });
     return normalizeRpc("revoke_app_role", result, error);
   });
+
+/* ------------------------------------------------------------------ */
+/* Admin control center (admin-only RPCs)                              */
+/* ------------------------------------------------------------------ */
+
+export interface PlatformStats {
+  users_total: number;
+  users_new_24h: number;
+  users_suspended: number;
+  rooms_total: number;
+  rooms_active: number;
+  rooms_new_24h: number;
+  messages_24h: number;
+  reports_open: number;
+  ads_today: number;
+  notifications_24h: number;
+}
+
+export interface AdminUserRow {
+  user_id: string;
+  email: string | null;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  status: "active" | "suspended" | "deactivated" | "deleted";
+  created_at: string;
+  last_sign_in_at: string | null;
+  rooms_owned: number;
+  roles: string[];
+}
+
+export interface AdminRoomRow {
+  room_id: string;
+  name: string;
+  type: string;
+  status: string;
+  privacy: string;
+  created_at: string;
+  expires_at: string | null;
+  ended_at: string | null;
+  owner_id: string;
+  owner_name: string | null;
+  member_count: number;
+  message_count: number;
+}
+
+export interface BroadcastRow {
+  id: string;
+  created_at: string;
+  actor_name: string | null;
+  metadata: Record<string, Json>;
+}
+
+export const getPlatformStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc("admin_platform_stats");
+    return normalizeRpc<PlatformStats>("admin_platform_stats", data, error);
+  });
+
+export const listPlatformUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        q: z.string().trim().max(120).nullish(),
+        status: z.enum(["active", "suspended", "deactivated", "deleted"]).nullish(),
+        limit: z.number().int().min(1).max(100).default(25),
+        offset: z.number().int().min(0).default(0),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("admin_list_users", {
+      _q: data.q ?? "",
+      _status: data.status ?? undefined,
+      _limit: data.limit,
+      _offset: data.offset,
+    });
+    return normalizeRpc<{ rows: AdminUserRow[]; total: number }>(
+      "admin_list_users",
+      result,
+      error,
+    );
+  });
+
+export const setAccountStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        user_id: uuid,
+        status: z.enum(["active", "suspended"]),
+        reason: z.string().trim().max(240).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("admin_set_account_status", {
+      _user_id: data.user_id,
+      _status: data.status,
+      _reason: data.reason ?? "",
+    });
+    return normalizeRpc<{ status: string }>("admin_set_account_status", result, error);
+  });
+
+export const listPlatformRooms = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        q: z.string().trim().max(120).nullish(),
+        status: z.enum(["draft", "active", "paused", "ended", "archived"]).nullish(),
+        limit: z.number().int().min(1).max(100).default(25),
+        offset: z.number().int().min(0).default(0),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("admin_list_rooms", {
+      _q: data.q ?? "",
+      _status: data.status ?? undefined,
+      _limit: data.limit,
+      _offset: data.offset,
+    });
+    return normalizeRpc<{ rows: AdminRoomRow[]; total: number }>(
+      "admin_list_rooms",
+      result,
+      error,
+    );
+  });
+
+export const forceEndRoom = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ room_id: uuid, reason: z.string().trim().max(240).optional() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("admin_force_end_room", {
+      _room_id: data.room_id,
+      _reason: data.reason ?? "",
+    });
+    return normalizeRpc("admin_force_end_room", result, error);
+  });
+
+export const sendAdminNotification = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        title: z.string().trim().min(1).max(120),
+        body: z.string().trim().max(240).optional(),
+        audience: z.enum(["all", "staff", "room", "users"]),
+        room_id: uuid.nullish(),
+        user_ids: z.array(uuid).max(200).nullish(),
+        link: z.string().trim().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("admin_broadcast_notification", {
+      _title: data.title,
+      _body: data.body ?? "",
+      _audience: data.audience,
+      _room_id: data.room_id ?? undefined,
+      _user_ids: data.user_ids ?? undefined,
+      _link: data.link ?? "",
+    });
+    return normalizeRpc<{ sent: number }>("admin_broadcast_notification", result, error);
+  });
+
+export const listRecentBroadcasts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc("admin_recent_broadcasts", { _limit: 20 });
+    return normalizeRpc<{ rows: BroadcastRow[] }>("admin_recent_broadcasts", data, error);
+  });

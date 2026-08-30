@@ -54,6 +54,18 @@ suite("watch together — search panel / tabs around playback (e2e)", () => {
     await expect
       .poll(async () => (await searchPanel().count()) > 0, { timeout: 20_000, interval: 400 })
       .toBe(visible);
+    await expect
+      .poll(async () => await searchToggle().getAttribute("aria-expanded"), { timeout: 20_000 })
+      .toBe(String(visible));
+  }
+
+  async function expectTabsSearchState(open: boolean) {
+    await expect
+      .poll(async () => await tabsNav().getAttribute("data-search-open"), {
+        timeout: 20_000,
+        interval: 400,
+      })
+      .toBe(String(open));
   }
 
   beforeAll(async () => {
@@ -111,7 +123,7 @@ suite("watch together — search panel / tabs around playback (e2e)", () => {
       [storageKey, JSON.stringify(session)],
     );
     await page.goto(`${appUrl}/rooms/${roomId}`, { waitUntil: "domcontentloaded" });
-    await expect(searchToggle()).toBeVisible({ timeout: 30_000 });
+    await searchToggle().waitFor({ state: "visible", timeout: 30_000 });
   }, 180_000);
 
   afterAll(async () => {
@@ -122,8 +134,7 @@ suite("watch together — search panel / tabs around playback (e2e)", () => {
 
   it("shows the search panel while the room has no media", async () => {
     await expectSearchVisible(true);
-    await expect(searchToggle()).toHaveAttribute("aria-expanded", "true");
-    await expect(tabsNav()).toHaveAttribute("data-search-open", "true");
+    await expectTabsSearchState(true);
   });
 
   it("hides the search panel and pulls the tabs up when playback starts", async () => {
@@ -139,8 +150,7 @@ suite("watch together — search panel / tabs around playback (e2e)", () => {
     expect((play.data as { ok: boolean }).ok).toBe(true);
 
     await expectSearchVisible(false);
-    await expect(searchToggle()).toHaveAttribute("aria-expanded", "false", { timeout: 20_000 });
-    await expect(tabsNav()).toHaveAttribute("data-search-open", "false", { timeout: 20_000 });
+    await expectTabsSearchState(false);
 
     // Tabs sit under the video and stay reachable without scrolling away.
     const box = await tabsNav().boundingBox();
@@ -152,7 +162,7 @@ suite("watch together — search panel / tabs around playback (e2e)", () => {
   it("re-opens on demand and collapses again on the next play", async () => {
     await searchToggle().click();
     await expectSearchVisible(true);
-    await expect(tabsNav()).toHaveAttribute("data-search-open", "true", { timeout: 20_000 });
+    await expectTabsSearchState(true);
 
     const pause = await client.rpc("pause_room_media", { _room_id: roomId });
     expect((pause.data as { ok: boolean }).ok).toBe(true);
@@ -162,6 +172,6 @@ suite("watch together — search panel / tabs around playback (e2e)", () => {
     const play = await client.rpc("play_room_media", { _room_id: roomId });
     expect((play.data as { ok: boolean }).ok).toBe(true);
     await expectSearchVisible(false);
-    await expect(tabsNav()).toHaveAttribute("data-search-open", "false", { timeout: 20_000 });
+    await expectTabsSearchState(false);
   });
 });

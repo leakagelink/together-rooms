@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { normalizeRpc } from "@/lib/server/rpc.server";
+import { normalizeRpc, rpcArgs } from "@/lib/server/rpc.server";
 import type { Json } from "@/lib/rpc-types";
 
 /**
@@ -386,12 +386,12 @@ export const listPlatformUsers = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("admin_list_users", {
-      _q: data.q ?? "",
-      _status: data.status ?? undefined,
-      _limit: data.limit,
-      _offset: data.offset,
-    });
+    const { data: result, error } = await context.supabase.rpc(
+      "admin_list_users",
+      rpcArgs({ _q: data.q ?? "", _limit: data.limit, _offset: data.offset }, {
+        _status: data.status,
+      }),
+    );
     return normalizeRpc<{ rows: AdminUserRow[]; total: number }>(
       "admin_list_users",
       result,
@@ -432,12 +432,12 @@ export const listPlatformRooms = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("admin_list_rooms", {
-      _q: data.q ?? "",
-      _status: data.status ?? undefined,
-      _limit: data.limit,
-      _offset: data.offset,
-    });
+    const { data: result, error } = await context.supabase.rpc(
+      "admin_list_rooms",
+      rpcArgs({ _q: data.q ?? "", _limit: data.limit, _offset: data.offset }, {
+        _status: data.status,
+      }),
+    );
     return normalizeRpc<{ rows: AdminRoomRow[]; total: number }>(
       "admin_list_rooms",
       result,
@@ -473,14 +473,18 @@ export const sendAdminNotification = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase.rpc("admin_broadcast_notification", {
-      _title: data.title,
-      _body: data.body ?? "",
-      _audience: data.audience,
-      _room_id: data.room_id ?? undefined,
-      _user_ids: data.user_ids ?? undefined,
-      _link: data.link ?? "",
-    });
+    const { data: result, error } = await context.supabase.rpc(
+      "admin_broadcast_notification",
+      rpcArgs(
+        {
+          _title: data.title,
+          _body: data.body ?? "",
+          _audience: data.audience,
+          _link: data.link ?? "",
+        },
+        { _room_id: data.room_id, _user_ids: data.user_ids },
+      ),
+    );
     return normalizeRpc<{ sent: number }>("admin_broadcast_notification", result, error);
   });
 

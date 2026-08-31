@@ -78,6 +78,10 @@ interface AdContextValue {
   requestFullscreen: (placement: string) => Promise<boolean>;
   /** Shows a user-initiated rewarded ad. True only when the reward was earned. */
   requestRewarded: (placement: string) => Promise<boolean>;
+  /** Asks the native SDK for an anchored banner at an approved placement. */
+  requestBanner: (placement: string) => Promise<boolean>;
+  /** Removes any live banner (route change, ineligibility, consent change). */
+  hideBanner: () => void;
   setActivity: (patch: Partial<ActivityFlags>) => void;
   adsPossible: boolean;
   consent: ConsentState;

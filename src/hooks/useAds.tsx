@@ -347,6 +347,8 @@ export function useAds(): AdContextValue {
     }),
     requestFullscreen: async () => false,
     requestRewarded: async () => false,
+    requestBanner: async () => false,
+    hideBanner: () => {},
     setActivity: () => {},
     adsPossible: false,
     consent: "unresolved",

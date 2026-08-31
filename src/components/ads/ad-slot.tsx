@@ -17,9 +17,18 @@ import { cn } from "@/lib/utils";
  *  - it never overlays controls: it is a static block in normal flow.
  */
 export function AdSlot({ placement, className }: { placement: string; className?: string }) {
-  const { evaluate } = useAds();
+  const { evaluate, requestBanner, hideBanner } = useAds();
   const outcome = evaluate("banner", placement);
   const [rendered, setRendered] = useState(false);
+
+  // The slot is the only place that asks the native SDK for a banner: the
+  // request happens when (and only when) the placement is eligible, and the
+  // banner is torn down as soon as the screen unmounts.
+  useEffect(() => {
+    if (!outcome.eligible) return;
+    void requestBanner(placement);
+    return () => hideBanner();
+  }, [outcome.eligible, placement, requestBanner, hideBanner]);
 
   useEffect(() => {
     if (!outcome.eligible || rendered) return;

@@ -78,6 +78,10 @@ interface AdContextValue {
   requestFullscreen: (placement: string) => Promise<boolean>;
   /** Shows a user-initiated rewarded ad. True only when the reward was earned. */
   requestRewarded: (placement: string) => Promise<boolean>;
+  /** Asks the native SDK for an anchored banner at an approved placement. */
+  requestBanner: (placement: string) => Promise<boolean>;
+  /** Removes any live banner (route change, ineligibility, consent change). */
+  hideBanner: () => void;
   setActivity: (patch: Partial<ActivityFlags>) => void;
   adsPossible: boolean;
   consent: ConsentState;
@@ -285,6 +289,15 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     [context],
   );
 
+  const requestBanner = useCallback(
+    (placement: string) => providerRef.current!.request({ format: "banner", placement }, context),
+    [context],
+  );
+
+  const hideBanner = useCallback(() => {
+    providerRef.current?.hideBanner();
+  }, []);
+
   const setActivity = useCallback((patch: Partial<ActivityFlags>) => {
     setActivityState((prev) => ({ ...prev, ...patch }));
   }, []);
@@ -294,6 +307,8 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       evaluate,
       requestFullscreen,
       requestRewarded,
+      requestBanner,
+      hideBanner,
       setActivity,
       adsPossible: resolution.units !== null,
       consent,
@@ -301,7 +316,18 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       privacyOptionsAvailable: shouldOfferPrivacyOptions(ump),
       showPrivacyOptions,
     }),
-    [evaluate, requestFullscreen, requestRewarded, setActivity, resolution.units, consent, ump, showPrivacyOptions],
+    [
+      evaluate,
+      requestFullscreen,
+      requestRewarded,
+      requestBanner,
+      hideBanner,
+      setActivity,
+      resolution.units,
+      consent,
+      ump,
+      showPrivacyOptions,
+    ],
   );
 
   return <AdRuntimeContext.Provider value={value}>{children}</AdRuntimeContext.Provider>;
@@ -321,6 +347,8 @@ export function useAds(): AdContextValue {
     }),
     requestFullscreen: async () => false,
     requestRewarded: async () => false,
+    requestBanner: async () => false,
+    hideBanner: () => {},
     setActivity: () => {},
     adsPossible: false,
     consent: "unresolved",

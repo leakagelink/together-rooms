@@ -445,7 +445,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Images className="size-4" aria-hidden="true" />
               {files.length === 1
-                ? `1 ${files[0]!.type.split("/")[0]} ready to share`
+                ? `1 ${files[0]!.type.split("/")[0]} ready to stream`
                 : `${files.length} items queued — the room can browse through them (up to ${
                     files[0]!.type.startsWith("image/") ? MAX_IMAGE_ITEMS : MAX_QUEUE_ITEMS
                   })`}

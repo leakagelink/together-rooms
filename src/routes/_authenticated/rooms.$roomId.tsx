@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Copy,
   Flag,
+  Image,
   LogIn,
   LogOut,
   MessageSquare,

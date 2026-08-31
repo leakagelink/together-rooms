@@ -415,7 +415,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
                 </>
               ) : null}
               <Button variant="destructive" onClick={() => void stopShare()}>
-                <Square className="size-4" aria-hidden="true" /> Stop sharing
+                <Square className="size-4" aria-hidden="true" /> Stop stream
               </Button>
             </div>
           ) : null}

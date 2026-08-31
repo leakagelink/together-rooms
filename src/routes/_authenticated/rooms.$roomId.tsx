@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Copy,
   Flag,
+  Image,
   LogIn,
   LogOut,
   MessageSquare,
@@ -344,7 +345,7 @@ function RoomPage() {
   const tabs: { id: RoomTab; label: string; icon: typeof Users }[] = [
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "people", label: "People", icon: Users },
-    { id: "share", label: "Share", icon: Share2 },
+    { id: "share", label: "My Media", icon: Image },
   ];
 
 

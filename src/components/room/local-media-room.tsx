@@ -438,7 +438,7 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
               onClick={() => setPreflightOpen(true)}
               disabled={files.length === 0 || !roomActive}
             >
-              <MonitorPlay className="size-4" aria-hidden="true" /> Review &amp; share
+              <MonitorPlay className="size-4" aria-hidden="true" /> Review &amp; stream
             </Button>
           </div>
           {files.length > 0 ? (

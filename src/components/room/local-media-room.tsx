@@ -239,11 +239,11 @@ export function LocalMediaRoom({ roomId, userId, canShare, roomActive }: LocalMe
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="local-media-heading" className="text-lg font-semibold">
-            Share from this device
+            My Media
           </h2>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             Photos, video and audio you pick are streamed live to people in this room. Nothing is
-            uploaded or stored, and access ends the moment you stop sharing.
+            uploaded or stored, and access ends the moment you stop streaming.
           </p>
         </div>
         <Badge variant={media.transportState === "unavailable" ? "secondary" : "default"}>

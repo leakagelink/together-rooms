@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { DoorOpen, Plus } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { AdSlot } from "@/components/ads/ad-slot";
+import { useAds } from "@/hooks/useAds";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,9 +14,6 @@ import { errorMessage } from "@/lib/errors";
 const roomsQueryOptions = () =>
   queryOptions({
     queryKey: ["rooms", "mine"],
-    // The list must always reflect the server: a room created moments ago (or
-    // on another device) has to appear as soon as this screen opens, so the
-    // cached copy is shown instantly but revalidated on every mount.
     staleTime: 0,
     refetchOnMount: "always",
     queryFn: async () => {
@@ -43,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/rooms/")({
   component: RoomsPage,
   errorComponent: () => (
     <AppShell>
-      <ErrorState message="Your rooms couldn't be loaded." />
+      <ErrorState message="Your profile couldn't be loaded." />
     </AppShell>
   ),
   notFoundComponent: () => (
@@ -54,7 +52,22 @@ export const Route = createFileRoute("/_authenticated/rooms/")({
 });
 
 function RoomsPage() {
+  const navigate = useNavigate();
   const { data, isPending, isError, error, refetch } = useQuery(roomsQueryOptions());
+  const { requestFullscreen } = useAds();
+
+  const handleJoinClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Interstitials are requested and shown if ready; navigation continues regardless.
+    await requestFullscreen("join_room_click");
+    navigate({ to: "/rooms/join" });
+  };
+
+  const handleNewRoomClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await requestFullscreen("new_room_click");
+    navigate({ to: "/rooms/new" });
+  };
 
   return (
     <AppShell>
@@ -66,15 +79,11 @@ function RoomsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link to="/rooms/join">
-              <DoorOpen className="size-4" aria-hidden="true" /> Join
-            </Link>
+          <Button variant="outline" onClick={handleJoinClick}>
+            <DoorOpen className="size-4" aria-hidden="true" /> Join
           </Button>
-          <Button asChild>
-            <Link to="/rooms/new">
-              <Plus className="size-4" aria-hidden="true" /> New room
-            </Link>
+          <Button onClick={handleNewRoomClick}>
+            <Plus className="size-4" aria-hidden="true" /> New room
           </Button>
         </div>
       </div>
@@ -89,9 +98,7 @@ function RoomsPage() {
             title="No rooms yet"
             description="Create your first room, then invite the people you want in it."
             action={
-              <Button asChild>
-                <Link to="/rooms/new">Create a room</Link>
-              </Button>
+              <Button onClick={handleNewRoomClick}>Create a room</Button>
             }
           />
         ) : (
@@ -116,8 +123,6 @@ function RoomsPage() {
             ))}
           </ul>
         )}
-        {/* Ads sit below all content, in normal flow, clearly separated from
-            the list and from every control. Nothing overlays or floats. */}
         <AdSlot placement="rooms_list_footer" className="mt-8" />
       </div>
     </AppShell>

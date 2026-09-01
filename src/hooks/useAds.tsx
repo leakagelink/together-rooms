@@ -44,10 +44,6 @@ import { queryKeys } from "@/lib/query-keys";
 
 /**
  * PHASE 9 — ad runtime.
- *
- * This provider owns the *only* ad decision path in the app. Screens declare
- * context (an active call, a sensitive flow, typing) and ask for a placement;
- * they never touch an SDK, a unit id or the consent state directly.
  */
 
 interface ActivityFlags {
@@ -73,15 +69,12 @@ const EMPTY_ACTIVITY: ActivityFlags = {
 };
 
 interface AdContextValue {
-  /** Evaluate without requesting; used by slots to reserve or skip space. */
   evaluate: (format: AdFormat, placement: string) => AdOutcome;
   requestFullscreen: (placement: string) => Promise<boolean>;
   setActivity: (patch: Partial<ActivityFlags>) => void;
   adsPossible: boolean;
   consent: ConsentState;
-  /** Raw platform consent state, for the privacy settings surface. */
   umpState: UmpState;
-  /** True when Google requires a always-reachable privacy options entry point. */
   privacyOptionsAvailable: boolean;
   showPrivacyOptions: () => Promise<void>;
 }
@@ -99,8 +92,6 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
   const [appAdsConsent, setAppAdsConsent] = useState<boolean | null>(null);
   const [ump, setUmp] = useState<UmpState>(UNRESOLVED_UMP);
 
-  // The in-app ads switch. It can only ever make the platform decision
-  // stricter — it is never a substitute for the CMP.
   useEffect(() => {
     if (!user) {
       setAppAdsConsent(null);
@@ -121,9 +112,6 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  // UMP consent gathering. Runs once at startup, BEFORE the ads SDK is
-  // initialized, so no ad request can leave the device while consent is
-  // unresolved. Failures leave consent unresolved (fail-closed).
   useEffect(() => {
     let cancelled = false;
     const bridge = getUmpBridge();
@@ -160,10 +148,6 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
 
   const config = configQuery.data ?? DEFAULT_AD_FREQUENCY;
 
-  // PHASE 13.1 — all identifiers come from the authoritative AdMob
-  // configuration boundary. Development builds get Google's test inventory;
-  // production builds get the real units, and any malformed/mismatched
-  // configuration disables advertising entirely (fail closed).
   const resolution = useMemo(() => {
     const env = environment();
     const overrides = {
@@ -181,9 +165,6 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     return units;
   }, []);
 
-  // PHASE 14 — how this build tests ads. Registered test devices are the only
-  // safe way to exercise the REAL ad units; they are explicit build-time
-  // configuration and never flip a production build into test mode.
   const testMode = useMemo(
     () =>
       resolveAdTestMode(
@@ -199,8 +180,6 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       units: resolution.units,
       testMode: resolution.testMode,
       config,
-      // No SDK is bundled in the web build; the Android shell injects one and
-      // it is attached only after consent permits ad requests.
       sdk: null,
       onDecision: (request, outcome) => {
         void track(outcome.eligible ? "ad_requested" : "ad_blocked", {
@@ -220,10 +199,6 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     providerRef.current?.updateConfig(config);
   }, [config]);
 
-  // Initialize the Mobile Ads SDK only once consent allows an ad request at
-  // all.
-  // PHASE 14 — the once-only guard lives in the bridge module, so a remount or
-  // an activity recreation replaying this effect cannot initialize twice.
   const sdkReady = useRef(false);
   useEffect(() => {
     if (sdkReady.current) return;
@@ -241,7 +216,6 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     });
   }, [ump, consent, resolution.testMode, testMode.testDeviceIds]);
 
-  // A consent withdrawal must remove any live banner immediately.
   useEffect(() => {
     if (consent === "denied" || consent === "unresolved") {
       providerRef.current?.hideBanner();
@@ -252,7 +226,6 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     try {
       setUmp(await getUmpBridge().showPrivacyOptionsForm());
     } catch {
-      /* Leaving the form open-failed keeps the previous state; never blocks. */
     }
   }, []);
 
@@ -272,8 +245,10 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
   );
 
   const requestFullscreen = useCallback(
-    (placement: string) =>
-      providerRef.current!.request({ format: "interstitial", placement }, context),
+    (placement: string) => {
+      const format: AdFormat = placement.includes("reward") ? "rewarded" : "interstitial";
+      return providerRef.current!.request({ format, placement }, context);
+    },
     [context],
   );
 
@@ -301,7 +276,6 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
 export function useAds(): AdContextValue {
   const ctx = useContext(AdRuntimeContext);
   if (ctx) return ctx;
-  // Safe fallback outside the provider: nothing is ever eligible.
   return {
     evaluate: () => ({
       eligible: false,
@@ -320,10 +294,6 @@ export function useAds(): AdContextValue {
   };
 }
 
-/**
- * Declares a temporary context flag (an active call, a sensitive screen) for
- * as long as the component is mounted.
- */
 export function useAdContextFlag(patch: Partial<ActivityFlags>) {
   const { setActivity } = useAds();
   const serialized = JSON.stringify(patch);

@@ -27,9 +27,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Verified App Links. Only the app's own origin is accepted, and
-                 only the invite/auth paths are claimed: no other host can hand
-                 this app a destination. Redemption still happens server-side. -->
+            <!-- Verified App Links -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -44,14 +42,21 @@
             </intent-filter>
         </activity>
 
-        <!-- Google Mobile Ads SDK application id. Required by the SDK at
-             startup; the SDK itself is only INITIALIZED after UMP consent
-             allows an ad request (see src/hooks/useAds.tsx). -->
+        <!-- Push Notification Metadata -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/colorPrimary" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="default" />
+
+        <!-- AdMob Configuration -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="@string/admob_app_id" />
-        <!-- Ads are never requested before consent resolution, so the SDK must
-             not auto-initialize on application start. -->
         <meta-data
             android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
             android:value="true" />
@@ -67,15 +72,6 @@
         </provider>
     </application>
 
-    <!-- Permissions.
-         INTERNET      : required, the entire product is networked.
-         CAMERA        : requested at runtime only when a member enables video.
-         RECORD_AUDIO  : requested at runtime only when a member joins a call
-                         with the microphone.
-         POST_NOTIFICATIONS : required for Android 13+ to show notifications.
-         No storage/media permissions are declared: local media sharing uses the
-         system file picker (SAF), which grants per-file access without any
-         permission. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -83,8 +79,6 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Devices without a camera or microphone must still install and use every
-         non-call feature. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />

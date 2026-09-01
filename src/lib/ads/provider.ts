@@ -13,7 +13,11 @@ import {
   recordFullscreenShown,
   type FrequencyState,
 } from "./frequency";
-import { isApprovedBannerPlacement, isApprovedInterstitialTransition } from "./placement-map";
+import {
+  isApprovedBannerPlacement,
+  isApprovedInterstitialTransition,
+  isApprovedRewardedPlacement,
+} from "./placement-map";
 import {
   evaluateAdPlacement,
   type AdFormat,
@@ -37,7 +41,7 @@ export interface AdOutcome extends AdPlacementDecision {
 export interface AdSdk {
   showBanner?(unitId: string, nonPersonalized: boolean): void;
   hideBanner?(): void;
-  showFullscreen?(unitId: string, nonPersonalized: boolean): Promise<void>;
+  showFullscreen?(unitId: string, nonPersonalized: boolean, format: AdFormat): Promise<void>;
 }
 
 export interface AdProviderOptions {
@@ -95,6 +99,16 @@ export class AdProvider {
         testMode: this.options.testMode,
       };
     }
+    if (request.format === "rewarded" && !isApprovedRewardedPlacement(request.placement)) {
+      return {
+        eligible: false,
+        reason: "NO_AD_PLACEMENT_NOT_APPROVED",
+        nonPersonalized: false,
+        unitId: null,
+        testMode: this.options.testMode,
+      };
+    }
+
     const decision = evaluateAdPlacement(request.format, context, this.options.config);
     if (!decision.eligible) {
       return { ...decision, unitId: null, testMode: this.options.testMode };
@@ -143,7 +157,7 @@ export class AdProvider {
       return true;
     }
     if (!sdk.showFullscreen) return false;
-    await sdk.showFullscreen(outcome.unitId, outcome.nonPersonalized);
+    await sdk.showFullscreen(outcome.unitId, outcome.nonPersonalized, request.format);
     this.frequency = recordFullscreenShown(request.format, this.frequency, this.now());
     return true;
   }

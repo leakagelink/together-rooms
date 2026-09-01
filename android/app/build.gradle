@@ -7,12 +7,10 @@ apply plugin: 'com.android.application'
  * versionCode  : monotonically increasing integer. CI supplies it through the
  *                ORG_GRADLE_PROJECT_versionCode / VERSION_CODE environment
  *                value so a build can never accidentally reuse a code that Play
- *                has already seen. Local builds fall back to 1.
- * Signing      : release signing is supplied by the environment only. No
- *                keystore, password or alias is ever committed to this repo.
+ *                has already seen. Local builds fall back to 3.
  */
-def appVersionName = "1.0.0"
-def appVersionCode = (System.getenv("VERSION_CODE") ?: project.findProperty("versionCode") ?: "1").toString().toInteger()
+def appVersionName = "1.0.2"
+def appVersionCode = (System.getenv("VERSION_CODE") ?: project.findProperty("versionCode") ?: "3").toString().toInteger()
 def signingEnvironment = [
     ANDROID_KEYSTORE_PATH: System.getenv("ANDROID_KEYSTORE_PATH"),
     ANDROID_KEYSTORE_PASSWORD: System.getenv("ANDROID_KEYSTORE_PASSWORD"),

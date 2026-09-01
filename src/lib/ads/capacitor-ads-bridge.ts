@@ -5,13 +5,6 @@
  * (see android/app/src/main/java/com/synctogether/com/ads/AdsPlugin.java).
  * This module adapts that plugin to the `NativeAdsBridge` contract the ad
  * runtime already speaks.
- *
- * Deliberate properties:
- *  - it is a THIN adapter: no policy, no unit selection, no consent decisions;
- *  - it never fabricates success. If the plugin is absent or a call rejects,
- *    the result is a failure/unresolved value, never a pretend impression;
- *  - on the web there is no plugin and `resolveCapacitorAdsBridge()` returns
- *    null, which is what keeps the browser build ad-free.
  */
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
@@ -33,6 +26,14 @@ export interface SyncTogetherAdsPlugin {
     nonPersonalized: boolean;
   }): Promise<{ loaded: boolean }>;
   showInterstitial(options: {
+    unitId: string;
+    nonPersonalized: boolean;
+  }): Promise<{ shown: boolean; reason?: string }>;
+  preloadRewarded(options: {
+    unitId: string;
+    nonPersonalized: boolean;
+  }): Promise<{ loaded: boolean }>;
+  showRewarded(options: {
     unitId: string;
     nonPersonalized: boolean;
   }): Promise<{ shown: boolean; reason?: string }>;
@@ -68,7 +69,6 @@ export function adaptAdsPlugin(plugin: SyncTogetherAdsPlugin, available: boolean
     try {
       return toUmpState(await fn());
     } catch {
-      // A failed consent gather is never consent.
       return { ...UNRESOLVED_UMP, error: "gathering_failed" };
     }
   };
@@ -90,6 +90,14 @@ export function adaptAdsPlugin(plugin: SyncTogetherAdsPlugin, available: boolean
     },
     async preloadInterstitial(unitId, nonPersonalized) {
       const result = await plugin.preloadInterstitial({ unitId, nonPersonalized });
+      return result?.loaded === true;
+    },
+    async showRewarded(unitId, nonPersonalized) {
+      const result = await plugin.showRewarded({ unitId, nonPersonalized });
+      return result?.shown === true;
+    },
+    async preloadRewarded(unitId, nonPersonalized) {
+      const result = await plugin.preloadRewarded({ unitId, nonPersonalized });
       return result?.loaded === true;
     },
     consent: {

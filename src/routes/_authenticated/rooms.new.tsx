@@ -2,8 +2,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Play } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { useAds } from "@/hooks/useAds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,6 +57,7 @@ function NewRoomPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = Route.useRouteContext();
+  const { requestFullscreen } = useAds();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<(typeof roomTypes)[number]>("friends");
@@ -63,6 +66,23 @@ function NewRoomPage() {
   const [ephemeral, setEphemeral] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [watchingAd, setWatchingAd] = useState(false);
+
+  async function handleWatchAd() {
+    setWatchingAd(true);
+    try {
+      const shown = await requestFullscreen("create_room_reward");
+      if (shown) {
+        toast.success("Thank you for watching! This helps keep SyncTogether free.");
+      } else {
+        toast.info("No ad available right now. You can still create your room!");
+      }
+    } catch {
+      toast.error("Could not load video.");
+    } finally {
+      setWatchingAd(false);
+    }
+  }
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -102,8 +122,6 @@ function NewRoomPage() {
         .select("id")
         .single();
       if (insertError) throw insertError;
-      // The new room must be present in the rooms list the moment the user
-      // navigates back, even if the cached list was restored from storage.
       await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.mine() });
       void track("room_created", { type: parsed.data.type, ephemeral: parsed.data.is_ephemeral });
       toast.success("Room created.");
@@ -179,6 +197,28 @@ function NewRoomPage() {
           </div>
           <Switch id="inviteOnly" checked={inviteOnly} onCheckedChange={setInviteOnly} />
         </div>
+
+        <div className="surface-panel flex flex-col gap-3 rounded-lg border border-dashed border-border p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Support SyncTogether</p>
+              <p className="text-xs text-muted-foreground">
+                Watch a short video to help keep the service free for everyone.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleWatchAd}
+              disabled={watchingAd}
+            >
+              <Play className="mr-2 size-3.5" />
+              {watchingAd ? "Loading..." : "Watch Ad"}
+            </Button>
+          </div>
+        </div>
+
         <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
           <div>
             <Label htmlFor="ephemeral">Ephemeral room</Label>

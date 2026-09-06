@@ -38,6 +38,7 @@ import {
   UNRESOLVED_UMP,
   type UmpState,
 } from "@/lib/ads/consent";
+import { adDebug } from "@/lib/ads/debug";
 import { track } from "@/lib/analytics";
 import { getAdRuntimeConfig } from "@/lib/ads.functions";
 import { queryKeys } from "@/lib/query-keys";
@@ -84,6 +85,8 @@ interface AdContextValue {
   hideBanner: () => void;
   setActivity: (patch: Partial<ActivityFlags>) => void;
   adsPossible: boolean;
+  /** True once the native ad SDK is initialized and attached. */
+  adsReady: boolean;
   consent: ConsentState;
   /** Raw platform consent state, for the privacy settings surface. */
   umpState: UmpState;
@@ -231,19 +234,31 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
   // PHASE 14 — the once-only guard lives in the bridge module, so a remount or
   // an activity recreation replaying this effect cannot initialize twice.
   const sdkReady = useRef(false);
+  const [adsReady, setAdsReady] = useState(false);
   useEffect(() => {
     if (sdkReady.current) return;
-    if (!mayInitializeAds(ump)) return;
+    if (!mayInitializeAds(ump)) {
+      adDebug("sdk_init_skipped_consent", { status: ump.status, canRequestAds: ump.canRequestAds });
+      return;
+    }
     const bridge = getAdsBridge();
-    if (!bridge) return;
+    if (!bridge) {
+      adDebug("sdk_init_skipped_no_bridge");
+      return;
+    }
     sdkReady.current = true;
     void initializeNativeAds(bridge, {
       testMode: resolution.testMode,
       nonPersonalized: consent !== "granted_personalized",
       testDeviceIds: testMode.testDeviceIds,
     }).then((ok) => {
-      if (ok) providerRef.current?.attachSdk(createNativeAdSdk(bridge));
-      else sdkReady.current = false;
+      adDebug(ok ? "sdk_initialized" : "sdk_init_failed", { testMode: resolution.testMode });
+      if (ok) {
+        providerRef.current?.attachSdk(createNativeAdSdk(bridge));
+        setAdsReady(true);
+      } else {
+        sdkReady.current = false;
+      }
     });
   }, [ump, consent, resolution.testMode, testMode.testDeviceIds]);
 
@@ -311,6 +326,7 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       hideBanner,
       setActivity,
       adsPossible: resolution.units !== null,
+      adsReady,
       consent,
       umpState: ump,
       privacyOptionsAvailable: shouldOfferPrivacyOptions(ump),
@@ -324,6 +340,7 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       hideBanner,
       setActivity,
       resolution.units,
+      adsReady,
       consent,
       ump,
       showPrivacyOptions,
@@ -351,6 +368,7 @@ export function useAds(): AdContextValue {
     hideBanner: () => {},
     setActivity: () => {},
     adsPossible: false,
+    adsReady: false,
     consent: "unresolved",
     umpState: UNRESOLVED_UMP,
     privacyOptionsAvailable: false,

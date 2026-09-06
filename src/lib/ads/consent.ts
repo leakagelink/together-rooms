@@ -90,6 +90,31 @@ export function umpToAdConsent(state: UmpState): ConsentState {
  * ads even if UMP consent was obtained, and UMP denial cannot be overridden by
  * an app setting.
  */
+/**
+ * The stored in-app ads switch, interpreted.
+ *
+ * `privacy_settings.ads_consent` is created with the column default (false)
+ * for every account, so the stored value cannot be read as a user decision
+ * until the user has actually saved their privacy settings at least once.
+ * Reading the untouched default as "the user turned ads off" denied ads to
+ * every account in the app.
+ *
+ * `null` means "no user decision" — the platform CMP alone decides. An
+ * explicit save is respected in both directions and always wins when it
+ * denies.
+ */
+export function interpretStoredAdsConsent(
+  row: { ads_consent: boolean; created_at?: string | null; updated_at?: string | null } | null,
+): boolean | null {
+  if (!row) return null;
+  const created = row.created_at ? Date.parse(row.created_at) : NaN;
+  const updated = row.updated_at ? Date.parse(row.updated_at) : NaN;
+  const touched =
+    Number.isFinite(created) && Number.isFinite(updated) ? updated - created > 1000 : true;
+  if (!touched) return null;
+  return Boolean(row.ads_consent);
+}
+
 export function resolveAdConsent(ump: UmpState, appAdsConsent: boolean | null): ConsentState {
   const platform = umpToAdConsent(ump);
   if (appAdsConsent === false) return "denied";

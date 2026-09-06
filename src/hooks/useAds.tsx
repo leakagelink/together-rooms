@@ -118,12 +118,14 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     void supabase
       .from("privacy_settings")
-      .select("ads_consent")
+      .select("ads_consent, created_at, updated_at")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
-        setAppAdsConsent(data ? Boolean(data.ads_consent) : null);
+        const stored = interpretStoredAdsConsent(data ?? null);
+        adDebug("app_ads_switch", { stored });
+        setAppAdsConsent(stored);
       });
     return () => {
       cancelled = true;

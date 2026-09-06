@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAdContextFlag } from "@/hooks/useAds";
+import { interpretStoredAdsConsent } from "@/lib/ads/consent";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { setAnalyticsConsent } from "@/lib/analytics";
@@ -93,7 +94,9 @@ function PrivacySettingsPage() {
         searchable_by_username: d.searchable_by_username,
         analytics_consent: d.analytics_consent,
         personalization_consent: d.personalization_consent,
-        ads_consent: d.ads_consent,
+        // Untouched settings mean "no decision yet": ads follow the platform
+        // consent form, so the switch must show them as on.
+        ads_consent: interpretStoredAdsConsent(d) ?? true,
         room_data_retention_days: d.room_data_retention_days,
       });
       setAnalyticsConsent(d.analytics_consent);
@@ -122,8 +125,8 @@ function PrivacySettingsPage() {
     <AppShell>
       <h1 className="text-2xl font-semibold">Privacy settings</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        We collect only what these features need. Nothing here is shared with advertisers — no ads
-        SDK is integrated.
+        We collect only what these features need. Ads are served by Google AdMob and you can turn
+        them off below.
       </p>
 
       <div className="mt-8 max-w-xl space-y-6">

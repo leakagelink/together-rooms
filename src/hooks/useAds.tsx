@@ -192,11 +192,24 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       rewarded: import.meta.env["VITE_ADMOB_REWARDED_UNIT"] as string | undefined,
       appId: import.meta.env["VITE_ADMOB_APP_ID"] as string | undefined,
     };
+    // PHASE 14.3 — safe, explicit test mode. A build may opt into Google's
+    // official test inventory (never real units, never real revenue) by
+    // setting VITE_ADMOB_USE_TEST_UNITS=1. Off unless the build sets it.
+    if (String(import.meta.env["VITE_ADMOB_USE_TEST_UNITS"] ?? "") === "1") {
+      adDebug("using_google_test_units");
+      return resolveAdUnits("development", {});
+    }
     const appId = resolveAdMobAppId(env, overrides);
     const units = resolveAdUnits(env, resolveConfiguredAdUnits(env, overrides));
     if (appId.configError) {
+      adDebug("ad_config_error", { error: appId.configError });
       return { units: null, testMode: false, configError: appId.configError };
     }
+    adDebug("ad_units_resolved", {
+      environment: env,
+      configured: units.units !== null,
+      error: units.configError,
+    });
     return units;
   }, []);
 

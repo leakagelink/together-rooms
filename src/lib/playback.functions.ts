@@ -98,6 +98,33 @@ export const seekRoomMedia = createServerFn({ method: "POST" })
     return normalizeRpc<StateResult>("seek_room_media", result, error);
   });
 
+/**
+ * YouTube Shorts Together — switches the room between the normal video stage
+ * and the portrait Shorts stage. It changes framing only: the media id, the
+ * playback transport and every permission check stay exactly as they are, and
+ * `set_room_watch_mode` re-checks membership, control permission, room
+ * lifecycle, rate limits and the optimistic version in Postgres.
+ */
+export const setRoomWatchMode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        room_id: uuid,
+        watch_mode: z.enum(["video", "shorts"]),
+        expected_version: version,
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("set_room_watch_mode", {
+      _room_id: data.room_id,
+      _mode: data.watch_mode,
+      ...(data.expected_version == null ? {} : { _expected_version: data.expected_version }),
+    });
+    return normalizeRpc<StateResult>("set_room_watch_mode", result, error);
+  });
+
 export const clearRoomMedia = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>

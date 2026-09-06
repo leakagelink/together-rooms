@@ -53,12 +53,20 @@ import {
 import { setPlaybackTrackingRestricted } from "@/lib/analytics";
 import { providerError, type ProviderError } from "@/lib/providers/media-provider";
 import { youtubeProvider } from "@/lib/providers/youtube";
+import { Input } from "@/components/ui/input";
+import {
+  parseShortsReference,
+  shouldPublishWatchMode,
+  toWatchMode,
+  type WatchMode,
+} from "@/lib/shorts";
 import {
   clearRoomMedia,
   pauseRoomMedia,
   playRoomMedia,
   seekRoomMedia,
   setRoomMedia,
+  setRoomWatchMode,
 } from "@/lib/playback.functions";
 
 /**
@@ -179,6 +187,62 @@ export interface WatchTogetherProps {
   onSearchVisibilityChange?: (open: boolean) => void;
 }
 
+/**
+ * Shorts Together — the host pastes the next Short explicitly. There is no
+ * feed, no crawling and no automatic "next Short": the app never discovers
+ * YouTube content on its own. The pasted link is parsed locally to an id and
+ * then goes through the same authoritative `set_room_media` RPC as any other
+ * video, which re-validates the id and the embedding policy server-side.
+ */
+function ShortsLinkForm({
+  disabled,
+  onPick,
+}: {
+  disabled: boolean;
+  onPick: (mediaId: string) => void;
+}) {
+  const [value, setValue] = useState("");
+
+  return (
+    <form
+      className="mt-3 space-y-2 rounded-lg border border-border bg-muted/30 p-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const reference = parseShortsReference(value);
+        if (!reference) {
+          toast.error("That doesn't look like a YouTube Short or video link.");
+          return;
+        }
+        setValue("");
+        onPick(reference.videoId);
+      }}
+    >
+      <label htmlFor="shorts-link" className="text-sm font-medium">
+        Play a Short
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <Input
+          id="shorts-link"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          placeholder="https://www.youtube.com/shorts/…"
+          inputMode="url"
+          autoComplete="off"
+          className="min-w-48 flex-1"
+        />
+        <Button type="submit" size="sm" disabled={disabled || value.trim().length === 0}>
+          Play in room
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Paste a YouTube Shorts or video link. Everyone in the room moves to it together.
+      </p>
+    </form>
+  );
+}
+
+
+
 export function WatchTogether({
   roomId,
   roomCode,
@@ -225,6 +289,13 @@ export function WatchTogether({
   // loaded, regardless of mount order. A manual toggle overrides the default
   // until the media changes again.
   const hasMedia = Boolean(state?.provider_media_id);
+  /**
+   * Shorts Together: framing only. The mode travels on the same authoritative
+   * room playback row everyone already subscribes to, so joiners land on the
+   * room's current mode, current Short and current playback state.
+   */
+  const watchMode: WatchMode = toWatchMode(state?.watch_mode);
+  const shortsMode = watchMode === "shorts" && !audioMode;
   const [searchOverride, setSearchOverride] = useState<boolean | null>(null);
   const searchOpen = searchOverride ?? !hasMedia;
   // Functional toggle: it always flips the *currently rendered* state, even if
@@ -252,6 +323,7 @@ export function WatchTogether({
   const pause = useServerFn(pauseRoomMedia);
   const seek = useServerFn(seekRoomMedia);
   const clear = useServerFn(clearRoomMedia);
+  const setMode = useServerFn(setRoomWatchMode);
 
   const setGesture = useCallback((value: boolean) => {
     gestureRef.current = value;
@@ -295,7 +367,8 @@ export function WatchTogether({
         | { kind: "play" }
         | { kind: "pause" }
         | { kind: "seek"; position: number }
-        | { kind: "clear" },
+        | { kind: "clear" }
+        | { kind: "mode"; mode: WatchMode },
     ) => {
       const expected_version = stateRef.current?.version ?? null;
       switch (action.kind) {
@@ -318,6 +391,8 @@ export function WatchTogether({
           });
         case "clear":
           return clear({ data: { room_id: roomId, expected_version } });
+        case "mode":
+          return setMode({ data: { room_id: roomId, watch_mode: action.mode, expected_version } });
       }
     },
     onSuccess: (result) => applyResult(result as never),
@@ -782,6 +857,33 @@ export function WatchTogether({
         </div>
       </div>
 
+      {!audioMode ? (
+        <div
+          className="mt-4 inline-flex rounded-lg border border-border bg-muted/40 p-1"
+          role="group"
+          aria-label="Watch mode"
+        >
+          {(["video", "shorts"] as const).map((mode) => (
+            <Button
+              key={mode}
+              type="button"
+              size="sm"
+              variant={watchMode === mode ? "secondary" : "ghost"}
+              aria-pressed={watchMode === mode}
+              disabled={!canControl || !roomActive || busy}
+              onClick={() => {
+                // Loop guard: only a real change is published.
+                if (!shouldPublishWatchMode(watchMode, mode)) return;
+                mutate({ kind: "mode", mode });
+              }}
+            >
+              {mode === "video" ? "Videos" : "Shorts"}
+            </Button>
+          ))}
+        </div>
+      ) : null}
+
+
       <div
         ref={stageRef}
         className={
@@ -789,16 +891,27 @@ export function WatchTogether({
             ? "fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-stage"
             : compact
               ? "group mt-4 flex items-center gap-3 overflow-hidden rounded-xl border border-border bg-card p-2"
-              : "group mt-4 overflow-hidden rounded-xl border border-border bg-stage"
+              : shortsMode
+                ? "group mt-4 flex justify-center overflow-hidden rounded-xl border border-border bg-stage"
+                : "group mt-4 overflow-hidden rounded-xl border border-border bg-stage"
         }
       >
+        {/*
+          Shorts framing: a portrait 9:16 box. The official player letterboxes
+          inside it, so the real video aspect ratio is preserved — nothing is
+          stretched, cropped or re-rendered by the app.
+        */}
         <div
           className={
             isFullscreen
-              ? "relative h-full max-h-full w-full"
+              ? shortsMode
+                ? "relative aspect-[9/16] h-full max-h-full max-w-full"
+                : "relative h-full max-h-full w-full"
               : compact
                 ? "relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-stage sm:w-36"
-                : "relative aspect-video w-full"
+                : shortsMode
+                  ? "relative aspect-[9/16] w-full max-w-[min(100%,26rem)]"
+                  : "relative aspect-video w-full"
           }
         >
           <div ref={containerRef} className="absolute inset-0 size-full" />
@@ -991,6 +1104,10 @@ export function WatchTogether({
       ) : null}
 
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
+
+      {canControl && roomActive && shortsMode ? (
+        <ShortsLinkForm disabled={busy} onPick={onPickMedia} />
+      ) : null}
 
       {canControl && roomActive ? (
         <div className="mt-3 space-y-3">

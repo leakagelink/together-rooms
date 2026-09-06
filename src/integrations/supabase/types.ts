@@ -1469,6 +1469,7 @@ export type Database = {
           title: string | null
           updated_at: string
           version: number
+          watch_mode: string
         }
         Insert: {
           controlled_by?: string | null
@@ -1484,6 +1485,7 @@ export type Database = {
           title?: string | null
           updated_at?: string
           version?: number
+          watch_mode?: string
         }
         Update: {
           controlled_by?: string | null
@@ -1499,6 +1501,7 @@ export type Database = {
           title?: string | null
           updated_at?: string
           version?: number
+          watch_mode?: string
         }
         Relationships: [
           {
@@ -2747,6 +2750,10 @@ export type Database = {
           _provider: string
           _room_id: string
         }
+        Returns: Json
+      }
+      set_room_watch_mode: {
+        Args: { _expected_version?: number; _mode: string; _room_id: string }
         Returns: Json
       }
       set_shuffle_enabled: {

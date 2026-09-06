@@ -21,6 +21,8 @@ export interface PlaybackState {
   version: number;
   controlled_by: string | null;
   updated_at: string;
+  /** Shorts Together: portrait framing flag for the shared stage. */
+  watch_mode?: "video" | "shorts";
 }
 
 /** Drift bands, in seconds. Deliberately generous: we never claim frame accuracy. */

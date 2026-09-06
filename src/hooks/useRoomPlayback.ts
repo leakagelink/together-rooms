@@ -13,7 +13,7 @@ import {
 import { getServerTime } from "@/lib/playback.functions";
 
 const PLAYBACK_COLUMNS =
-  "room_id, provider, provider_media_id, title, thumbnail_url, playback_status, position_seconds, playback_started_at, version, controlled_by, updated_at";
+  "room_id, provider, provider_media_id, title, thumbnail_url, playback_status, position_seconds, playback_started_at, version, controlled_by, updated_at, watch_mode";
 
 function toState(row: unknown): PlaybackState | null {
   if (!row || typeof row !== "object") return null;

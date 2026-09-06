@@ -1,6 +1,7 @@
 package com.synctogether.com.ads;
 
 import android.app.Activity;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -27,6 +28,8 @@ import com.google.android.gms.ads.LoadAdError;
  *    layout shift.
  */
 public class BannerAdController {
+
+    private static final String TAG = "SyncTogetherAds";
 
     private AdView adView;
     private FrameLayout container;
@@ -68,11 +71,13 @@ public class BannerAdController {
             view.setAdListener(new AdListener() {
                 @Override
                 public void onAdLoaded() {
+                    Log.d(TAG, "banner loaded");
                     callback.onSuccess();
                 }
 
                 @Override
                 public void onAdFailedToLoad(@NonNull LoadAdError error) {
+                    Log.w(TAG, "banner failed: code=" + error.getCode() + " msg=" + error.getMessage());
                     // No blank space is left behind.
                     destroy();
                     callback.onFailure(AdErrorMapper.token(error));
@@ -82,8 +87,10 @@ public class BannerAdController {
             adView = view;
             container = frame;
             currentUnitId = unitId;
+            Log.d(TAG, "banner request started (npa=" + nonPersonalized + ")");
             view.loadAd(AdRequestFactory.build(nonPersonalized));
         } catch (Throwable error) {
+            Log.e(TAG, "banner internal error", error);
             destroy();
             callback.onFailure("internal");
         }
@@ -100,6 +107,7 @@ public class BannerAdController {
     /** Idempotent teardown: safe on rotation, navigation away and destroy. */
     public void destroy() {
         try {
+            if (adView != null) Log.d(TAG, "banner destroyed");
             if (adView != null) {
                 adView.setAdListener(null);
                 adView.destroy();

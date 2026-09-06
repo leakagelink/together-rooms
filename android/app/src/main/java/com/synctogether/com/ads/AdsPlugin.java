@@ -1,6 +1,7 @@
 package com.synctogether.com.ads;
 
 import android.app.Activity;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -31,6 +32,8 @@ import java.util.List;
  */
 @CapacitorPlugin(name = "SyncTogetherAds")
 public class AdsPlugin extends Plugin {
+
+    private static final String TAG = "SyncTogetherAds";
 
     private final BannerAdController banner = new BannerAdController();
     private final InterstitialAdController interstitial = new InterstitialAdController();
@@ -94,12 +97,14 @@ public class AdsPlugin extends Plugin {
                 MobileAds.initialize(activity, status -> {
                     initialized = true;
                     initializing = false;
+                    Log.d(TAG, "MobileAds initialized (testMode=" + testMode + ", testDevices=" + testDevices.size() + ")");
                     JSObject result = new JSObject();
                     result.put("initialized", true);
                     result.put("testMode", testMode);
                     call.resolve(result);
                 });
             } catch (Throwable error) {
+                Log.e(TAG, "MobileAds init failed", error);
                 initializing = false;
                 call.reject("sdk_init_failed");
             }

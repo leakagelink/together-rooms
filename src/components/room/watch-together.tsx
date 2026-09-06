@@ -801,6 +801,33 @@ export function WatchTogether({
         </div>
       </div>
 
+      {!audioMode ? (
+        <div
+          className="mt-4 inline-flex rounded-lg border border-border bg-muted/40 p-1"
+          role="group"
+          aria-label="Watch mode"
+        >
+          {(["video", "shorts"] as const).map((mode) => (
+            <Button
+              key={mode}
+              type="button"
+              size="sm"
+              variant={watchMode === mode ? "secondary" : "ghost"}
+              aria-pressed={watchMode === mode}
+              disabled={!canControl || !roomActive || busy}
+              onClick={() => {
+                // Loop guard: only a real change is published.
+                if (!shouldPublishWatchMode(watchMode, mode)) return;
+                mutate({ kind: "mode", mode });
+              }}
+            >
+              {mode === "video" ? "Videos" : "Shorts"}
+            </Button>
+          ))}
+        </div>
+      ) : null}
+
+
       <div
         ref={stageRef}
         className={

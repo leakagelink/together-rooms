@@ -260,6 +260,7 @@ export function WatchTogether({
   const pause = useServerFn(pauseRoomMedia);
   const seek = useServerFn(seekRoomMedia);
   const clear = useServerFn(clearRoomMedia);
+  const setMode = useServerFn(setRoomWatchMode);
 
   const setGesture = useCallback((value: boolean) => {
     gestureRef.current = value;

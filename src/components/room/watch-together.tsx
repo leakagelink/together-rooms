@@ -1049,6 +1049,10 @@ export function WatchTogether({
 
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
 
+      {canControl && roomActive && shortsMode ? (
+        <ShortsLinkForm disabled={busy} onPick={onPickMedia} />
+      ) : null}
+
       {canControl && roomActive ? (
         <div className="mt-3 space-y-3">
           <div className="flex items-center justify-between gap-2">

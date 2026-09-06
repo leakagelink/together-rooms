@@ -53,12 +53,20 @@ import {
 import { setPlaybackTrackingRestricted } from "@/lib/analytics";
 import { providerError, type ProviderError } from "@/lib/providers/media-provider";
 import { youtubeProvider } from "@/lib/providers/youtube";
+import { Input } from "@/components/ui/input";
+import {
+  parseShortsReference,
+  shouldPublishWatchMode,
+  toWatchMode,
+  type WatchMode,
+} from "@/lib/shorts";
 import {
   clearRoomMedia,
   pauseRoomMedia,
   playRoomMedia,
   seekRoomMedia,
   setRoomMedia,
+  setRoomWatchMode,
 } from "@/lib/playback.functions";
 
 /**

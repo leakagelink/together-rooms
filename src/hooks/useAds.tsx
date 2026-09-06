@@ -31,6 +31,7 @@ import {
 } from "@/lib/ads/admob-bridge";
 import { resolveAdTestMode } from "@/lib/ads/test-devices";
 import {
+  interpretStoredAdsConsent,
   mayInitializeAds,
   nextUmpAction,
   resolveAdConsent,
@@ -144,6 +145,13 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
         if (nextUmpAction(next).action === "show_form") {
           next = await bridge.showConsentFormIfRequired();
         }
+        adDebug("ump_state", {
+          status: next.status,
+          formStatus: next.formStatus,
+          canRequestAds: next.canRequestAds,
+          personalized: next.personalizedAllowed,
+          error: next.error ?? null,
+        });
         if (!cancelled) setUmp(next);
       } catch {
         if (!cancelled) setUmp({ ...UNRESOLVED_UMP, error: "gathering_failed" });

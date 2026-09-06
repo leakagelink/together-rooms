@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAds } from "@/hooks/useAds";
 import { sanitizeAdEvent } from "@/lib/ads/analytics-safety";

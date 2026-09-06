@@ -303,7 +303,8 @@ export function WatchTogether({
         | { kind: "play" }
         | { kind: "pause" }
         | { kind: "seek"; position: number }
-        | { kind: "clear" },
+        | { kind: "clear" }
+        | { kind: "mode"; mode: WatchMode },
     ) => {
       const expected_version = stateRef.current?.version ?? null;
       switch (action.kind) {
@@ -326,6 +327,8 @@ export function WatchTogether({
           });
         case "clear":
           return clear({ data: { room_id: roomId, expected_version } });
+        case "mode":
+          return setMode({ data: { room_id: roomId, watch_mode: action.mode, expected_version } });
       }
     },
     onSuccess: (result) => applyResult(result as never),

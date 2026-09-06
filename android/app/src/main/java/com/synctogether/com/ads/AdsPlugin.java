@@ -95,9 +95,9 @@ public class AdsPlugin extends Plugin {
                 }
                 MobileAds.setRequestConfiguration(configuration.build());
                 MobileAds.initialize(activity, status -> {
-                    Log.d(TAG, "MobileAds initialized (testMode=" + testMode + ", testDevices=" + testDevices.size() + ")");
                     initialized = true;
                     initializing = false;
+                    Log.d(TAG, "MobileAds initialized (testMode=" + testMode + ", testDevices=" + testDevices.size() + ")");
                     JSObject result = new JSObject();
                     result.put("initialized", true);
                     result.put("testMode", testMode);

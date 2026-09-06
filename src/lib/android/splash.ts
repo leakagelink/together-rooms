@@ -8,16 +8,28 @@
  */
 let hidden = false;
 
+interface SplashScreenPlugin {
+  hide(options?: { fadeOutDuration?: number }): Promise<void>;
+}
+
+interface CapacitorGlobal {
+  isNativePlatform?: () => boolean;
+  Plugins?: { SplashScreen?: SplashScreenPlugin };
+}
+
 export async function hideNativeSplash(): Promise<void> {
   if (hidden) return;
   hidden = true;
   if (typeof window === "undefined") return;
-  const capacitor = (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+  const capacitor = (window as { Capacitor?: CapacitorGlobal }).Capacitor;
   if (!capacitor?.isNativePlatform?.()) return;
   try {
-    const { SplashScreen } = await import("@capacitor/splash-screen");
-    await SplashScreen.hide({ fadeOutDuration: 250 });
+    // Resolved from the native plugin registry rather than imported, so the
+    // web bundle never needs the plugin package at build time.
+    const splash = capacitor.Plugins?.SplashScreen;
+    await splash?.hide({ fadeOutDuration: 250 });
   } catch {
     /* plugin unavailable — the native auto-hide fallback applies */
   }
 }
+

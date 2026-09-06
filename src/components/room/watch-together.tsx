@@ -233,6 +233,13 @@ export function WatchTogether({
   // loaded, regardless of mount order. A manual toggle overrides the default
   // until the media changes again.
   const hasMedia = Boolean(state?.provider_media_id);
+  /**
+   * Shorts Together: framing only. The mode travels on the same authoritative
+   * room playback row everyone already subscribes to, so joiners land on the
+   * room's current mode, current Short and current playback state.
+   */
+  const watchMode: WatchMode = toWatchMode(state?.watch_mode);
+  const shortsMode = watchMode === "shorts" && !audioMode;
   const [searchOverride, setSearchOverride] = useState<boolean | null>(null);
   const searchOpen = searchOverride ?? !hasMedia;
   // Functional toggle: it always flips the *currently rendered* state, even if

@@ -808,16 +808,27 @@ export function WatchTogether({
             ? "fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-stage"
             : compact
               ? "group mt-4 flex items-center gap-3 overflow-hidden rounded-xl border border-border bg-card p-2"
-              : "group mt-4 overflow-hidden rounded-xl border border-border bg-stage"
+              : shortsMode
+                ? "group mt-4 flex justify-center overflow-hidden rounded-xl border border-border bg-stage"
+                : "group mt-4 overflow-hidden rounded-xl border border-border bg-stage"
         }
       >
+        {/*
+          Shorts framing: a portrait 9:16 box. The official player letterboxes
+          inside it, so the real video aspect ratio is preserved — nothing is
+          stretched, cropped or re-rendered by the app.
+        */}
         <div
           className={
             isFullscreen
-              ? "relative h-full max-h-full w-full"
+              ? shortsMode
+                ? "relative aspect-[9/16] h-full max-h-full max-w-full"
+                : "relative h-full max-h-full w-full"
               : compact
                 ? "relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-stage sm:w-36"
-                : "relative aspect-video w-full"
+                : shortsMode
+                  ? "relative aspect-[9/16] w-full max-w-[min(100%,26rem)]"
+                  : "relative aspect-video w-full"
           }
         >
           <div ref={containerRef} className="absolute inset-0 size-full" />

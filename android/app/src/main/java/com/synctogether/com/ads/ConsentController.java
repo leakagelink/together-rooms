@@ -1,6 +1,7 @@
 package com.synctogether.com.ads;
 
 import android.app.Activity;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -20,6 +21,8 @@ import com.google.android.ump.UserMessagingPlatform;
  * ad request is made.
  */
 public class ConsentController {
+
+    private static final String TAG = "SyncTogetherAds";
 
     public interface StateCallback {
         void onState(JSObject state);
@@ -47,7 +50,10 @@ public class ConsentController {
                 activity,
                 params,
                 () -> callback.onState(snapshot(info, null)),
-                error -> callback.onState(unresolved())
+                error -> {
+                    Log.w(TAG, "consent info update failed: " + error.getMessage());
+                    callback.onState(unresolved());
+                }
             );
         } catch (Throwable error) {
             callback.onState(unresolved());
@@ -100,6 +106,12 @@ public class ConsentController {
             canRequestAds && info.getConsentStatus() == ConsentInformation.ConsentStatus.OBTAINED
         );
         state.put("error", null);
+        Log.d(
+            TAG,
+            "consent status=" + statusToken(info.getConsentStatus())
+                + " canRequestAds=" + canRequestAds
+                + " formAvailable=" + info.isConsentFormAvailable()
+        );
         return state;
     }
 

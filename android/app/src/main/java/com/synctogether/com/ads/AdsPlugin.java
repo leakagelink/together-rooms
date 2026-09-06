@@ -116,14 +116,17 @@ public class AdsPlugin extends Plugin {
         final Activity activity = getActivity();
         final String unitId = call.getString("unitId");
         if (activity == null || !AdUnitIds.isValidUnitId(unitId)) {
+            Log.w(TAG, "showBanner rejected: invalid request (unitId=" + unitId + ")");
             call.reject("invalid_request");
             return;
         }
         if (!initialized) {
+            Log.w(TAG, "showBanner rejected: SDK not initialized");
             call.reject("sdk_init_failed");
             return;
         }
         final boolean nonPersonalized = Boolean.TRUE.equals(call.getBoolean("nonPersonalized", true));
+        Log.d(TAG, "showBanner requested unit=" + unitId + " npa=" + nonPersonalized);
         activity.runOnUiThread(() ->
             banner.show(activity, unitId, nonPersonalized, new AdCallback() {
                 @Override
@@ -149,6 +152,7 @@ public class AdsPlugin extends Plugin {
             return;
         }
         activity.runOnUiThread(() -> {
+            Log.d(TAG, "hideBanner requested");
             banner.destroy();
             call.resolve();
         });

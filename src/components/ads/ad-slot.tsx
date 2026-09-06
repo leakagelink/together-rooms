@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAds } from "@/hooks/useAds";
 import { sanitizeAdEvent } from "@/lib/ads/analytics-safety";
@@ -27,22 +27,39 @@ export function AdSlot({ placement, className }: { placement: string; className?
   const outcome = evaluate("banner", placement);
   const [shown, setShown] = useState(false);
 
+  // The request functions change identity whenever ad context changes; keeping
+  // them in refs means only a real eligibility change can re-request a banner,
+  // so re-renders can never produce a second AdView or a request loop.
+  const requestRef = useRef(requestBanner);
+  const hideRef = useRef(hideBanner);
+  requestRef.current = requestBanner;
+  hideRef.current = hideBanner;
+
+  // Why a banner is not showing, visible in `VITE_ADS_DEBUG=1` builds only.
   useEffect(() => {
-    if (!outcome.eligible || !adsReady) return;
+    if (outcome.eligible) return;
+    adDebug("banner_blocked", { placement, reason: outcome.reason });
+  }, [outcome.eligible, outcome.reason, placement]);
+
+  useEffect(() => {
+    if (!outcome.eligible || !adsReady) {
+      if (!adsReady) adDebug("banner_waiting_sdk", { placement });
+      return;
+    }
     let cancelled = false;
     adDebug("banner_request", { placement });
-    void requestBanner(placement).then((ok) => {
+    void requestRef.current(placement).then((ok) => {
       if (cancelled) return;
-      adDebug(ok ? "banner_requested" : "banner_not_requested", { placement });
+      adDebug(ok ? "banner_shown" : "banner_not_filled", { placement });
       setShown(ok);
       if (ok) void track("ad_shown", sanitizeAdEvent({ format: "banner", placement, eligible: true }));
     });
     return () => {
       cancelled = true;
       setShown(false);
-      hideBanner();
+      hideRef.current();
     };
-  }, [outcome.eligible, adsReady, placement, requestBanner, hideBanner]);
+  }, [outcome.eligible, adsReady, placement]);
 
   if (!shown) return null;
 

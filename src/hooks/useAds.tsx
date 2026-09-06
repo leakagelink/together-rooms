@@ -31,6 +31,7 @@ import {
 } from "@/lib/ads/admob-bridge";
 import { resolveAdTestMode } from "@/lib/ads/test-devices";
 import {
+  interpretStoredAdsConsent,
   mayInitializeAds,
   nextUmpAction,
   resolveAdConsent,
@@ -118,12 +119,14 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     void supabase
       .from("privacy_settings")
-      .select("ads_consent")
+      .select("ads_consent, created_at, updated_at")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
-        setAppAdsConsent(data ? Boolean(data.ads_consent) : null);
+        const stored = interpretStoredAdsConsent(data ?? null);
+        adDebug("app_ads_switch", { stored });
+        setAppAdsConsent(stored);
       });
     return () => {
       cancelled = true;
@@ -142,6 +145,13 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
         if (nextUmpAction(next).action === "show_form") {
           next = await bridge.showConsentFormIfRequired();
         }
+        adDebug("ump_state", {
+          status: next.status,
+          formStatus: next.formStatus,
+          canRequestAds: next.canRequestAds,
+          personalized: next.personalizedAllowed,
+          error: next.error ?? null,
+        });
         if (!cancelled) setUmp(next);
       } catch {
         if (!cancelled) setUmp({ ...UNRESOLVED_UMP, error: "gathering_failed" });
@@ -182,11 +192,24 @@ export function AdRuntimeProvider({ children }: { children: ReactNode }) {
       rewarded: import.meta.env["VITE_ADMOB_REWARDED_UNIT"] as string | undefined,
       appId: import.meta.env["VITE_ADMOB_APP_ID"] as string | undefined,
     };
+    // PHASE 14.3 — safe, explicit test mode. A build may opt into Google's
+    // official test inventory (never real units, never real revenue) by
+    // setting VITE_ADMOB_USE_TEST_UNITS=1. Off unless the build sets it.
+    if (String(import.meta.env["VITE_ADMOB_USE_TEST_UNITS"] ?? "") === "1") {
+      adDebug("using_google_test_units");
+      return resolveAdUnits("development", {});
+    }
     const appId = resolveAdMobAppId(env, overrides);
     const units = resolveAdUnits(env, resolveConfiguredAdUnits(env, overrides));
     if (appId.configError) {
+      adDebug("ad_config_error", { error: appId.configError });
       return { units: null, testMode: false, configError: appId.configError };
     }
+    adDebug("ad_units_resolved", {
+      environment: env,
+      configured: units.units !== null,
+      error: units.configError,
+    });
     return units;
   }, []);
 

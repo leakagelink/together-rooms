@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import {
   mayInitializeAds,
   nextUmpAction,
+  interpretStoredAdsConsent,
   resolveAdConsent,
   shouldOfferPrivacyOptions,
   umpToAdConsent,
@@ -80,5 +81,34 @@ describe("UMP", () => {
     expect(shouldOfferPrivacyOptions(obtained)).toBe(true);
     expect(shouldOfferPrivacyOptions(state({ privacyOptionsRequired: false }))).toBe(false);
     expect(shouldOfferPrivacyOptions(UNRESOLVED_UMP)).toBe(false);
+  });
+});
+
+describe("UMP-STORED-SWITCH", () => {
+  const base = { ads_consent: false, created_at: "2026-01-01T00:00:00Z" };
+
+  it("treats the untouched column default as no decision, not a denial", () => {
+    expect(interpretStoredAdsConsent({ ...base, updated_at: "2026-01-01T00:00:00Z" })).toBeNull();
+    expect(interpretStoredAdsConsent(null)).toBeNull();
+  });
+
+  it("respects an explicitly saved choice in both directions", () => {
+    expect(interpretStoredAdsConsent({ ...base, updated_at: "2026-02-01T00:00:00Z" })).toBe(false);
+    expect(
+      interpretStoredAdsConsent({ ...base, ads_consent: true, updated_at: "2026-02-01T00:00:00Z" }),
+    ).toBe(true);
+  });
+
+  it("an explicit opt-out still denies ads even with platform consent", () => {
+    const obtained = {
+      status: "obtained" as const,
+      formStatus: "available" as const,
+      privacyOptionsRequired: true,
+      canRequestAds: true,
+      personalizedAllowed: true,
+      error: null,
+    };
+    expect(resolveAdConsent(obtained, interpretStoredAdsConsent({ ...base, updated_at: "2026-02-01T00:00:00Z" }))).toBe("denied");
+    expect(resolveAdConsent(obtained, interpretStoredAdsConsent({ ...base, updated_at: "2026-01-01T00:00:00Z" }))).toBe("granted_personalized");
   });
 });

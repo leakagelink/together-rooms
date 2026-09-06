@@ -38,7 +38,9 @@ function makeProvider(overrides: Partial<ConstructorParameters<typeof AdProvider
   clock = 0;
   const shown: { unit: string; npa: boolean }[] = [];
   const sdk = {
-    showBanner: (unit: string, npa: boolean) => shown.push({ unit, npa }),
+    showBanner: (unit: string, npa: boolean) => {
+      shown.push({ unit, npa });
+    },
     hideBanner: () => {},
     showFullscreen: async (unit: string, npa: boolean) => void shown.push({ unit, npa }),
   };

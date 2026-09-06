@@ -39,7 +39,12 @@ export interface AdOutcome extends AdPlacementDecision {
 
 /** The concrete SDK boundary. The web build has no implementation. */
 export interface AdSdk {
-  showBanner?(unitId: string, nonPersonalized: boolean): void;
+  /**
+   * Requests an anchored banner. Implementations that can observe the real SDK
+   * load result return a promise resolving to whether a banner actually
+   * loaded; the legacy void form is treated as "requested".
+   */
+  showBanner?(unitId: string, nonPersonalized: boolean): void | Promise<boolean>;
   hideBanner?(): void;
   showFullscreen?(unitId: string, nonPersonalized: boolean): Promise<void>;
   /** Shows a rewarded ad. Resolves true ONLY when the SDK reported the reward. */
@@ -156,8 +161,11 @@ export class AdProvider {
     if (!sdk) return false;
 
     if (request.format === "banner") {
-      sdk.showBanner?.(outcome.unitId, outcome.nonPersonalized);
-      return true;
+      if (!sdk.showBanner) return false;
+      const result = sdk.showBanner(outcome.unitId, outcome.nonPersonalized);
+      // Only a real SDK load counts as shown; a void implementation keeps the
+      // previous fire-and-forget semantics.
+      return result instanceof Promise ? await result : true;
     }
     if (request.format === "rewarded") {
       if (!sdk.showRewarded) return false;

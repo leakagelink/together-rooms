@@ -18,6 +18,7 @@
  */
 import { isValidAdUnitId } from "./config";
 import { sanitizeBridgeError } from "./bridge-errors";
+import { adDebug } from "./debug";
 import type { AdSdk } from "./provider";
 import type { UmpBridge, UmpState } from "./consent";
 import { UNRESOLVED_UMP } from "./consent";
@@ -140,21 +141,37 @@ export function resetNativeAdsInit() {
  */
 export function createNativeAdSdk(bridge: NativeAdsBridge): AdSdk {
   let bannerUnit: string | null = null;
+  let bannerLoaded = false;
   let fullscreenInFlight = false;
 
   return {
-    showBanner(unitId, nonPersonalized) {
-      if (!isValidAdUnitId(unitId)) return; // fail closed on a malformed id
-      if (bannerUnit === unitId) return; // already showing: no duplicate instance
+    async showBanner(unitId, nonPersonalized) {
+      if (!isValidAdUnitId(unitId)) return false; // fail closed on a malformed id
+      // Already showing this unit, or a request for it is in flight: never a
+      // second AdView, whatever React re-renders.
+      if (bannerUnit === unitId) return bannerLoaded;
       bannerUnit = unitId;
-      void bridge.showBanner(unitId, nonPersonalized).catch((error: unknown) => {
-        sanitizeBridgeError(error);
+      bannerLoaded = false;
+      try {
+        // The native call resolves only when the SDK reported onAdLoaded, and
+        // rejects with a short token when the load failed.
+        await bridge.showBanner(unitId, nonPersonalized);
+        if (bannerUnit !== unitId) return false; // hidden while loading
+        bannerLoaded = true;
+        adDebug("native_banner_loaded", { unitId });
+        return true;
+      } catch (error: unknown) {
+        adDebug("native_banner_failed", { unitId, reason: sanitizeBridgeError(error) });
         bannerUnit = null;
-      });
+        bannerLoaded = false;
+        return false;
+      }
     },
     hideBanner() {
       if (bannerUnit === null) return;
       bannerUnit = null;
+      bannerLoaded = false;
+      adDebug("native_banner_hidden");
       void bridge.hideBanner().catch((error: unknown) => {
         sanitizeBridgeError(error);
       });

@@ -127,7 +127,7 @@ function PrivacyPage() {
       </p>
       <h2>Contact</h2>
       <p>
-        Privacy questions and data requests: <strong>support@synctogether.app</strong>. You can also
+        Privacy questions and data requests: <strong>hello@socilet.in</strong>. You can also
         delete your account at any time from settings, or from the delete-account page without
         signing in.
       </p>

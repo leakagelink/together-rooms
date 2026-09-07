@@ -60,29 +60,53 @@ export function useAdAccess() {
         return { ok: false, reason: "daily_ad_limit_reached" };
       }
       setWatching(true);
+      const before = state;
       try {
         const earned = await requestRewarded(PLACEMENT[purpose]);
         if (!earned) {
           return { ok: false, reason: adsPossible ? "not_earned" : "ad_unavailable" };
         }
-        const next = await mutation.mutateAsync(purpose);
-        queryClient.setQueryData(queryKeys.account.adAccess(user?.id), next);
         void track("rewarded_ad_completed", { purpose });
-        if (!next.ok) {
-          return {
-            ok: false,
-            reason: next.reason === "daily_ad_limit_reached" ? "daily_ad_limit_reached" : "failed",
-          };
+
+        let next = await mutation.mutateAsync(purpose);
+        // A transient server hiccup must never cost the user their reward.
+        if (!next.ok && next.reason === "server_error") {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          next = await mutation.mutateAsync(purpose);
         }
-        return { ok: true, state: next };
+
+        if (next.ok) {
+          queryClient.setQueryData(queryKeys.account.adAccess(user?.id), next);
+          return { ok: true, state: next };
+        }
+
+        // The claim response was NOT a state snapshot (it carries fallback
+        // zeroes), so it must never overwrite the cached progress. Re-read the
+        // authoritative state instead: if the reward did land (e.g. the retry
+        // hit the 10s duplicate guard), the user still sees it counted.
+        const fresh = await fetchState();
+        queryClient.setQueryData(queryKeys.account.adAccess(user?.id), fresh);
+        const advanced =
+          purpose === "unlock"
+            ? fresh.unlock_progress > before.unlock_progress || fresh.unlocked
+            : fresh.room_credits > before.room_credits;
+        if (advanced) return { ok: true, state: fresh };
+
+        return {
+          ok: false,
+          reason: next.reason === "daily_ad_limit_reached" ? "daily_ad_limit_reached" : "failed",
+        };
       } catch {
+        // Keep the displayed progress honest even when the claim call throws.
+        void queryClient.invalidateQueries({ queryKey: queryKeys.account.adAccess(user?.id) });
         return { ok: false, reason: "failed" };
       } finally {
         setWatching(false);
       }
     },
-    [adsPossible, mutation, queryClient, requestRewarded, state.ads_remaining_today, user?.id],
+    [adsPossible, fetchState, mutation, queryClient, requestRewarded, state, user?.id],
   );
+
 
   const refresh = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.account.adAccess(user?.id) });

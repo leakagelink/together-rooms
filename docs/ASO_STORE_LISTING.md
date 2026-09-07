@@ -39,12 +39,13 @@ videos straight from your phone — all with the people you invite, and all free
 
 No subscriptions. No in-app purchases. No paywalled features.
 
-WATCH TOGETHER — YOUTUBE IN SYNC
+WATCH TOGETHER — YOUTUBE & SHORTS IN SYNC
 Paste a link or search YouTube inside the app and everyone in the room sees the
 same frame at the same time. Play, pause and seek stay synchronized across every
-device, with automatic drift correction so nobody falls behind. Theatre mode and
-fullscreen give you a clean viewing surface, and the room ID is always one tap
-away when you want to invite a friend mid-session.
+device, with automatic drift correction so nobody falls behind. Shorts get their
+own portrait 9:16 mode with swipe navigation, and regular videos keep theatre mode
+and fullscreen for a clean viewing surface. The room ID is always one tap away
+when you want to invite a friend mid-session.
 
 MUSIC TOGETHER — A SHARED QUEUE
 Turn the room into a listening party. Search songs, add them to a collaborative

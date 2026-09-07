@@ -27,6 +27,9 @@ function GuidelinesPage() {
       title="Community Guidelines"
       subtitle="Standards for safe and respectful use of SyncTogether."
     >
+      <p>
+        <strong>Last updated: 7 September 2026</strong>
+      </p>
       <h2>Not allowed</h2>
       <ul>
         <li>Harassment, bullying, hate speech, threats or violent content.</li>

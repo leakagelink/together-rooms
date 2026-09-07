@@ -26,6 +26,9 @@ function TermsPage() {
       title="Terms of Service"
       subtitle="The agreement between you and SyncTogether when you use the app."
     >
+      <p>
+        <strong>Last updated: 7 September 2026</strong>
+      </p>
       <h2>1. About these terms</h2>
       <p>
         SyncTogether provides private, invite-only rooms where people can spend time together. By
@@ -65,16 +68,21 @@ function TermsPage() {
       </p>
       <h2>7. Third-party services</h2>
       <p>
-        The app uses YouTube&apos;s embedded player for shared playback, Google AdMob for
-        advertising, Firebase Cloud Messaging for notifications and DuckDuckGo for research search
-        results. Their own terms and privacy policies apply to those parts of the experience.
-        SyncTogether does not host, stream, or re-stream third-party media.
+        The app uses YouTube&apos;s embedded player and official YouTube Data API for shared
+        playback and search (including Shorts Together), Google AdMob for advertising, Firebase
+        Cloud Messaging for notifications and DuckDuckGo for research search results. Their own
+        terms and privacy policies apply to those parts of the experience. By using shared playback
+        you also agree to the YouTube Terms of Service. SyncTogether does not host, download, cache,
+        stream, or re-stream third-party media, does not modify or obstruct the embedded player, its
+        branding or its ads, and does not provide any background or audio-only playback of YouTube
+        content.
       </p>
       <h2>8. Price and advertising</h2>
       <p>
         SyncTogether is free. There are no paid plans and no in-app purchases, and we never ask you
         for payment details. The app is supported by advertising, and you control ad personalisation
-        from privacy settings.
+        from privacy settings. Optional features can be unlocked by choosing to watch a rewarded ad;
+        there is no currency, no points, no purchasable item and no reward for watching content.
       </p>
       <h2>9. Disclaimers</h2>
       <p>

@@ -27,6 +27,9 @@ function PrivacyPage() {
       title="Privacy Policy"
       subtitle="How SyncTogether handles your data. This policy matches the Google Play Data Safety declaration for the current release."
     >
+      <p>
+        <strong>Last updated: 7 September 2026</strong>
+      </p>
       <h2>Summary</h2>
       <p>
         SyncTogether is free to use. There are no paid plans, no in-app purchases and no
@@ -71,14 +74,29 @@ function PrivacyPage() {
         loaded directly from those websites, whose own privacy policies apply. Only links you
         explicitly share with the room become visible to other members.
       </p>
+      <h2>Shared YouTube playback and Shorts</h2>
+      <p>
+        Watch Together and Shorts Together play videos only through YouTube&apos;s official embedded
+        player. When you search for a video or a Short, your search text is sent to our server, which
+        forwards it to the official YouTube Data API and returns embeddable results. We never
+        download, copy, cache, proxy or re-host YouTube content; we store only the video identifier
+        and title so the room can stay in sync. Your use of the embedded player is also covered by
+        the YouTube Terms of Service and the Google Privacy Policy.
+      </p>
       <h2>Advertising</h2>
-
       <p>
         This release integrates Google AdMob. On first launch you are shown Google&apos;s consent
         form (UMP) where required by law, and you can change your choice at any time in privacy
         settings. If you do not consent to personalised ads, non-personalised ads are requested
-        instead. Ads are never shown over player controls, safety flows or account deletion, and no
-        ad is shown to a user we know to be a child. We do not sell your data.
+        instead. On Android, AdMob may use the device advertising ID and related device identifiers
+        to serve, limit and measure ads and to prevent fraud; you can reset or delete that ID in your
+        Android settings. Ads are never shown over player controls, safety flows or account deletion,
+        and no ad is shown to a user we know to be a child. We do not sell your data.
+      </p>
+      <p>
+        Some optional features can be unlocked by choosing to watch a rewarded ad. This is always
+        your choice, involves no payment, no currency, no points and no watch-time incentive, and we
+        record only that the unlock was granted and when it expires.
       </p>
       <h2>Retention</h2>
       <p>

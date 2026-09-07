@@ -27,6 +27,9 @@ function PrivacyPage() {
       title="Privacy Policy"
       subtitle="How SyncTogether handles your data. This policy matches the Google Play Data Safety declaration for the current release."
     >
+      <p>
+        <strong>Last updated: 7 September 2026</strong>
+      </p>
       <h2>Summary</h2>
       <p>
         SyncTogether is free to use. There are no paid plans, no in-app purchases and no

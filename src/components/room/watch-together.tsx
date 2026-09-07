@@ -734,6 +734,56 @@ export function WatchTogether({
     [mutate],
   );
 
+  /**
+   * Shorts reel: an in-app picker over official YouTube search results. Moving
+   * between Shorts writes through the same authoritative playback RPC, so every
+   * member follows along; only a controller can swipe.
+   */
+  const shortsReel = useShortsReel(
+    shortsMode && canControl && roomActive,
+    state?.provider_media_id ?? null,
+    onPickMedia,
+  );
+
+  /** Vertical swipe / wheel navigation on the stage (controllers only). */
+  const swipeStart = useRef<{ y: number; t: number } | null>(null);
+  const wheelAt = useRef(0);
+  const swipeEnabled = shortsMode && canControl && roomActive && !busy;
+  const onStageTouchStart = useCallback(
+    (event: React.TouchEvent) => {
+      if (!swipeEnabled) return;
+      const touch = event.touches[0];
+      if (touch) swipeStart.current = { y: touch.clientY, t: Date.now() };
+    },
+    [swipeEnabled],
+  );
+  const onStageTouchEnd = useCallback(
+    (event: React.TouchEvent) => {
+      if (!swipeEnabled) return;
+      const start = swipeStart.current;
+      swipeStart.current = null;
+      const touch = event.changedTouches[0];
+      if (!start || !touch) return;
+      const delta = start.y - touch.clientY;
+      if (Math.abs(delta) < 60 || Date.now() - start.t > 800) return;
+      if (delta > 0) shortsReel.goNext();
+      else shortsReel.goPrevious();
+    },
+    [swipeEnabled, shortsReel],
+  );
+  const onStageWheel = useCallback(
+    (event: React.WheelEvent) => {
+      if (!swipeEnabled || Math.abs(event.deltaY) < 30) return;
+      const now = Date.now();
+      if (now - wheelAt.current < 600) return;
+      wheelAt.current = now;
+      if (event.deltaY > 0) shortsReel.goNext();
+      else shortsReel.goPrevious();
+    },
+    [swipeEnabled, shortsReel],
+  );
+
+
   /** Relative seek from the device's current position, applied room-wide. */
   const onNudge = useCallback(
     (delta: number) => {
@@ -1049,10 +1099,10 @@ export function WatchTogether({
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
 
       {canControl && roomActive && shortsMode ? (
-        <ShortsLinkForm disabled={busy} onPick={onPickMedia} />
+        <ShortsReelPanel reel={shortsReel} disabled={busy} />
       ) : null}
 
-      {canControl && roomActive ? (
+      {canControl && roomActive && !shortsMode ? (
         <div className="mt-3 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium">
@@ -1090,6 +1140,7 @@ export function WatchTogether({
           ) : null}
         </div>
       ) : null}
+
 
       <details className="mt-3 rounded-md border border-border bg-muted/20 p-2">
         <summary className="cursor-pointer text-xs text-muted-foreground">

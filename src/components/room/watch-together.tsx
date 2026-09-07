@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MediaSearchPanel } from "@/components/room/media-search-panel";
+import { ShortsReelPanel, useShortsReel } from "@/components/room/shorts-reel";
 import { useRoomPlayback } from "@/hooks/useRoomPlayback";
 import { useProviderMetadata } from "@/hooks/useProviderMetadata";
 import { queryKeys } from "@/lib/query-keys";
@@ -53,9 +54,7 @@ import {
 import { setPlaybackTrackingRestricted } from "@/lib/analytics";
 import { providerError, type ProviderError } from "@/lib/providers/media-provider";
 import { youtubeProvider } from "@/lib/providers/youtube";
-import { Input } from "@/components/ui/input";
 import {
-  parseShortsReference,
   shouldPublishWatchMode,
   toWatchMode,
   type WatchMode,
@@ -186,62 +185,6 @@ export interface WatchTogetherProps {
    */
   onSearchVisibilityChange?: (open: boolean) => void;
 }
-
-/**
- * Shorts Together — the host pastes the next Short explicitly. There is no
- * feed, no crawling and no automatic "next Short": the app never discovers
- * YouTube content on its own. The pasted link is parsed locally to an id and
- * then goes through the same authoritative `set_room_media` RPC as any other
- * video, which re-validates the id and the embedding policy server-side.
- */
-function ShortsLinkForm({
-  disabled,
-  onPick,
-}: {
-  disabled: boolean;
-  onPick: (mediaId: string) => void;
-}) {
-  const [value, setValue] = useState("");
-
-  return (
-    <form
-      className="mt-3 space-y-2 rounded-lg border border-border bg-muted/30 p-3"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const reference = parseShortsReference(value);
-        if (!reference) {
-          toast.error("That doesn't look like a YouTube Short or video link.");
-          return;
-        }
-        setValue("");
-        onPick(reference.videoId);
-      }}
-    >
-      <label htmlFor="shorts-link" className="text-sm font-medium">
-        Play a Short
-      </label>
-      <div className="flex flex-wrap gap-2">
-        <Input
-          id="shorts-link"
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          placeholder="https://www.youtube.com/shorts/…"
-          inputMode="url"
-          autoComplete="off"
-          className="min-w-48 flex-1"
-        />
-        <Button type="submit" size="sm" disabled={disabled || value.trim().length === 0}>
-          Play in room
-        </Button>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Paste a YouTube Shorts or video link. Everyone in the room moves to it together.
-      </p>
-    </form>
-  );
-}
-
-
 
 export function WatchTogether({
   roomId,
@@ -791,6 +734,56 @@ export function WatchTogether({
     [mutate],
   );
 
+  /**
+   * Shorts reel: an in-app picker over official YouTube search results. Moving
+   * between Shorts writes through the same authoritative playback RPC, so every
+   * member follows along; only a controller can swipe.
+   */
+  const shortsReel = useShortsReel(
+    shortsMode && canControl && roomActive,
+    state?.provider_media_id ?? null,
+    onPickMedia,
+  );
+
+  /** Vertical swipe / wheel navigation on the stage (controllers only). */
+  const swipeStart = useRef<{ y: number; t: number } | null>(null);
+  const wheelAt = useRef(0);
+  const swipeEnabled = shortsMode && canControl && roomActive;
+  const onStageTouchStart = useCallback(
+    (event: React.TouchEvent) => {
+      if (!swipeEnabled) return;
+      const touch = event.touches[0];
+      if (touch) swipeStart.current = { y: touch.clientY, t: Date.now() };
+    },
+    [swipeEnabled],
+  );
+  const onStageTouchEnd = useCallback(
+    (event: React.TouchEvent) => {
+      if (!swipeEnabled) return;
+      const start = swipeStart.current;
+      swipeStart.current = null;
+      const touch = event.changedTouches[0];
+      if (!start || !touch) return;
+      const delta = start.y - touch.clientY;
+      if (Math.abs(delta) < 60 || Date.now() - start.t > 800) return;
+      if (delta > 0) shortsReel.goNext();
+      else shortsReel.goPrevious();
+    },
+    [swipeEnabled, shortsReel],
+  );
+  const onStageWheel = useCallback(
+    (event: React.WheelEvent) => {
+      if (!swipeEnabled || Math.abs(event.deltaY) < 30) return;
+      const now = Date.now();
+      if (now - wheelAt.current < 600) return;
+      wheelAt.current = now;
+      if (event.deltaY > 0) shortsReel.goNext();
+      else shortsReel.goPrevious();
+    },
+    [swipeEnabled, shortsReel],
+  );
+
+
   /** Relative seek from the device's current position, applied room-wide. */
   const onNudge = useCallback(
     (delta: number) => {
@@ -886,6 +879,10 @@ export function WatchTogether({
 
       <div
         ref={stageRef}
+        onTouchStart={onStageTouchStart}
+        onTouchEnd={onStageTouchEnd}
+        onWheel={onStageWheel}
+
         className={
           isFullscreen
             ? "fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-stage"
@@ -1106,10 +1103,10 @@ export function WatchTogether({
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
 
       {canControl && roomActive && shortsMode ? (
-        <ShortsLinkForm disabled={busy} onPick={onPickMedia} />
+        <ShortsReelPanel reel={shortsReel} disabled={busy} />
       ) : null}
 
-      {canControl && roomActive ? (
+      {canControl && roomActive && !shortsMode ? (
         <div className="mt-3 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium">
@@ -1147,6 +1144,7 @@ export function WatchTogether({
           ) : null}
         </div>
       ) : null}
+
 
       <details className="mt-3 rounded-md border border-border bg-muted/20 p-2">
         <summary className="cursor-pointer text-xs text-muted-foreground">

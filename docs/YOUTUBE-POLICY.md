@@ -155,3 +155,19 @@ WebView-specific URL schemes, video extraction, or native players are used. The
 same policy checks, RLS guards, and rate limits apply regardless of whether the
 client is a desktop browser or an Android WebView.
 
+
+## Shorts reel — picker and swipe navigation (additive)
+
+Shorts mode no longer requires pasting a link. The room controller sees a Shorts
+picker whose results come from the **official YouTube Data API search endpoint**
+(server-side key, `type=video`, `videoEmbeddable=true`, `videoDuration=short`,
+`safeSearch=strict`). YouTube's own Shorts feed is never scraped or crawled, and
+no ranking, watch history or recommendation data is derived.
+
+Swiping up/down (or the Previous/Next buttons, or a mouse wheel) simply selects
+another item from that result list and loads it through the existing
+`set_room_media` RPC, which re-validates the id, embeddability and
+Made-for-Kids status. Only a host/controller can swipe; other members follow the
+authoritative room state. Playback still requires a user action — nothing
+auto-plays on load, and there are no rewards, coins or watch-time incentives.
+Pasting a link remains available as a secondary option.

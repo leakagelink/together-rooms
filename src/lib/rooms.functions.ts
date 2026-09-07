@@ -60,6 +60,20 @@ export const endRoom = createServerFn({ method: "POST" })
     return normalizeRpc("end_room", result, error);
   });
 
+/**
+ * Permanently delete a room and everything inside it. Owner-only, enforced
+ * inside the RPC; child rows are removed by the database's cascade rules.
+ */
+export const deleteRoom = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => roomIdInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("delete_room", {
+      _room_id: data.room_id,
+    });
+    return normalizeRpc("delete_room", result, error);
+  });
+
 /** Explicit host transfer. Host-only, target must be a joined member. */
 export const transferRoomHost = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

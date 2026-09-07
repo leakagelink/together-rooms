@@ -49,7 +49,7 @@ function DeleteAccountPage() {
 
       <h2>Option 2 — Request deletion by email</h2>
       <p>
-        If you cannot sign in, email <strong>support@synctogether.app</strong> from the email
+        If you cannot sign in, email <strong>hello@socilet.in</strong> from the email
         address linked to your account with the subject{" "}
         <strong>&quot;Delete my account&quot;</strong>. We verify ownership of the email address
         before deleting. Requests are completed within 30 days.
@@ -86,7 +86,7 @@ function DeleteAccountPage() {
 
       <h2>Questions</h2>
       <p>
-        Contact <strong>support@synctogether.app</strong>. See also our{" "}
+        Contact <strong>hello@socilet.in</strong>. See also our{" "}
         <Link to="/privacy" className="text-primary underline underline-offset-4">
           Privacy Policy
         </Link>

@@ -26,6 +26,9 @@ function ChildSafetyPage() {
   return (
     <LegalPage title="Child Safety Standards">
       <p>
+        <strong>Last updated: 7 September 2026</strong>
+      </p>
+      <p>
         SyncTogether has zero tolerance for child sexual abuse and exploitation (CSAE), child sexual
         abuse material (CSAM), grooming, sexual exploitation of minors, and child endangerment.
       </p>

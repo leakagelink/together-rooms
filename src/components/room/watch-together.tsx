@@ -748,7 +748,7 @@ export function WatchTogether({
   /** Vertical swipe / wheel navigation on the stage (controllers only). */
   const swipeStart = useRef<{ y: number; t: number } | null>(null);
   const wheelAt = useRef(0);
-  const swipeEnabled = shortsMode && canControl && roomActive && !busy;
+  const swipeEnabled = shortsMode && canControl && roomActive;
   const onStageTouchStart = useCallback(
     (event: React.TouchEvent) => {
       if (!swipeEnabled) return;

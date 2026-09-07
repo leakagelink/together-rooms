@@ -12,6 +12,7 @@ import {
   MoreVertical,
   PowerOff,
   Share2,
+  Trash2,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,6 +22,16 @@ import { ReportDialog } from "@/components/report-dialog";
 import { RoomInvitePanel } from "@/components/room/room-invite-panel";
 import { RoomMembersPanel } from "@/components/room/room-members-panel";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -38,6 +49,7 @@ import { errorMessage } from "@/lib/errors";
 import { queryKeys } from "@/lib/query-keys";
 import { roomJoinability } from "@/lib/room-rules";
 import {
+  deleteRoom,
   endRoom,
   joinRoomByCode,
   leaveRoom,
@@ -146,6 +158,8 @@ function RoomPage() {
   const leave = useServerFn(leaveRoom);
   const rejoin = useServerFn(joinRoomByCode);
   const end = useServerFn(endRoom);
+  const removeRoom = useServerFn(deleteRoom);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const transfer = useServerFn(transferRoomHost);
   const mute = useServerFn(setMemberMute);
 
@@ -267,6 +281,24 @@ function RoomPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const result = await removeRoom({ data: { room_id: roomId } });
+      if (!result.ok) throw new Error(rpcMessage(result.reason));
+    },
+    onSuccess: async () => {
+      setDeleteOpen(false);
+      queryClient.removeQueries({ queryKey: queryKeys.rooms.detail(roomId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rooms.mine() });
+      toast.success("Room deleted.");
+      navigate({ to: "/rooms" });
+    },
+    onError: (error: Error) => {
+      setDeleteOpen(false);
+      toast.error(error.message);
+    },
+  });
+
   const transferMutation = useMutation({
     mutationFn: async (toUserId: string) => {
       const result = await transfer({ data: { room_id: roomId, to_user_id: toUserId } });
@@ -316,7 +348,8 @@ function RoomPage() {
     );
   }
 
-  const isHost = room.owner_id === user?.id || room.host_id === user?.id;
+  const isOwner = room.owner_id === user?.id;
+  const isHost = isOwner || room.host_id === user?.id;
   const lifecycle = roomJoinability(room);
 
   // Client-side gating is UX only; every rule below is re-enforced in SQL.
@@ -434,8 +467,42 @@ function RoomPage() {
                     <PowerOff className="size-4" aria-hidden="true" /> End room
                   </DropdownMenuItem>
                 ) : null}
+                {isOwner ? (
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      setDeleteOpen(true);
+                    }}
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" /> Delete room
+                  </DropdownMenuItem>
+                ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
+            <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this room?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Everything in “{room.name}” — chat, notes, tasks, queue and invites — is
+                    removed for everyone. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={deleteMutation.isPending}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      deleteMutation.mutate();
+                    }}
+                  >
+                    {deleteMutation.isPending ? "Deleting…" : "Delete room"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             {/* Self-reporting is rejected server-side, so the host never sees
                 a Report action for their own room. Play policy requires the
                 report path to stay one tap away from the content itself. */}

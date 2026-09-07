@@ -2367,6 +2367,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["subscription_tier"]
       }
       delete_playlist: { Args: { _playlist_id: string }; Returns: Json }
+      delete_room: { Args: { _room_id: string }; Returns: Json }
       delete_room_message: { Args: { _message_id: string }; Returns: Json }
       delete_room_note: { Args: { _note_id: string }; Returns: Json }
       delete_room_task: { Args: { _task_id: string }; Returns: Json }

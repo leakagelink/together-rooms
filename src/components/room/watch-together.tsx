@@ -879,6 +879,10 @@ export function WatchTogether({
 
       <div
         ref={stageRef}
+        onTouchStart={onStageTouchStart}
+        onTouchEnd={onStageTouchEnd}
+        onWheel={onStageWheel}
+
         className={
           isFullscreen
             ? "fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-stage"

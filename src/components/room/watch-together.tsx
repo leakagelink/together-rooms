@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MediaSearchPanel } from "@/components/room/media-search-panel";
+import { ShortsReelPanel, useShortsReel } from "@/components/room/shorts-reel";
 import { useRoomPlayback } from "@/hooks/useRoomPlayback";
 import { useProviderMetadata } from "@/hooks/useProviderMetadata";
 import { queryKeys } from "@/lib/query-keys";
@@ -53,9 +54,7 @@ import {
 import { setPlaybackTrackingRestricted } from "@/lib/analytics";
 import { providerError, type ProviderError } from "@/lib/providers/media-provider";
 import { youtubeProvider } from "@/lib/providers/youtube";
-import { Input } from "@/components/ui/input";
 import {
-  parseShortsReference,
   shouldPublishWatchMode,
   toWatchMode,
   type WatchMode,
@@ -186,62 +185,6 @@ export interface WatchTogetherProps {
    */
   onSearchVisibilityChange?: (open: boolean) => void;
 }
-
-/**
- * Shorts Together — the host pastes the next Short explicitly. There is no
- * feed, no crawling and no automatic "next Short": the app never discovers
- * YouTube content on its own. The pasted link is parsed locally to an id and
- * then goes through the same authoritative `set_room_media` RPC as any other
- * video, which re-validates the id and the embedding policy server-side.
- */
-function ShortsLinkForm({
-  disabled,
-  onPick,
-}: {
-  disabled: boolean;
-  onPick: (mediaId: string) => void;
-}) {
-  const [value, setValue] = useState("");
-
-  return (
-    <form
-      className="mt-3 space-y-2 rounded-lg border border-border bg-muted/30 p-3"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const reference = parseShortsReference(value);
-        if (!reference) {
-          toast.error("That doesn't look like a YouTube Short or video link.");
-          return;
-        }
-        setValue("");
-        onPick(reference.videoId);
-      }}
-    >
-      <label htmlFor="shorts-link" className="text-sm font-medium">
-        Play a Short
-      </label>
-      <div className="flex flex-wrap gap-2">
-        <Input
-          id="shorts-link"
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          placeholder="https://www.youtube.com/shorts/…"
-          inputMode="url"
-          autoComplete="off"
-          className="min-w-48 flex-1"
-        />
-        <Button type="submit" size="sm" disabled={disabled || value.trim().length === 0}>
-          Play in room
-        </Button>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Paste a YouTube Shorts or video link. Everyone in the room moves to it together.
-      </p>
-    </form>
-  );
-}
-
-
 
 export function WatchTogether({
   roomId,

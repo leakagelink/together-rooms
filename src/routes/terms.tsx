@@ -26,6 +26,9 @@ function TermsPage() {
       title="Terms of Service"
       subtitle="The agreement between you and SyncTogether when you use the app."
     >
+      <p>
+        <strong>Last updated: 7 September 2026</strong>
+      </p>
       <h2>1. About these terms</h2>
       <p>
         SyncTogether provides private, invite-only rooms where people can spend time together. By

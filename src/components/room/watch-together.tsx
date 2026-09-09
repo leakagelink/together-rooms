@@ -745,10 +745,40 @@ export function WatchTogether({
     onPickMedia,
   );
 
-  /** Vertical swipe / wheel navigation on the stage (controllers only). */
+  /**
+   * Vertical swipe / wheel navigation (controllers only).
+   *
+   * The official player runs inside an iframe, so touch events over the video
+   * never reach this document. Navigation therefore listens on thin gutters at
+   * the left and right edges of the portrait stage: they sit clear of the
+   * player's own controls, add no visual overlay on the video, and never
+   * intercept taps on YouTube's UI or ads.
+   */
   const swipeStart = useRef<{ y: number; t: number } | null>(null);
   const wheelAt = useRef(0);
+  const navAt = useRef(0);
   const swipeEnabled = shortsMode && canControl && roomActive;
+
+  const navigateShort = useCallback(
+    (direction: 1 | -1) => {
+      if (!swipeEnabled) return;
+      if (shortsReel.items.length === 0) {
+        toast.message(
+          shortsReel.loading
+            ? "Loading Shorts…"
+            : "Search Shorts below to swipe between them.",
+        );
+        return;
+      }
+      const now = Date.now();
+      if (now - navAt.current < 600) return;
+      navAt.current = now;
+      if (direction === 1) shortsReel.goNext();
+      else shortsReel.goPrevious();
+    },
+    [swipeEnabled, shortsReel],
+  );
+
   const onStageTouchStart = useCallback(
     (event: React.TouchEvent) => {
       if (!swipeEnabled) return;
@@ -765,11 +795,10 @@ export function WatchTogether({
       const touch = event.changedTouches[0];
       if (!start || !touch) return;
       const delta = start.y - touch.clientY;
-      if (Math.abs(delta) < 60 || Date.now() - start.t > 800) return;
-      if (delta > 0) shortsReel.goNext();
-      else shortsReel.goPrevious();
+      if (Math.abs(delta) < 40 || Date.now() - start.t > 1200) return;
+      navigateShort(delta > 0 ? 1 : -1);
     },
-    [swipeEnabled, shortsReel],
+    [swipeEnabled, navigateShort],
   );
   const onStageWheel = useCallback(
     (event: React.WheelEvent) => {
@@ -777,11 +806,11 @@ export function WatchTogether({
       const now = Date.now();
       if (now - wheelAt.current < 600) return;
       wheelAt.current = now;
-      if (event.deltaY > 0) shortsReel.goNext();
-      else shortsReel.goPrevious();
+      navigateShort(event.deltaY > 0 ? 1 : -1);
     },
-    [swipeEnabled, shortsReel],
+    [swipeEnabled, navigateShort],
   );
+
 
 
   /** Relative seek from the device's current position, applied room-wide. */

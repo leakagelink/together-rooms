@@ -405,14 +405,33 @@ export function WatchTogether({
   // ---- fullscreen: prefer the native Fullscreen API. Some embedding contexts
   // (preview iframes without the `fullscreen` permission) reject the request —
   // there we fall back to an in-app theatre mode that fills the viewport.
+  const shortsModeRef = useRef(false);
   useEffect(() => {
     const onChange = () => {
-      if (document.fullscreenElement) setIsFullscreen(true);
+      const fs = document.fullscreenElement;
+      // In Shorts mode the player's own fullscreen hides the app's swipe rail,
+      // so we re-target fullscreen to the stage (which contains the official
+      // player unchanged) — nothing about the player UI is altered.
+      if (
+        fs &&
+        shortsModeRef.current &&
+        stageRef.current &&
+        fs !== stageRef.current &&
+        stageRef.current.contains(fs)
+      ) {
+        void Promise.resolve(document.exitFullscreen?.())
+          .then(() => stageRef.current?.requestFullscreen?.())
+          .catch(() => undefined);
+        setIsFullscreen(true);
+        return;
+      }
+      if (fs) setIsFullscreen(true);
       else if (!theatreRef.current) setIsFullscreen(false);
     };
     document.addEventListener("fullscreenchange", onChange);
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
+
 
   useEffect(() => {
     if (!isFullscreen) return;

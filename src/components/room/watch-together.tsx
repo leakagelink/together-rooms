@@ -950,6 +950,62 @@ export function WatchTogether({
               {surface.overlay}
             </div>
           ) : null}
+          {/*
+            Shorts navigation gutters: narrow, transparent touch strips at the
+            outer edges of the portrait stage. They exist only because touch
+            events cannot cross the player's iframe. They stop well above the
+            player's control bar, cover no video content the user interacts
+            with, and never sit over YouTube branding, controls or ads.
+          */}
+          {swipeEnabled && !compact ? (
+            <>
+              <div
+                role="presentation"
+                aria-hidden="true"
+                onTouchStart={onStageTouchStart}
+                onTouchEnd={onStageTouchEnd}
+                onWheel={onStageWheel}
+                className="absolute bottom-[24%] left-0 top-0 z-10 flex w-10 touch-none flex-col items-center justify-center gap-6 text-foreground/40"
+              >
+                <ChevronUp className="size-5" aria-hidden="true" />
+                <ChevronDown className="size-5" aria-hidden="true" />
+              </div>
+              <div
+                role="presentation"
+                aria-hidden="true"
+                onTouchStart={onStageTouchStart}
+                onTouchEnd={onStageTouchEnd}
+                onWheel={onStageWheel}
+                className="absolute bottom-[24%] right-0 top-0 z-10 flex w-10 touch-none flex-col items-center justify-center gap-6 text-foreground/40"
+              >
+                <ChevronUp className="size-5" aria-hidden="true" />
+                <ChevronDown className="size-5" aria-hidden="true" />
+              </div>
+              <div className="absolute inset-x-12 bottom-2 z-10 flex justify-center gap-2">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="size-9 opacity-80 hover:opacity-100"
+                  onClick={() => navigateShort(-1)}
+                  aria-label="Previous Short"
+                >
+                  <ChevronUp className="size-4" aria-hidden="true" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="size-9 opacity-80 hover:opacity-100"
+                  onClick={() => navigateShort(1)}
+                  aria-label="Next Short"
+                >
+                  <ChevronDown className="size-4" aria-hidden="true" />
+                </Button>
+              </div>
+            </>
+          ) : null}
+
           <Button
             type="button"
             size="icon"

@@ -406,6 +406,8 @@ export function WatchTogether({
   // (preview iframes without the `fullscreen` permission) reject the request —
   // there we fall back to an in-app theatre mode that fills the viewport.
   const shortsModeRef = useRef(false);
+  shortsModeRef.current = shortsMode;
+
   useEffect(() => {
     const onChange = () => {
       const fs = document.fullscreenElement;

@@ -766,9 +766,9 @@ export function WatchTogether({
 
   const onPickMedia = useCallback(
     (mediaId: string) => {
-      mutate({ kind: "media", mediaId });
+      mutate({ kind: "media", mediaId, autoplay: shortsMode });
     },
-    [mutate],
+    [mutate, shortsMode],
   );
 
   /**

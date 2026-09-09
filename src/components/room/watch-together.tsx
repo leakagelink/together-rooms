@@ -306,7 +306,7 @@ export function WatchTogether({
   const mutation = useMutation({
     mutationFn: async (
       action:
-        | { kind: "media"; mediaId: string }
+        | { kind: "media"; mediaId: string; autoplay?: boolean }
         | { kind: "play" }
         | { kind: "pause" }
         | { kind: "seek"; position: number }

@@ -1005,7 +1005,7 @@ export function WatchTogether({
               pointerSwipeStart.current = null;
             }}
             onWheel={onStageWheel}
-            className="flex h-full w-12 shrink-0 touch-none select-none flex-col items-center justify-between border-l border-border bg-muted/50 py-3"
+            className="flex w-12 shrink-0 self-stretch touch-none select-none flex-col items-center justify-between border-l border-border bg-muted/50 py-3"
           >
             <Button
               type="button"

@@ -306,7 +306,7 @@ export function WatchTogether({
   const mutation = useMutation({
     mutationFn: async (
       action:
-        | { kind: "media"; mediaId: string }
+        | { kind: "media"; mediaId: string; autoplay?: boolean }
         | { kind: "play" }
         | { kind: "pause" }
         | { kind: "seek"; position: number }
@@ -315,8 +315,8 @@ export function WatchTogether({
     ) => {
       const expected_version = stateRef.current?.version ?? null;
       switch (action.kind) {
-        case "media":
-          return setMedia({
+        case "media": {
+          const result = await setMedia({
             data: {
               room_id: roomId,
               provider: "youtube",
@@ -324,6 +324,22 @@ export function WatchTogether({
               expected_version,
             },
           });
+          // Shorts reel: swiping is the user's intent to keep watching, so the
+          // next Short continues playing instead of landing paused. Playback is
+          // still started through the authoritative play RPC, never locally.
+          if (action.autoplay && (result as { ok?: boolean }).ok) {
+            const nextVersion = Number(
+              ((result as { state?: { version?: unknown } }).state?.version as number) ?? NaN,
+            );
+            return play({
+              data: {
+                room_id: roomId,
+                expected_version: Number.isFinite(nextVersion) ? nextVersion : null,
+              },
+            });
+          }
+          return result;
+        }
         case "play":
           return play({ data: { room_id: roomId, expected_version } });
         case "pause":
@@ -750,9 +766,9 @@ export function WatchTogether({
 
   const onPickMedia = useCallback(
     (mediaId: string) => {
-      mutate({ kind: "media", mediaId });
+      mutate({ kind: "media", mediaId, autoplay: shortsMode });
     },
-    [mutate],
+    [mutate, shortsMode],
   );
 
   /**

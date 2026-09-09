@@ -135,7 +135,7 @@ export function ShortsReelPanel({ reel, disabled }: { reel: ShortsReel; disabled
         </Button>
         <span className="text-xs text-muted-foreground">
           {reel.items.length > 0
-            ? `Swipe up or down along the edges of the video · ${Math.max(reel.index, 0) + 1}/${reel.items.length}`
+            ? `Swipe up or down on the side rail · ${Math.max(reel.index, 0) + 1}/${reel.items.length}`
             : "No Shorts loaded yet"}
 
         </span>

@@ -755,6 +755,7 @@ export function WatchTogether({
    * intercept taps on YouTube's UI or ads.
    */
   const swipeStart = useRef<{ y: number; t: number } | null>(null);
+  const pointerSwipeStart = useRef<{ id: number; y: number; t: number } | null>(null);
   const wheelAt = useRef(0);
   const navAt = useRef(0);
   const swipeEnabled = shortsMode && canControl && roomActive;
@@ -809,6 +810,31 @@ export function WatchTogether({
       navigateShort(event.deltaY > 0 ? 1 : -1);
     },
     [swipeEnabled, navigateShort],
+  );
+
+  const onSwipePointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!swipeEnabled || event.pointerType === "mouse") return;
+      pointerSwipeStart.current = {
+        id: event.pointerId,
+        y: event.clientY,
+        t: Date.now(),
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    [swipeEnabled],
+  );
+
+  const onSwipePointerUp = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const start = pointerSwipeStart.current;
+      pointerSwipeStart.current = null;
+      if (!swipeEnabled || !start || start.id !== event.pointerId) return;
+      const delta = start.y - event.clientY;
+      if (Math.abs(delta) < 36 || Date.now() - start.t > 1400) return;
+      navigateShort(delta > 0 ? 1 : -1);
+    },
+    [navigateShort, swipeEnabled],
   );
 
 
@@ -936,7 +962,7 @@ export function WatchTogether({
               : compact
                 ? "relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-stage sm:w-36"
                 : shortsMode
-                  ? "relative aspect-[9/16] w-full max-w-[min(100%,26rem)]"
+                  ? "relative aspect-[9/16] min-w-0 flex-1 max-w-[26rem]"
                   : "relative aspect-video w-full"
           }
         >
@@ -950,35 +976,6 @@ export function WatchTogether({
               {surface.overlay}
             </div>
           ) : null}
-          {/*
-            Shorts navigation gutters: narrow, transparent touch strips at the
-            outer edges of the portrait stage. They exist only because touch
-            events cannot cross the player's iframe. They stop well above the
-            player's control bar, cover no video content the user interacts
-            with, and never sit over YouTube branding, controls or ads.
-          */}
-          {swipeEnabled && !compact ? (
-            <>
-              <div
-                role="presentation"
-                aria-hidden="true"
-                onTouchStart={onStageTouchStart}
-                onTouchEnd={onStageTouchEnd}
-                onWheel={onStageWheel}
-                className="absolute bottom-[28%] left-0 top-0 z-10 w-9 touch-none"
-              />
-              <div
-                role="presentation"
-                aria-hidden="true"
-                onTouchStart={onStageTouchStart}
-                onTouchEnd={onStageTouchEnd}
-                onWheel={onStageWheel}
-                className="absolute bottom-[28%] right-0 top-0 z-10 w-9 touch-none"
-              />
-            </>
-          ) : null}
-
-
           <Button
             type="button"
             size="icon"
@@ -998,6 +995,45 @@ export function WatchTogether({
             )}
           </Button>
         </div>
+        {swipeEnabled && !compact ? (
+          <div
+            role="presentation"
+            aria-label="Shorts navigation"
+            onPointerDown={onSwipePointerDown}
+            onPointerUp={onSwipePointerUp}
+            onPointerCancel={() => {
+              pointerSwipeStart.current = null;
+            }}
+            onWheel={onStageWheel}
+            className="flex w-12 shrink-0 self-stretch touch-none select-none flex-col items-center justify-between border-l border-border bg-muted/50 py-3"
+          >
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-10 shrink-0"
+              onClick={shortsReel.goPrevious}
+              disabled={busy || shortsReel.items.length === 0}
+              aria-label="Previous Short"
+            >
+              <ChevronUp className="size-5" aria-hidden="true" />
+            </Button>
+            <div className="flex flex-1 items-center justify-center" aria-hidden="true">
+              <span className="h-12 w-1 rounded-full bg-muted-foreground/40" />
+            </div>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-10 shrink-0"
+              onClick={shortsReel.goNext}
+              disabled={busy || shortsReel.items.length === 0}
+              aria-label="Next Short"
+            >
+              <ChevronDown className="size-5" aria-hidden="true" />
+            </Button>
+          </div>
+        ) : null}
         {compact ? (
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             <div className="flex min-w-0 items-center gap-2">

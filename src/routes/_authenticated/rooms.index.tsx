@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { DoorOpen, Plus, Trash2 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { AdSlot } from "@/components/ads/ad-slot";
+
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
 import {
   AlertDialog,
@@ -165,9 +165,6 @@ function RoomsPage() {
             ))}
           </ul>
         )}
-        {/* Ads sit below all content, in normal flow, clearly separated from
-            the list and from every control. Nothing overlays or floats. */}
-        <AdSlot placement="rooms_list_footer" className="mt-8" />
         <AlertDialog
           open={pendingDelete !== null}
           onOpenChange={(open) => {

@@ -21,10 +21,11 @@ import { PushRegistrar } from "@/components/push-registrar";
 import { rememberLastRoute } from "@/lib/android/last-route";
 import { hideNativeSplash } from "@/lib/android/splash";
 import { SplashOverlay } from "@/components/splash-overlay";
+import { applyThemePreference, readStoredTheme } from "@/lib/ui/theme";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen items-center justify-center px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
@@ -52,7 +53,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen items-center justify-center px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           This page didn't load
@@ -86,7 +87,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#080A12" },
       // YouTube validates the embedding origin; stripping the Referer entirely
       // triggers player error 153. Send the origin (never the full path).
       { name: "referrer", content: "strict-origin-when-cross-origin" },
@@ -109,7 +111,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@400;500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap",
       },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
     ],
@@ -136,7 +138,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
@@ -160,6 +162,11 @@ function RootComponent() {
   // users never see the blank WebView while the origin loads.
   useEffect(() => {
     void hideNativeSplash();
+  }, []);
+
+  // Dark glass by default; a saved "light" choice applies on every screen.
+  useEffect(() => {
+    applyThemePreference(readStoredTheme() ?? "system");
   }, []);
 
   // Remember where the user was so a cold start can resume there.

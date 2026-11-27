@@ -14,7 +14,7 @@ export function AuthCard({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col">
       <header className="mx-auto flex h-16 w-full max-w-5xl items-center gap-2 px-4">
         <BackButton homePaths={["/"]} />
         <BrandLogo />

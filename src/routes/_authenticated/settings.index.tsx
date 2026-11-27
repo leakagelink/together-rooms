@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { INCLUDED_FEATURES } from "@/lib/entitlements";
 import { errorMessage } from "@/lib/errors";
+import { applyThemePreference } from "@/lib/ui/theme";
 
 export const Route = createFileRoute("/_authenticated/settings/")({
   head: () => ({
@@ -68,11 +69,9 @@ function SettingsPage() {
   }, [settingsQuery.data]);
 
   // Theme architecture: the stored preference drives the `dark` class.
+  // Liquid Sync is dark by default; only an explicit "Light" choice switches.
   useEffect(() => {
-    const root = document.documentElement;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const dark = form.theme === "dark" || (form.theme === "system" && prefersDark);
-    root.classList.toggle("dark", dark);
+    applyThemePreference(form.theme);
   }, [form.theme]);
 
   async function save() {
@@ -126,7 +125,7 @@ function SettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="system">Match my device</SelectItem>
+                  <SelectItem value="system">Default (dark glass)</SelectItem>
                   <SelectItem value="light">Light</SelectItem>
                   <SelectItem value="dark">Dark</SelectItem>
                 </SelectContent>

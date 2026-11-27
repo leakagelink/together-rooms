@@ -14,7 +14,7 @@ export function LegalPage({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col">
       <header className="border-b border-border">
         <div className="mx-auto flex h-16 w-full max-w-3xl items-center gap-2 px-4">
           <BackButton homePaths={["/"]} />

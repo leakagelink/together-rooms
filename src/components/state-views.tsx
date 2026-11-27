@@ -37,8 +37,8 @@ export function EmptyState({
 }) {
   return (
     <div className="surface-panel flex flex-col items-center gap-3 p-10 text-center">
-      <span className="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        {icon ?? <Inbox className="size-5" aria-hidden="true" />}
+      <span className="flex size-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/15 text-lavender shadow-[var(--shadow-glow)]">
+        {icon ?? <Inbox className="size-6" aria-hidden="true" />}
       </span>
       <h3 className="text-base font-semibold">{title}</h3>
       {description ? <p className="max-w-sm text-sm text-muted-foreground">{description}</p> : null}
@@ -58,8 +58,8 @@ export function ErrorState({
 }) {
   return (
     <div role="alert" className="surface-panel flex flex-col items-center gap-3 p-10 text-center">
-      <span className="flex size-11 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-        <AlertTriangle className="size-5" aria-hidden="true" />
+      <span className="flex size-14 items-center justify-center rounded-2xl border border-destructive/30 bg-destructive/10 text-destructive">
+        <AlertTriangle className="size-6" aria-hidden="true" />
       </span>
       <h3 className="text-base font-semibold">{title}</h3>
       <p className="max-w-sm text-sm text-muted-foreground">
@@ -78,7 +78,7 @@ export function OfflineBanner() {
   return (
     <div
       role="status"
-      className="flex items-center justify-center gap-2 bg-warning px-4 py-2 text-sm text-warning-foreground"
+      className="flex items-center justify-center gap-2 border-b border-warning/30 bg-warning/15 px-4 py-2 text-sm text-warning backdrop-blur-xl"
     >
       <WifiOff className="size-4" aria-hidden="true" />
       You're offline. Some actions are paused until the connection returns.

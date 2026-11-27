@@ -32,14 +32,14 @@ export function SplashOverlay({ duration = 550 }: { duration?: number }) {
     >
       <div className="pointer-events-none absolute inset-0">
         <span className="animate-drift absolute -top-32 -left-24 size-[26rem] rounded-full bg-primary/25 blur-3xl" />
-        <span className="animate-drift absolute -right-24 bottom-[-8rem] size-[24rem] rounded-full bg-accent-pink/20 blur-3xl [animation-delay:-6s]" />
+        <span className="animate-drift absolute -right-24 bottom-[-8rem] size-[24rem] rounded-full bg-accent-blue/20 blur-3xl [animation-delay:-6s]" />
         <span className="animate-drift absolute top-1/3 left-1/2 size-[20rem] -translate-x-1/2 rounded-full bg-accent-violet/20 blur-3xl [animation-delay:-11s]" />
       </div>
 
       <div className="relative flex flex-col items-center">
         <span className="relative flex size-28 items-center justify-center">
           <span className="animate-splash-ring absolute inset-0 rounded-[2rem] border border-primary/40" />
-          <span className="animate-splash-ring absolute inset-0 rounded-[2rem] border border-accent-pink/30 [animation-delay:.6s]" />
+          <span className="animate-splash-ring absolute inset-0 rounded-[2rem] border border-accent-violet/30 [animation-delay:.6s]" />
           <span className="animate-splash-pop bg-sunset flex size-24 items-center justify-center rounded-[1.75rem] shadow-elevated">
             <img src={brandMark} alt="" width={96} height={96} className="size-14 object-contain" />
           </span>

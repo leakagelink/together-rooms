@@ -40,8 +40,8 @@ export function SplashOverlay({ duration = 550 }: { duration?: number }) {
         <span className="relative flex size-28 items-center justify-center">
           <span className="animate-splash-ring absolute inset-0 rounded-[2rem] border border-primary/40" />
           <span className="animate-splash-ring absolute inset-0 rounded-[2rem] border border-accent-violet/30 [animation-delay:.6s]" />
-          <span className="animate-splash-pop bg-sunset flex size-24 items-center justify-center rounded-[1.75rem] shadow-elevated">
-            <img src={brandMark} alt="" width={96} height={96} className="size-14 object-contain" />
+          <span className="animate-splash-pop flex size-24 overflow-hidden rounded-[1.75rem] shadow-elevated">
+            <img src={brandMark} alt="" width={96} height={96} className="size-full object-cover" />
           </span>
         </span>
 
@@ -49,7 +49,7 @@ export function SplashOverlay({ duration = 550 }: { duration?: number }) {
           SyncTogether
         </h1>
         <p className="animate-rise mt-2 text-xs tracking-[0.22em] text-muted-foreground uppercase [animation-delay:300ms]">
-          Watch · Listen · Study
+          Watch · Listen · Chat · Together
         </p>
 
         <span className="mt-8 block h-1 w-40 overflow-hidden rounded-full bg-border/70">

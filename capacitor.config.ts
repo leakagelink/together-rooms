@@ -30,7 +30,7 @@ const config: CapacitorConfig = {
       // web app after first paint instead of on a fixed timer.
       launchAutoHide: false,
       launchShowDuration: 0,
-      backgroundColor: "#140B24",
+      backgroundColor: "#080522",
       androidScaleType: "CENTER_CROP",
       showSpinner: false,
       splashFullScreen: true,

@@ -22,8 +22,8 @@ export function AuthCard({
       </header>
       <main className="flex flex-1 flex-col items-center px-4 pt-2 pb-16">
         <Link to="/" aria-label="SyncTogether home" className="animate-rise flex flex-col items-center text-center">
-          <span className="bg-liquid flex size-20 items-center justify-center rounded-full ring-1 ring-glass-border">
-            <img src={brandMark} alt="" width={80} height={80} className="size-12 object-contain" />
+          <span className="flex size-20 overflow-hidden rounded-3xl shadow-glow ring-1 ring-glass-border">
+            <img src={brandMark} alt="" width={80} height={80} className="size-full object-cover" />
           </span>
           <span className="mt-4 font-display text-[2rem] leading-none font-extrabold tracking-tight">
             SyncTogether

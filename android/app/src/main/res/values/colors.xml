@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#FF6A3D</color>
-    <color name="colorPrimaryDark">#140B24</color>
+    <color name="colorPrimaryDark">#080522</color>
     <color name="colorAccent">#FF3D77</color>
     <!-- Brand night background used by the launch theme so the window is never
          white while the WebView loads the app origin. -->
-    <color name="splashBackground">#140B24</color>
+    <color name="splashBackground">#080522</color>
 </resources>

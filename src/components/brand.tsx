@@ -6,14 +6,14 @@ export function BrandMark({ className = "" }: { className?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={`bg-liquid inline-flex size-9 shrink-0 items-center justify-center rounded-full ring-1 ring-glass-border ${className}`}
+      className={`inline-flex size-9 shrink-0 overflow-hidden rounded-xl shadow-glow ring-1 ring-glass-border ${className}`}
     >
       <img
         src={brandMark}
         alt=""
         width={36}
         height={36}
-        className="size-6 object-contain"
+        className="size-full object-cover"
         decoding="async"
       />
     </span>

@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
+  Camera,
   ChevronRight,
   DoorOpen,
   ListMusic,
@@ -10,7 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -25,6 +26,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { errorMessage } from "@/lib/errors";
 import { profileSchema } from "@/lib/validation";
 import { myProfileQueryOptions } from "@/lib/profile-query";
+import {
+  AVATAR_BUCKET,
+  avatarObjectPath,
+  avatarRefFor,
+  buildAvatarObjectPath,
+  checkAvatarFile,
+  prepareAvatarImage,
+} from "@/lib/avatar";
 
 const profileQueryOptions = myProfileQueryOptions;
 
@@ -32,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
       { title: "Your profile — SyncTogether" },
-      { name: "description", content: "Manage your SyncTogether display name, username and bio." },
+      { name: "description", content: "Manage your SyncTogether profile photo, display name, username and bio." },
       { property: "og:title", content: "Your profile — SyncTogether" },
       { property: "og:description", content: "Manage your SyncTogether profile." },
       { name: "robots", content: "noindex" },
@@ -66,6 +75,65 @@ function ProfilePage() {
   const navigate = useNavigate();
 
   const profileQuery = useQuery(profileQueryOptions(user.id));
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+
+  async function setAvatar(nextRef: string | null) {
+    const previousPath = avatarObjectPath(profileQuery.data?.avatar_url);
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: nextRef })
+      .eq("id", user.id);
+    if (updateError) throw updateError;
+    if (previousPath && previousPath !== avatarObjectPath(nextRef)) {
+      // Best effort: the old file is no longer referenced anywhere.
+      await supabase.storage.from(AVATAR_BUCKET).remove([previousPath]);
+    }
+    await queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+  }
+
+  async function onPhotoPicked(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const check = checkAvatarFile(file);
+    if (!check.ok) {
+      toast.error(check.message);
+      return;
+    }
+    setPhotoBusy(true);
+    try {
+      const image = await prepareAvatarImage(file);
+      const objectPath = buildAvatarObjectPath(user.id);
+      const { error: uploadError } = await supabase.storage
+        .from(AVATAR_BUCKET)
+        .upload(objectPath, image, { contentType: "image/jpeg", upsert: false });
+      if (uploadError) throw uploadError;
+      try {
+        await setAvatar(avatarRefFor(objectPath));
+      } catch (err) {
+        await supabase.storage.from(AVATAR_BUCKET).remove([objectPath]);
+        throw err;
+      }
+      toast.success("Profile photo updated.");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removePhoto() {
+    setPhotoBusy(true);
+    try {
+      await setAvatar(null);
+      toast.success("Profile photo removed.");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (profileQuery.data) {
@@ -118,13 +186,52 @@ function ProfilePage() {
           <section className="glass relative overflow-hidden rounded-3xl px-5 pt-6 pb-6 text-center">
             <div aria-hidden="true" className="bg-liquid-hero pointer-events-none absolute inset-x-0 top-0 h-32" />
             <div className="relative flex flex-col items-center">
-              <UserAvatar
-                name={profileQuery.data?.display_name || user.email}
-                src={profileQuery.data?.avatar_url}
-                size="xl"
-                className="ring-4 shadow-[var(--shadow-glow)]"
-              />
-              <p className="mt-4 font-display text-2xl font-bold">
+              <div className="relative">
+                <UserAvatar
+                  name={profileQuery.data?.display_name || user.email}
+                  src={profileQuery.data?.avatar_url}
+                  size="xl"
+                  className={`ring-4 shadow-[var(--shadow-glow)] ${photoBusy ? "opacity-60" : ""}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={photoBusy}
+                  aria-label={profileQuery.data?.avatar_url ? "Change profile photo" : "Add profile photo"}
+                  className="press bg-liquid absolute -right-1 -bottom-1 grid size-10 place-items-center rounded-full text-primary-foreground ring-4 ring-background shadow-[var(--shadow-glow)] disabled:opacity-60"
+                >
+                  <Camera className="size-5" aria-hidden="true" />
+                </button>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  onChange={onPhotoPicked}
+                />
+              </div>
+              <div className="mt-3 flex items-center gap-3 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={photoBusy}
+                  className="text-lavender hover:underline disabled:opacity-60"
+                >
+                  {photoBusy ? "Uploading…" : profileQuery.data?.avatar_url ? "Change photo" : "Add photo"}
+                </button>
+                {profileQuery.data?.avatar_url && !photoBusy ? (
+                  <button
+                    type="button"
+                    onClick={() => void removePhoto()}
+                    className="text-muted-foreground hover:text-destructive hover:underline"
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+              <p className="mt-3 font-display text-2xl font-bold">
                 {profileQuery.data?.display_name || "Add your name"}
               </p>
               {profileQuery.data?.username ? (

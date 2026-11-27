@@ -1,3 +1,4 @@
+import { AvatarImage } from "@/components/user-avatar";
 import type { RoomMemberEntry } from "@/lib/rooms.functions";
 import type { PresenceStatus } from "@/lib/realtime/events";
 
@@ -46,18 +47,15 @@ export function RoomPresenceRail({ members, presence, onOpenPeople, max = 5 }: P
         const status: PresenceStatus = presence[member.user_id] ?? "offline";
         return (
           <span key={member.user_id} className="relative shrink-0">
-            {member.avatar_url ? (
-              <img
-                src={member.avatar_url}
-                alt=""
-                className="size-11 rounded-full object-cover ring-2 ring-primary/45 ring-offset-2 ring-offset-card"
-                loading="lazy"
-              />
-            ) : (
-              <span className="grid size-11 place-items-center rounded-full bg-primary/12 text-sm font-black text-primary ring-2 ring-primary/45 ring-offset-2 ring-offset-card">
-                {initials(member.display_name)}
-              </span>
-            )}
+            <AvatarImage
+              value={member.avatar_url}
+              className="size-11 rounded-full object-cover ring-2 ring-primary/45 ring-offset-2 ring-offset-card"
+              fallback={
+                <span className="grid size-11 place-items-center rounded-full bg-primary/12 text-sm font-black text-primary ring-2 ring-primary/45 ring-offset-2 ring-offset-card">
+                  {initials(member.display_name)}
+                </span>
+              }
+            />
             <span
               aria-hidden="true"
               className={`absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-card ${DOT[status]}`}

@@ -71,13 +71,16 @@ export const DATA_SAFETY_INVENTORY: readonly DataSafetyEntry[] = [
   },
   {
     category: "photos_videos_audio",
-    collected: false,
-    stored: false,
+    collected: true,
+    stored: true,
     processed: true,
     sharedWith: [],
-    retention: "Not stored. Streamed peer to peer for the lifetime of the sharing session only.",
-    purpose: "Temporary local media sharing inside a room.",
-    protection: "Encrypted WebRTC transport; time-limited, revocable transport grants.",
+    retention:
+      "Optional profile photo: kept until the user changes or removes it, or deletes the account. Local media shared in a room is not stored; it is streamed peer to peer for the sharing session only.",
+    purpose:
+      "Optional profile photo shown to other signed-in members, and temporary local media sharing inside a room.",
+    protection:
+      "Private storage bucket; uploads limited to the user's own folder; signed, expiring view links; encrypted WebRTC transport for local media.",
     requiresOwnerReview: false,
   },
   {

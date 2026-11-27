@@ -33,9 +33,10 @@ describe("assetlinks", () => {
 
 describe("free-only product surface", () => {
   it("profile query does not select subscription_tier", () => {
-    const source = read("src/routes/_authenticated/profile.tsx");
-    expect(source).toContain('.select("id, username, display_name, bio, status")');
-    expect(source).not.toMatch(/subscription_tier/);
+    const query = read("src/lib/profile-query.ts");
+    expect(query).toContain('.select("id, username, display_name, bio, status, avatar_url")');
+    expect(query).not.toMatch(/subscription_tier/);
+    expect(read("src/routes/_authenticated/profile.tsx")).not.toMatch(/subscription_tier/);
   });
 
   it("has no purchase/subscribe/upgrade analytics events", () => {

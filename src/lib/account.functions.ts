@@ -74,6 +74,18 @@ export const deleteAccount = createServerFn({ method: "POST" })
       .update({ status: "processing" })
       .eq("id", requestId);
 
+    // Remove the user's profile photos from storage (best effort; the purge
+    // below also clears the profile reference).
+    try {
+      const { data: photos } = await supabaseAdmin.storage
+        .from("avatars")
+        .list(userId, { limit: 100 });
+      const paths = (photos ?? []).map((photo) => `${userId}/${photo.name}`);
+      if (paths.length > 0) await supabaseAdmin.storage.from("avatars").remove(paths);
+    } catch (err) {
+      console.error("[delete_account:avatars]", err instanceof Error ? err.message : "failed");
+    }
+
     const { error: purgeError } = await supabaseAdmin.rpc("purge_user_data", {
       _user_id: userId,
     });

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   isShortsUrl,
   parseShortsReference,
+  shortsSwipeScope,
   shouldPublishWatchMode,
   toWatchMode,
   watchModeAspectClass,
@@ -77,5 +78,20 @@ describe("watch mode", () => {
   it("uses portrait framing for shorts only", () => {
     expect(watchModeAspectClass("shorts")).toBe("aspect-[9/16]");
     expect(watchModeAspectClass("video")).toBe("aspect-video");
+  });
+});
+
+describe("shorts swipe scope", () => {
+  it("host or controller swipes change the Short for the whole room", () => {
+    expect(shortsSwipeScope({ shortsMode: true, roomActive: true, canControl: true })).toBe("room");
+  });
+  it("joined members can swipe, but only for themselves", () => {
+    expect(shortsSwipeScope({ shortsMode: true, roomActive: true, canControl: false })).toBe(
+      "personal",
+    );
+  });
+  it("no swiping outside Shorts mode or in a closed room", () => {
+    expect(shortsSwipeScope({ shortsMode: false, roomActive: true, canControl: true })).toBe("none");
+    expect(shortsSwipeScope({ shortsMode: true, roomActive: false, canControl: false })).toBe("none");
   });
 });

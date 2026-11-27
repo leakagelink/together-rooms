@@ -79,7 +79,16 @@ export function useShortsReel(
 
 export type ShortsReel = ReturnType<typeof useShortsReel>;
 
-export function ShortsReelPanel({ reel, disabled }: { reel: ShortsReel; disabled: boolean }) {
+export function ShortsReelPanel({
+  reel,
+  disabled,
+  personal = false,
+}: {
+  reel: ShortsReel;
+  disabled: boolean;
+  /** Member without playback control: picks play on this device only. */
+  personal?: boolean;
+}) {
   const [linkOpen, setLinkOpen] = useState(false);
   const [link, setLink] = useState("");
 
@@ -135,7 +144,7 @@ export function ShortsReelPanel({ reel, disabled }: { reel: ShortsReel; disabled
         </Button>
         <span className="text-xs text-muted-foreground">
           {reel.items.length > 0
-            ? `Swipe up or down on the side rail · ${Math.max(reel.index, 0) + 1}/${reel.items.length}`
+            ? `${personal ? "Swipe for yourself" : "Swipe up or down"} on the side rail · ${Math.max(reel.index, 0) + 1}/${reel.items.length}`
             : "No Shorts loaded yet"}
 
         </span>
@@ -222,7 +231,7 @@ export function ShortsReelPanel({ reel, disabled }: { reel: ShortsReel; disabled
               className="min-w-48 flex-1"
             />
             <Button type="submit" size="sm" disabled={disabled || link.trim().length === 0}>
-              Play in room
+              {personal ? "Watch" : "Play in room"}
             </Button>
           </form>
         ) : null}

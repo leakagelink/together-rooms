@@ -16,6 +16,7 @@ import {
   SkipBack,
   SkipForward,
   Trash2,
+  Users,
   Youtube,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -55,6 +56,7 @@ import { setPlaybackTrackingRestricted } from "@/lib/analytics";
 import { providerError, type ProviderError } from "@/lib/providers/media-provider";
 import { youtubeProvider } from "@/lib/providers/youtube";
 import {
+  shortsSwipeScope,
   shouldPublishWatchMode,
   toWatchMode,
   type WatchMode,
@@ -239,6 +241,14 @@ export function WatchTogether({
    */
   const watchMode: WatchMode = toWatchMode(state?.watch_mode);
   const shortsMode = watchMode === "shorts" && !audioMode;
+  /**
+   * Personal Shorts browsing (members without playback control). While set,
+   * this device plays its own Short locally and ignores room updates; the
+   * room's authoritative state is never written. Cleared by "Back to room".
+   */
+  const [soloMediaId, setSoloMediaId] = useState<string | null>(null);
+  const soloRef = useRef<string | null>(null);
+  soloRef.current = soloMediaId;
   const [searchOverride, setSearchOverride] = useState<boolean | null>(null);
   const searchOpen = searchOverride ?? !hasMedia;
   // Functional toggle: it always flips the *currently rendered* state, even if
@@ -609,6 +619,7 @@ export function WatchTogether({
   // ---- apply authoritative state (version-ordered)
   useEffect(() => {
     if (!playerReady || !state) return;
+    if (soloRef.current) return; // browsing Shorts personally; rejoin re-applies
     if (state.version <= appliedVersion.current) return; // out-of-order / duplicate
     appliedVersion.current = state.version;
     applyPlanRef.current(state);
@@ -616,8 +627,8 @@ export function WatchTogether({
 
   // ---- autoplay detection: one bounded check, never a retry loop
   useEffect(() => {
-    if (!playerReady || state?.playback_status !== "playing") {
-      if (state && state.playback_status !== "playing") setGesture(false);
+    if (!playerReady || soloMediaId || state?.playback_status !== "playing") {
+      if (soloMediaId || (state && state.playback_status !== "playing")) setGesture(false);
       return;
     }
     const timer = setTimeout(() => {
@@ -631,7 +642,7 @@ export function WatchTogether({
       }
     }, AUTOPLAY_GRACE_MS + 100);
     return () => clearTimeout(timer);
-  }, [playerReady, setGesture, snapshot, state]);
+  }, [playerReady, setGesture, snapshot, soloMediaId, state]);
 
   // ---- YouTube ToS: no background playback, no audio-only extraction.
   // When the app is backgrounded the local player is paused. This is a LOCAL
@@ -644,7 +655,7 @@ export function WatchTogether({
       if (!player) return;
       const enforcement = planBackgroundEnforcement({
         visibility: document.visibilityState === "hidden" ? "hidden" : "visible",
-        hasMedia: Boolean(stateRef.current?.provider_media_id),
+        hasMedia: Boolean(stateRef.current?.provider_media_id || soloRef.current),
         locallyPlaying: snapshot().playing,
       });
       if (!enforcement.pauseLocally) return;
@@ -662,7 +673,13 @@ export function WatchTogether({
     const id = setInterval(() => {
       const player = playerRef.current;
       const current = stateRef.current;
-      if (!player || !current || current.playback_status !== "playing" || gestureRef.current) {
+      if (
+        !player ||
+        !current ||
+        soloRef.current ||
+        current.playback_status !== "playing" ||
+        gestureRef.current
+      ) {
         setDrifting(false);
         return;
       }
@@ -736,6 +753,8 @@ export function WatchTogether({
 
   /** Manual resync: refresh authoritative state + clock, then reconcile locally. */
   const onResync = useCallback(() => {
+    soloRef.current = null;
+    setSoloMediaId(null);
     playback.resync("manual_resync");
     appliedVersion.current = -1;
     setProviderFailure(null);
@@ -776,10 +795,47 @@ export function WatchTogether({
    * between Shorts writes through the same authoritative playback RPC, so every
    * member follows along; only a controller can swipe.
    */
+  const swipeScope = shortsSwipeScope({ shortsMode, roomActive, canControl });
+
+  /**
+   * Members without playback control swipe for themselves only: the official
+   * player loads the chosen Short locally (the swipe is the user gesture), and
+   * the room's shared state is left untouched.
+   */
+  const pickPersonalShort = useCallback(
+    (mediaId: string) => {
+      const player = playerRef.current;
+      if (!player) return;
+      soloRef.current = mediaId;
+      setSoloMediaId(mediaId);
+      setGesture(false);
+      setProviderFailure(null);
+      loadedVideo.current = mediaId;
+      suppress(() => player.loadVideoById(mediaId, 0));
+    },
+    [setGesture, suppress],
+  );
+
+  /** Leaves personal browsing and snaps back to the room's current Short. */
+  const backToRoom = useCallback(() => {
+    soloRef.current = null;
+    setSoloMediaId(null);
+    appliedVersion.current = -1;
+    setProviderFailure(null);
+    playAttemptAt.current = Date.now();
+    applyPlanRef.current(stateRef.current);
+  }, []);
+
+  // Losing personal scope (room left Shorts mode, room closed, or this member
+  // was given control) always returns the device to the room's state.
+  useEffect(() => {
+    if (swipeScope !== "personal" && soloRef.current) backToRoom();
+  }, [backToRoom, swipeScope]);
+
   const shortsReel = useShortsReel(
-    shortsMode && canControl && roomActive,
-    state?.provider_media_id ?? null,
-    onPickMedia,
+    swipeScope !== "none",
+    soloMediaId ?? state?.provider_media_id ?? null,
+    swipeScope === "room" ? onPickMedia : pickPersonalShort,
   );
 
   /**
@@ -795,7 +851,7 @@ export function WatchTogether({
   const pointerSwipeStart = useRef<{ id: number; y: number; t: number } | null>(null);
   const wheelAt = useRef(0);
   const navAt = useRef(0);
-  const swipeEnabled = shortsMode && canControl && roomActive;
+  const swipeEnabled = swipeScope !== "none";
 
   const navigateShort = useCallback(
     (direction: 1 | -1) => {
@@ -894,7 +950,7 @@ export function WatchTogether({
     authorized: playback.authorized,
     playerReady,
     loading: playback.isPending || metadataPending,
-    hasMedia: Boolean(state?.provider_media_id),
+    hasMedia: Boolean(state?.provider_media_id || soloMediaId),
     connected: playback.connected,
     awaitingGesture,
     policyStatus,
@@ -1055,8 +1111,21 @@ export function WatchTogether({
             >
               <ChevronUp className="size-5" aria-hidden="true" />
             </Button>
-            <div className="flex flex-1 items-center justify-center" aria-hidden="true">
-              <span className="h-12 w-1 rounded-full bg-muted-foreground/40" />
+            <div className="flex flex-1 flex-col items-center justify-center gap-3">
+              <span className="h-12 w-1 rounded-full bg-muted-foreground/40" aria-hidden="true" />
+              {soloMediaId ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="size-10 shrink-0"
+                  onClick={backToRoom}
+                  aria-label="Back to the room's Short"
+                  title="Back to the room's Short"
+                >
+                  <Users className="size-5" aria-hidden="true" />
+                </Button>
+              ) : null}
             </div>
             <Button
               type="button"
@@ -1233,8 +1302,23 @@ export function WatchTogether({
 
       <p className="mt-1 text-xs text-muted-foreground">{controllerLabel}</p>
 
-      {canControl && roomActive && shortsMode ? (
-        <ShortsReelPanel reel={shortsReel} disabled={busy} />
+      {soloMediaId && !isFullscreen ? (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
+          <p role="status" className="min-w-40 flex-1 text-xs text-foreground">
+            You're swiping Shorts on your own. The room keeps watching its Short.
+          </p>
+          <Button size="sm" variant="secondary" onClick={backToRoom}>
+            <Users className="size-4" aria-hidden="true" /> Back to room
+          </Button>
+        </div>
+      ) : null}
+
+      {swipeScope !== "none" ? (
+        <ShortsReelPanel
+          reel={shortsReel}
+          disabled={busy}
+          personal={swipeScope === "personal"}
+        />
       ) : null}
 
       {canControl && roomActive && !shortsMode ? (

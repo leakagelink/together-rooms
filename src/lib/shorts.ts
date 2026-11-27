@@ -85,3 +85,21 @@ export function shouldPublishWatchMode(current: WatchMode, requested: WatchMode)
 export function watchModeAspectClass(mode: WatchMode): string {
   return mode === "shorts" ? "aspect-[9/16]" : "aspect-video";
 }
+
+/**
+ * What a Shorts swipe does for this member.
+ *  - "room": host/controller — changes the Short for everyone (authoritative RPC).
+ *  - "personal": other members — browse locally only; the room is untouched and
+ *    they can rejoin the room's Short at any time.
+ *  - "none": not in Shorts mode or the room is closed.
+ */
+export type ShortsSwipeScope = "room" | "personal" | "none";
+
+export function shortsSwipeScope(input: {
+  shortsMode: boolean;
+  roomActive: boolean;
+  canControl: boolean;
+}): ShortsSwipeScope {
+  if (!input.shortsMode || !input.roomActive) return "none";
+  return input.canControl ? "room" : "personal";
+}

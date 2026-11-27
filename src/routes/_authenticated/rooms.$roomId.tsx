@@ -207,6 +207,9 @@ function RoomPage() {
       if (!result.ok) throw new Error(rpcMessage(result.reason));
       return result.members;
     },
+    // Profiles are not part of the room event stream. Refresh the directory so
+    // a member's new photo or built-in avatar appears without rejoining.
+    refetchInterval: 15_000,
   });
 
   // Mute state lives on room_members; members can read their room's rows via RLS.

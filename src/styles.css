@@ -335,6 +335,23 @@
     var(--shadow-glow);
 }
 
+/* Built-in profile avatars, themed entirely with semantic brand colors. */
+@utility avatar-preset-violet {
+  background-image: linear-gradient(135deg, var(--accent-violet), var(--primary));
+}
+
+@utility avatar-preset-blue {
+  background-image: linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
+}
+
+@utility avatar-preset-pink {
+  background-image: linear-gradient(135deg, var(--accent-pink), var(--accent-violet));
+}
+
+@utility avatar-preset-warm {
+  background-image: linear-gradient(135deg, var(--accent-pink), var(--sunset-from));
+}
+
 /* Abstract liquid hero background for welcome/auth/profile covers. */
 @utility bg-liquid-hero {
   background:

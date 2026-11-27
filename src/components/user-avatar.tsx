@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 
+import { PresetAvatar } from "@/components/preset-avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { AVATAR_BUCKET, avatarObjectPath, isRenderableAvatarUrl } from "@/lib/avatar";
+import { avatarPresetId } from "@/lib/avatar-presets";
 import { initialsFor } from "@/lib/profile-query";
 
 /**
@@ -40,6 +42,7 @@ export function UserAvatar({
   className?: string;
 }) {
   const resolved = useAvatarSrc(src);
+  const preset = avatarPresetId(src);
   const sizes = {
     sm: "size-8 text-[11px]",
     md: "size-10 text-sm",
@@ -51,7 +54,9 @@ export function UserAvatar({
       aria-hidden="true"
       className={`bg-liquid relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-display font-bold text-primary-foreground ring-2 ring-glass-border ${sizes[size]} ${className}`}
     >
-      {resolved ? (
+      {preset ? (
+        <PresetAvatar id={preset} className="size-full" />
+      ) : resolved ? (
         <img src={resolved} alt="" className="size-full object-cover" loading="lazy" />
       ) : (
         initialsFor(name)
@@ -71,6 +76,8 @@ export function AvatarImage({
   fallback: React.ReactNode;
 }) {
   const resolved = useAvatarSrc(value);
+  const preset = avatarPresetId(value);
+  if (preset) return <PresetAvatar id={preset} className={className} />;
   if (!resolved) return <>{fallback}</>;
   return <img src={resolved} alt="" className={className} loading="lazy" />;
 }

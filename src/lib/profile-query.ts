@@ -16,6 +16,9 @@ export const myProfileQueryOptions = (userId: string) =>
       return data;
     },
     staleTime: 60_000,
+    // A persisted cache may survive an app restart; never let it hide a newly
+    // selected photo/avatar after the profile screen is opened again.
+    refetchOnMount: "always",
   });
 
 /** First letters of up to two words, for avatar fallbacks. */

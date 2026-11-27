@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
+import { PresetAvatar } from "@/components/preset-avatar";
 import { ErrorState, LoadingState } from "@/components/state-views";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { errorMessage } from "@/lib/errors";
 import { profileSchema } from "@/lib/validation";
 import { myProfileQueryOptions } from "@/lib/profile-query";
+import { AVATAR_PRESETS, avatarPresetId, avatarPresetRef, type AvatarPresetId } from "@/lib/avatar-presets";
 import {
   AVATAR_BUCKET,
   avatarObjectPath,
@@ -41,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
       { title: "Your profile — SyncTogether" },
-      { name: "description", content: "Manage your SyncTogether profile photo, display name, username and bio." },
+      { name: "description", content: "Manage your SyncTogether profile photo or avatar, display name, username and bio." },
       { property: "og:title", content: "Your profile — SyncTogether" },
       { property: "og:description", content: "Manage your SyncTogether profile." },
       { name: "robots", content: "noindex" },
@@ -77,6 +79,9 @@ function ProfilePage() {
   const profileQuery = useQuery(profileQueryOptions(user.id));
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const currentAvatar = profileQuery.data?.avatar_url;
+  const hasStoredPhoto = avatarObjectPath(currentAvatar) !== null;
+  const selectedPreset = avatarPresetId(currentAvatar);
 
   async function setAvatar(nextRef: string | null) {
     const previousPath = avatarObjectPath(profileQuery.data?.avatar_url);
@@ -89,7 +94,16 @@ function ProfilePage() {
       // Best effort: the old file is no longer referenced anywhere.
       await supabase.storage.from(AVATAR_BUCKET).remove([previousPath]);
     }
-    await queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["profile", user.id] }),
+      // Update every room directory this user already has open as well.
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === "rooms" &&
+          query.queryKey[1] === "detail" &&
+          query.queryKey[3] === "members",
+      }),
+    ]);
   }
 
   async function onPhotoPicked(event: React.ChangeEvent<HTMLInputElement>) {
@@ -123,11 +137,24 @@ function ProfilePage() {
     }
   }
 
-  async function removePhoto() {
+  async function choosePreset(presetId: AvatarPresetId) {
+    if (selectedPreset === presetId) return;
+    setPhotoBusy(true);
+    try {
+      await setAvatar(avatarPresetRef(presetId));
+      toast.success("Avatar updated.");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removeAvatar() {
     setPhotoBusy(true);
     try {
       await setAvatar(null);
-      toast.success("Profile photo removed.");
+      toast.success(hasStoredPhoto ? "Profile photo removed." : "Avatar removed.");
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -197,7 +224,7 @@ function ProfilePage() {
                   type="button"
                   onClick={() => photoInputRef.current?.click()}
                   disabled={photoBusy}
-                  aria-label={profileQuery.data?.avatar_url ? "Change profile photo" : "Add profile photo"}
+                  aria-label={hasStoredPhoto ? "Change profile photo" : "Add profile photo"}
                   className="press bg-liquid absolute -right-1 -bottom-1 grid size-10 place-items-center rounded-full text-primary-foreground ring-4 ring-background shadow-[var(--shadow-glow)] disabled:opacity-60"
                 >
                   <Camera className="size-5" aria-hidden="true" />
@@ -219,15 +246,15 @@ function ProfilePage() {
                   disabled={photoBusy}
                   className="text-lavender hover:underline disabled:opacity-60"
                 >
-                  {photoBusy ? "Uploading…" : profileQuery.data?.avatar_url ? "Change photo" : "Add photo"}
+                  {photoBusy ? "Saving…" : hasStoredPhoto ? "Change photo" : "Add photo"}
                 </button>
-                {profileQuery.data?.avatar_url && !photoBusy ? (
+                {currentAvatar && !photoBusy ? (
                   <button
                     type="button"
-                    onClick={() => void removePhoto()}
+                    onClick={() => void removeAvatar()}
                     className="text-muted-foreground hover:text-destructive hover:underline"
                   >
-                    Remove
+                    {hasStoredPhoto ? "Remove photo" : "Remove avatar"}
                   </button>
                 ) : null}
               </div>
@@ -240,6 +267,33 @@ function ProfilePage() {
               {profileQuery.data?.bio ? (
                 <p className="mt-3 max-w-sm text-sm text-muted-foreground">{profileQuery.data.bio}</p>
               ) : null}
+              <div className="mt-5 w-full border-t border-glass-border pt-4">
+                <p className="text-sm font-semibold">No photo? Choose an avatar</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Your choice is visible to other signed-in users.
+                </p>
+                <div role="group" aria-label="Ready-made avatars" className="mt-3 grid grid-cols-4 gap-2">
+                  {AVATAR_PRESETS.map((preset) => {
+                    const selected = selectedPreset === preset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        aria-label={`Use ${preset.label} avatar`}
+                        aria-pressed={selected}
+                        disabled={photoBusy}
+                        onClick={() => void choosePreset(preset.id)}
+                        className={`press flex min-w-0 flex-col items-center gap-1.5 rounded-2xl p-2 text-[11px] font-semibold disabled:opacity-60 ${
+                          selected ? "glass-selected" : "hover:bg-glass"
+                        }`}
+                      >
+                        <PresetAvatar id={preset.id} className="size-11 ring-2 ring-glass-border" />
+                        <span className="truncate">{preset.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </section>
 

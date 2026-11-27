@@ -15,8 +15,9 @@
 - Theme: `<html>` carries `dark` by default and `src/lib/ui/theme.ts` removes it only for an explicit "light" choice — dark glass is the app's primary identity.
 - Glass surfaces come from `@utility` classes in `src/styles.css` (`glass`, `glass-strong`, `glass-selected`, `surface-panel`, `bg-liquid`) with an opaque `@supports` fallback — reuse them instead of per-component blur/color values.
 
-## Profile photos
-- Photos live in the private `avatars` bucket under `<userId>/`; `profiles.avatar_url` stores a `storage:avatars/...` reference resolved to signed URLs via `useAvatarSrc` in `src/components/user-avatar.tsx` — workspace blocks public buckets and photos must stay signed-in-only.
+## Profile photos and avatars
+- Uploaded photos live in the private `avatars` bucket under `<userId>/`; `profiles.avatar_url` stores a `storage:avatars/...` reference resolved to signed URLs via `useAvatarSrc` in `src/components/user-avatar.tsx` — workspace blocks public buckets and photos must stay signed-in-only.
+- Built-in avatars use a validated `preset:<id>` value in the same `avatar_url` column and render locally through `PresetAvatar`; they require no storage object or external image URL.
 
 ## Voice notes
 - Room voice notes live in the private `voice-notes` bucket at `<roomId>/<senderId>/<uuid>.<ext>` and are sent only via `send_room_voice_note`; storage rules and the hourly orphan cleanup (`/api/public/voice-notes/cleanup`) depend on that layout and on the message row being the only reference.

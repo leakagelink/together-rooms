@@ -3,6 +3,7 @@ import { MicOff, Mic, UserCog } from "lucide-react";
 import { BlockUserButton } from "@/components/block-user-button";
 import { ReportDialog } from "@/components/report-dialog";
 import { EmptyState } from "@/components/state-views";
+import { UserAvatar } from "@/components/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { RoomMemberEntry } from "@/lib/rooms.functions";
@@ -59,22 +60,25 @@ export function RoomMembersPanel({
             key={member.user_id}
             className="surface-panel flex flex-wrap items-center justify-between gap-3 p-4"
           >
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
-                <span className="truncate">{isSelf ? "You" : member.display_name}</span>
-                {member.username ? (
-                  <span className="text-xs font-normal text-muted-foreground">
-                    @{member.username}
-                  </span>
-                ) : null}
-                <Badge variant={status === "online" ? "default" : "secondary"}>
-                  {PRESENCE_LABEL[status]}
-                </Badge>
-                {muted ? <Badge variant="outline">Muted</Badge> : null}
+            <div className="flex min-w-0 items-center gap-3">
+              <UserAvatar name={member.display_name} src={member.avatar_url} size="md" />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                  <span className="truncate">{isSelf ? "You" : member.display_name}</span>
+                  {member.username ? (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      @{member.username}
+                    </span>
+                  ) : null}
+                  <Badge variant={status === "online" ? "default" : "secondary"}>
+                    {PRESENCE_LABEL[status]}
+                  </Badge>
+                  {muted ? <Badge variant="outline">Muted</Badge> : null}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {member.role} · {member.status}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {member.role} · {member.status}
-              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               {canModerate && !isSelf && onToggleMute && member.role !== "host" ? (

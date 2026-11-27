@@ -15,5 +15,6 @@
   - [ ] Room screen restructure: Chat / People / My Media tabs, compact playback controls in an overflow panel, Shorts bottom sheet
   - [x] Visual check at phone + desktop widths
 - [x] Profile photo upload/change/remove
+- [x] Built-in avatar choices without a photo; updated photos/avatars refresh for room members
 - [x] Voice notes in room chat (up to 5 minutes)
 - [x] Floating chat shortcut in rooms (mini chat box, red new-message badge, open full chat)

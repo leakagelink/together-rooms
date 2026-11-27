@@ -42,11 +42,13 @@ function PrivacyPage() {
           Account data: email address and authentication records (handled by our auth provider).
         </li>
         <li>
-          Profile data you choose to provide: display name, username, profile photo, bio. Your
-          profile photo is optional, is resized on your device before upload, is stored privately
-          and is shown only to signed-in SyncTogether users (for example, people in your rooms,
-          unless you have blocked each other). You can change or remove it at any time, and it is
-          deleted when you delete your account.
+          Profile data you choose to provide: display name, username, profile photo or built-in
+          avatar, and bio. Your profile photo is optional, is resized on your device before upload,
+          is stored privately and is shown only to signed-in SyncTogether users (for example,
+          people in your rooms, unless you have blocked each other). You can instead choose a
+          built-in avatar, which saves only your preset choice and uploads no photo. You can change
+          or remove either at any time, and an uploaded photo is deleted when you delete your
+          account.
         </li>
         <li>
           Room data: rooms you create or join, membership, roles, invites and room activity events.

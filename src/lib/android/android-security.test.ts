@@ -148,6 +148,12 @@ describe("Phase 10 — Android production hardening", () => {
     // One-shot: consumed destinations never replay.
     expect(takePendingDestination()).toBeNull();
 
+    // Create / Join tapped while signed out resume after sign-in.
+    rememberPendingDestination("/rooms/new");
+    expect(takePendingDestination()).toBe("/rooms/new");
+    rememberPendingDestination("/rooms/join");
+    expect(takePendingDestination()).toBe("/rooms/join");
+
     // A destination injected directly into storage is re-validated on read.
     window.sessionStorage.setItem(
       PENDING_DESTINATION_KEY,

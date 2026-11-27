@@ -26,6 +26,7 @@ const RESUMABLE_PATH_PATTERNS: RegExp[] = [
   /^\/invite\/[a-f0-9]{48}$/,
   /^\/rooms$/,
   /^\/rooms\/[0-9a-fA-F-]{36}$/,
+  /^\/rooms\/(new|join)$/,
   /^\/playlists$/,
   /^\/settings(\/[a-z-]{1,32})?$/,
   /^\/profile$/,

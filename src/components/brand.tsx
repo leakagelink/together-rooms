@@ -6,7 +6,7 @@ export function BrandMark({ className = "" }: { className?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={`bg-liquid inline-flex size-9 shrink-0 items-center justify-center rounded-full ring-1 ring-white/15 ${className}`}
+      className={`bg-liquid inline-flex size-9 shrink-0 items-center justify-center rounded-full ring-1 ring-glass-border ${className}`}
     >
       <img
         src={brandMark}

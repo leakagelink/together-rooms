@@ -87,7 +87,7 @@ function ForgotPasswordPage() {
             {error}
           </p>
         ) : null}
-        <Button type="submit" className="w-full" disabled={submitting}>
+        <Button type="submit" size="lg" className="w-full" disabled={submitting}>
           {submitting ? "Sending…" : "Send reset link"}
         </Button>
       </form>

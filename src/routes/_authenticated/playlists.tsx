@@ -123,13 +123,13 @@ function PlaylistsPage() {
 
   return (
     <AppShell>
-      <h1 className="text-2xl font-semibold">Playlists</h1>
+      <h1 className="text-[1.75rem] sm:text-3xl">Playlists</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Playlists are private to you until you load them into a music room queue.
       </p>
 
       <form
-        className="mt-6 flex flex-wrap gap-2"
+        className="glass mt-5 flex flex-wrap gap-2 rounded-3xl p-2"
         onSubmit={(event) => {
           event.preventDefault();
           const value = name.trim();
@@ -146,11 +146,11 @@ function PlaylistsPage() {
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="New playlist name"
-          className="min-w-48 flex-1"
+          className="min-w-40 flex-1 border-transparent bg-transparent"
           maxLength={80}
         />
         <Button type="submit" disabled={busy}>
-          <Plus className="size-4" aria-hidden="true" /> Create
+          <Plus className="size-4" aria-hidden="true" /> New Playlist
         </Button>
       </form>
 
@@ -165,29 +165,38 @@ function PlaylistsPage() {
         <EmptyState
           title="No playlists yet"
           description="Create one above, then add YouTube tracks to it."
+          icon={<ListMusic className="size-6" aria-hidden="true" />}
         />
       ) : (
-        <div className="mt-6 grid gap-6 md:grid-cols-[240px_1fr]">
+        <div className="mt-6 grid gap-5 md:grid-cols-[280px_1fr]">
           <nav aria-label="Your playlists" className="space-y-2">
             {playlists.data.map((playlist) => (
               <button
                 key={playlist.id}
                 type="button"
                 onClick={() => setSelected(playlist.id)}
-                className={
-                  playlist.id === activeId
-                    ? "w-full rounded-lg border border-primary bg-primary/10 p-3 text-left text-sm"
-                    : "w-full rounded-lg border border-border p-3 text-left text-sm hover:bg-muted/50"
-                }
+                aria-pressed={playlist.id === activeId}
+                className={`press flex w-full items-center gap-3 rounded-2xl p-2.5 text-left ${
+                  playlist.id === activeId ? "glass-selected" : "glass hover:bg-glass-strong"
+                }`}
               >
-                <span className="flex items-center gap-2 font-medium">
-                  <ListMusic className="size-4" aria-hidden="true" /> {playlist.name}
+                <span
+                  aria-hidden="true"
+                  className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--sunset-from),var(--accent-blue))] text-primary-foreground"
+                >
+                  <ListMusic className="size-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-display text-[15px] font-semibold">{playlist.name}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {playlist.visibility === "shared_with_room" ? "Shared with a room" : "Private"}
+                  </span>
                 </span>
               </button>
             ))}
           </nav>
 
-          <section className="surface-panel p-5" aria-live="polite">
+          <section className="surface-panel rounded-3xl p-4 sm:p-5" aria-live="polite">
             {!active ? (
               <p className="text-sm text-muted-foreground">Select a playlist.</p>
             ) : (
@@ -252,7 +261,7 @@ function PlaylistsPage() {
                     {items.data.map((item, index) => (
                       <li
                         key={item.id}
-                        className="flex items-center gap-3 rounded-lg border border-border bg-card/60 p-2"
+                        className="glass flex items-center gap-3 rounded-2xl p-2"
                       >
                         {item.thumbnail_url ? (
                           <img
@@ -260,12 +269,12 @@ function PlaylistsPage() {
                             alt=""
                             loading="lazy"
                             referrerPolicy="strict-origin-when-cross-origin"
-                            className="h-10 w-16 shrink-0 rounded object-cover"
+                            className="h-11 w-[4.5rem] shrink-0 rounded-xl object-cover"
                           />
                         ) : (
-                          <div className="h-10 w-16 shrink-0 rounded bg-muted" aria-hidden="true" />
+                          <div className="h-11 w-[4.5rem] shrink-0 rounded-xl bg-[linear-gradient(135deg,var(--sunset-from),var(--accent-blue))]" aria-hidden="true" />
                         )}
-                        <p className="min-w-0 flex-1 truncate text-sm">
+                        <p className="min-w-0 flex-1 truncate text-sm font-medium">
                           {item.title ?? item.provider_media_id}
                         </p>
                         <Button

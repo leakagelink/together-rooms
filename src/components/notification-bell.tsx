@@ -71,12 +71,12 @@ export function NotificationBell() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative rounded-xl"
+          className="glass relative rounded-full"
           aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
         >
           <Bell className="size-5" aria-hidden="true" />
           {unreadCount > 0 ? (
-            <span className="absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-4 text-primary-foreground">
+            <span className="absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-accent-pink px-1 text-[10px] font-bold leading-4 text-primary-foreground">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           ) : null}
@@ -129,9 +129,9 @@ export function NotificationBell() {
                     <button
                       type="button"
                       onClick={() => void openNotification(notification)}
-                      className="flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/60"
+                      className="flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-glass-strong"
                     >
-                      <span className="mt-0.5 rounded-lg bg-muted p-1.5">
+                      <span className="mt-0.5 rounded-xl border border-primary/25 bg-primary/15 p-1.5 text-lavender">
                         <Icon className="size-4" aria-hidden="true" />
                       </span>
                       <span className="min-w-0 flex-1">

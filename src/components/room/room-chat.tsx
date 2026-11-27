@@ -200,7 +200,7 @@ export function RoomChat({
         )}
       </div>
 
-      <div className="border-t border-border/60 bg-background/40 p-3 sm:p-4">
+      <div className="border-t border-glass-border bg-background/30 p-3 backdrop-blur-xl sm:p-4">
         {replyTo ? (
           <p className="mb-2 flex items-center justify-between gap-2 rounded-2xl border border-border/60 bg-muted/60 py-1.5 pl-3 pr-1 text-xs">
             <span className="truncate">
@@ -222,7 +222,7 @@ export function RoomChat({
           <>
             {/* One pill holds the field and the send affordance so the composer
                 reads as a single target on small screens. */}
-            <div className="flex items-end gap-2 rounded-[1.75rem] border border-border/70 bg-muted/40 p-1.5 focus-within:border-primary/60">
+            <div className="glass flex items-end gap-2 rounded-[1.75rem] p-1.5 focus-within:border-primary/60">
               <Textarea
                 ref={inputRef}
                 aria-label="Message"
@@ -243,7 +243,7 @@ export function RoomChat({
                 onClick={submit}
                 disabled={sendMutation.isPending || draft.trim().length === 0}
                 aria-label="Send message"
-                className="size-10 shrink-0 rounded-full p-0 shadow-lg shadow-primary/25"
+                className="size-10 shrink-0 rounded-full p-0"
               >
                 <Send className="size-4" aria-hidden="true" />
               </Button>

@@ -10,3 +10,7 @@
 > the editor, so keep the branch in a working state.
 
 <!-- LOVABLE:END -->
+
+## UI architecture
+- Theme: `<html>` carries `dark` by default and `src/lib/ui/theme.ts` removes it only for an explicit "light" choice — dark glass is the app's primary identity.
+- Glass surfaces come from `@utility` classes in `src/styles.css` (`glass`, `glass-strong`, `glass-selected`, `surface-panel`, `bg-liquid`) with an opaque `@supports` fallback — reuse them instead of per-component blur/color values.

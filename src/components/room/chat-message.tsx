@@ -60,8 +60,10 @@ export function ChatMessageRow({
 
   if (message.content_type === "system") {
     return (
-      <li className="my-2 text-center text-xs text-muted-foreground">
-        {systemMessageLabel(message.system_code)} · {timeLabel(message.created_at)}
+      <li className="my-1.5 flex justify-center">
+        <span className="glass rounded-full px-3 py-1 text-[11px] text-muted-foreground">
+          {systemMessageLabel(message.system_code)} · {timeLabel(message.created_at)}
+        </span>
       </li>
     );
   }
@@ -75,8 +77,10 @@ export function ChatMessageRow({
     <li className={cn("flex flex-col gap-1", mine ? "items-end" : "items-start")}>
       <div
         className={cn(
-          "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm sm:max-w-[70%]",
-          mine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
+          "max-w-[85%] px-4 py-2.5 text-sm sm:max-w-[70%]",
+          mine
+            ? "bg-liquid rounded-3xl rounded-br-lg text-primary-foreground"
+            : "glass rounded-3xl rounded-bl-lg text-foreground",
           removed && "italic opacity-70",
         )}
       >

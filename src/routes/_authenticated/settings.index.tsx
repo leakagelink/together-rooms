@@ -1,7 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { BadgeAlert, ChevronRight, Scale, ShieldCheck, Trash2, Users } from "lucide-react";
+import {
+  BadgeAlert,
+  Bell,
+  ChevronRight,
+  Lock,
+  Moon,
+  Scale,
+  ShieldCheck,
+  Trash2,
+  User as UserIcon,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -90,25 +101,36 @@ function SettingsPage() {
 
   return (
     <AppShell>
-      <h1 className="text-2xl font-semibold">Settings</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Manage{" "}
-        <Link to="/settings/notifications" className="text-primary hover:underline">
-          notifications
-        </Link>{" "}
-        or{" "}
-        <Link to="/settings/privacy" className="text-primary hover:underline">
-          privacy settings
-        </Link>
-        .
-      </p>
+      <h1 className="text-[1.75rem] sm:text-3xl">Settings</h1>
 
-      <PlanSummary />
+      <nav aria-label="Settings sections" className="mt-5 max-w-xl space-y-2.5">
+        {SECTION_LINKS.map((item) => {
+          const { to, label, description, icon: Icon } = item;
+          return (
+          <Link
+            key={label}
+            to={to}
+            {...("hash" in item ? { hash: item.hash } : {})}
+            className="press glass flex min-h-16 items-center gap-3 rounded-2xl px-4 py-3 hover:bg-glass-strong"
+          >
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/25 bg-primary/15 text-lavender">
+              <Icon className="size-5" aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-semibold">{label}</span>
+              <span className="block truncate text-xs text-muted-foreground">{description}</span>
+            </span>
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          </Link>
+          );
+        })}
+      </nav>
 
-      <LegalLinks />
 
-
-      <div className="mt-8 max-w-xl">
+      <section id="appearance" aria-labelledby="appearance-heading" className="mt-8 max-w-xl scroll-mt-20">
+        <h2 id="appearance-heading" className="mb-3 text-lg">
+          Appearance
+        </h2>
         {settingsQuery.isPending ? (
           <LoadingState label="Loading settings" rows={3} />
         ) : settingsQuery.isError ? (
@@ -142,7 +164,11 @@ function SettingsPage() {
             </Button>
           </div>
         )}
-      </div>
+      </section>
+
+      <PlanSummary />
+
+      <LegalLinks />
     </AppShell>
   );
 }
@@ -161,7 +187,7 @@ function ToggleRow({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+    <div className="glass flex items-start justify-between gap-4 rounded-2xl p-4">
       <div>
         <Label htmlFor={id}>{label}</Label>
         {description ? <p className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
@@ -177,7 +203,7 @@ function ToggleRow({
  */
 function PlanSummary() {
   return (
-    <section className="surface-panel mt-6 max-w-xl p-5" aria-labelledby="plan-heading">
+    <section className="surface-panel mt-8 max-w-xl rounded-3xl p-5" aria-labelledby="plan-heading">
       <h2 id="plan-heading" className="text-sm font-semibold">
         Your plan
       </h2>
@@ -195,6 +221,18 @@ function PlanSummary() {
     </section>
   );
 }
+
+const SECTION_LINKS = [
+  { to: "/profile", label: "Account", description: "Name, username and bio", icon: UserIcon },
+  {
+    to: "/settings/notifications",
+    label: "Notifications",
+    description: "Alerts, chat and room activity",
+    icon: Bell,
+  },
+  { to: "/settings/privacy", label: "Privacy", description: "Who can invite you, visibility", icon: Lock },
+  { to: "/settings", hash: "appearance", label: "Appearance", description: "Theme and motion", icon: Moon },
+] as const;
 
 const LEGAL_LINKS = [
   {
@@ -238,14 +276,14 @@ function LegalLinks() {
       <p className="mt-1 text-xs text-muted-foreground">
         Policies, community rules and account deletion.
       </p>
-      <ul className="surface-panel mt-3 divide-y divide-border/70 overflow-hidden p-0">
+      <ul className="surface-panel mt-3 divide-y divide-border overflow-hidden rounded-3xl p-0">
         {LEGAL_LINKS.map(({ to, label, description, icon: Icon }) => (
           <li key={to}>
             <Link
               to={to}
-              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+              className="flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-glass-strong"
             >
-              <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <Icon className="size-4 shrink-0 text-lavender" aria-hidden="true" />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">{label}</span>
                 <span className="block text-xs text-muted-foreground">{description}</span>

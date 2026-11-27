@@ -2,19 +2,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Check } from "lucide-react";
 
 import { RewardedGate } from "@/components/ads/rewarded-gate";
 import { AppShell } from "@/components/app-shell";
+import { ROOM_TYPE_ICONS, ROOM_TYPE_LABELS } from "@/components/rooms/room-card-meta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAdAccess } from "@/hooks/useAdAccess";
@@ -39,19 +34,26 @@ export const Route = createFileRoute("/_authenticated/rooms/new")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  // Quick-create tiles preselect a room type; anything else is ignored.
+  validateSearch: (search: Record<string, unknown>): { type?: (typeof roomTypes)[number] } => {
+    const value = search["type"];
+    return typeof value === "string" && (roomTypes as readonly string[]).includes(value)
+      ? { type: value as (typeof roomTypes)[number] }
+      : {};
+  },
   component: NewRoomPage,
 });
 
-const TYPE_LABELS: Record<string, string> = {
-  couple: "Couple",
-  friends: "Friends",
-  family: "Family",
-  study: "Study",
-  research: "Research",
-  music: "Listen",
-  watch: "Watch",
-  game: "Games",
-  private: "Private",
+const TYPE_DESCRIPTIONS: Record<string, string> = {
+  couple: "Just the two of you",
+  friends: "Hang out with friends",
+  family: "Family time together",
+  study: "Focus timer, notes, tasks",
+  research: "Shared resources & notes",
+  music: "Listen together",
+  watch: "Videos & Shorts in sync",
+  game: "Game night",
+  private: "Only you and invitees",
 };
 
 function NewRoomPage() {
@@ -62,7 +64,8 @@ function NewRoomPage() {
   const { requestFullscreen } = useAds();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [type, setType] = useState<(typeof roomTypes)[number]>("friends");
+  const search = Route.useSearch();
+  const [type, setType] = useState<(typeof roomTypes)[number]>(search.type ?? "friends");
   const [maxMembers, setMaxMembers] = useState("10");
   const [inviteOnly, setInviteOnly] = useState(true);
   const [ephemeral, setEphemeral] = useState(true);
@@ -135,7 +138,7 @@ function NewRoomPage() {
 
   return (
     <AppShell>
-      <h1 className="text-2xl font-semibold">Create a room</h1>
+      <h1 className="text-2xl sm:text-[1.75rem]">Create Room</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Rooms are private by default. Everything in SyncTogether is free.
       </p>
@@ -148,7 +151,7 @@ function NewRoomPage() {
         )}
       </div>
 
-      <form onSubmit={onSubmit} className="surface-panel mt-8 max-w-xl space-y-5 p-6" noValidate>
+      <form onSubmit={onSubmit} className="surface-panel mt-6 max-w-xl space-y-6 rounded-3xl p-5 sm:p-6" noValidate>
         <div className="space-y-2">
           <Label htmlFor="name">Room name</Label>
           <Input
@@ -168,35 +171,50 @@ function NewRoomPage() {
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="type">Room type</Label>
-            <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
-              <SelectTrigger id="type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {roomTypes.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {TYPE_LABELS[t]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <fieldset className="space-y-2">
+          <legend className="mb-2 text-sm font-medium">Room type</legend>
+          <div role="radiogroup" aria-label="Room type" className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {roomTypes.map((t) => {
+              const Icon = ROOM_TYPE_ICONS[t];
+              const selected = type === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setType(t)}
+                  className={`press relative flex min-h-[4.5rem] items-start gap-2.5 rounded-2xl p-3 text-left ${
+                    selected ? "glass-selected" : "glass hover:bg-glass-strong"
+                  }`}
+                >
+                  <Icon className={`mt-0.5 size-5 shrink-0 ${selected ? "text-lavender" : "text-muted-foreground"}`} aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">{ROOM_TYPE_LABELS[t]}</span>
+                    <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                      {TYPE_DESCRIPTIONS[t]}
+                    </span>
+                  </span>
+                  {selected ? (
+                    <Check className="absolute top-2 right-2 size-4 rounded-full bg-primary p-0.5 text-primary-foreground" aria-hidden="true" />
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="max">Maximum members</Label>
-            <Input
-              id="max"
-              type="number"
-              min={2}
-              max={50}
-              value={maxMembers}
-              onChange={(e) => setMaxMembers(e.target.value)}
-            />
-          </div>
+        </fieldset>
+        <div className="space-y-2">
+          <Label htmlFor="max">Maximum members</Label>
+          <Input
+            id="max"
+            type="number"
+            min={2}
+            max={50}
+            value={maxMembers}
+            onChange={(e) => setMaxMembers(e.target.value)}
+          />
         </div>
-        <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+        <div className="glass flex items-start justify-between gap-4 rounded-2xl p-4">
           <div>
             <Label htmlFor="inviteOnly">Invite only</Label>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -205,7 +223,7 @@ function NewRoomPage() {
           </div>
           <Switch id="inviteOnly" checked={inviteOnly} onCheckedChange={setInviteOnly} />
         </div>
-        <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+        <div className="glass flex items-start justify-between gap-4 rounded-2xl p-4">
           <div>
             <Label htmlFor="ephemeral">Ephemeral room</Label>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -219,8 +237,8 @@ function NewRoomPage() {
             {error}
           </p>
         ) : null}
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Creating…" : "Create room"}
+        <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+          {submitting ? "Creating…" : "Create Room"}
         </Button>
       </form>
     </AppShell>

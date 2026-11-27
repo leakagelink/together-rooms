@@ -1,18 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import {
-  Bell,
-  DoorOpen,
-  ListMusic,
-  LogIn,
-  Plus,
-  PlusCircle,
-  User as UserIcon,
-} from "lucide-react";
+import { ArrowRight, Bell, DoorOpen, ListMusic, LogIn, PlusCircle, User as UserIcon } from "lucide-react";
 
 import { BrandLogo } from "@/components/brand";
 import { SiteFooter } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { DashboardActions, DashboardGreeting } from "@/components/rooms/dashboard-actions";
 import { useAuth } from "@/hooks/useAuth";
 import { readLastRoute } from "@/lib/android/last-route";
 import { rememberPendingDestination } from "@/lib/android/deep-link";
@@ -68,14 +61,14 @@ function Index() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-2 px-3 sm:px-4">
+      <header className="sticky top-0 z-30 border-b border-glass-border bg-background/55 pt-[env(safe-area-inset-top)] backdrop-blur-2xl">
+        <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-2 px-3 sm:px-4">
           <BrandLogo />
           <nav aria-label="Main" className="flex shrink-0 items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
-              className="hidden rounded-xl sm:inline-flex"
+              className="hidden sm:inline-flex"
               onClick={() => requireSignIn("/rooms")}
             >
               Rooms
@@ -83,7 +76,7 @@ function Index() {
             <Button
               variant="ghost"
               size="sm"
-              className="hidden rounded-xl sm:inline-flex"
+              className="hidden sm:inline-flex"
               onClick={() => requireSignIn("/playlists")}
             >
               Playlists
@@ -92,7 +85,7 @@ function Index() {
               variant="ghost"
               size="icon"
               aria-label="Notifications"
-              className="rounded-xl"
+              className="glass rounded-full"
               onClick={() => requireSignIn("/rooms")}
             >
               <Bell className="size-5" aria-hidden="true" />
@@ -101,7 +94,6 @@ function Index() {
               variant="outline"
               size="sm"
               aria-label="Sign in"
-              className="rounded-xl"
               onClick={() => requireSignIn("/profile")}
             >
               <UserIcon className="size-4 shrink-0" aria-hidden="true" />
@@ -111,66 +103,69 @@ function Index() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-3 pt-5 pb-10 sm:px-4 sm:py-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold">Your rooms</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Private and invite-only. Public discovery is off in this release.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => requireSignIn("/rooms/join")}>
-              <DoorOpen className="size-4" aria-hidden="true" /> Join
-            </Button>
-            <Button onClick={() => requireSignIn("/rooms/new")}>
-              <Plus className="size-4" aria-hidden="true" /> New room
-            </Button>
-          </div>
+      <main className="animate-rise mx-auto w-full max-w-5xl flex-1 px-4 pt-5 pb-10 sm:px-6 sm:py-8">
+        <DashboardGreeting name={null} />
+        <div className="mt-5">
+          <DashboardActions
+            onGuest={(target) =>
+              requireSignIn(target.kind === "join" ? "/rooms/join" : "/rooms/new")
+            }
+          />
         </div>
 
-        <div className="mt-8">
-          <div className="surface-panel flex flex-col items-center gap-3 p-10 text-center">
-            <span className="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
-              <LogIn className="size-5" aria-hidden="true" />
+        <section aria-labelledby="guest-rooms" className="mt-8">
+          <h2 id="guest-rooms" className="text-lg">
+            Your rooms
+          </h2>
+          <div className="glass mt-3 flex flex-col items-center gap-3 rounded-3xl p-8 text-center">
+            <span className="bg-liquid flex size-14 items-center justify-center rounded-2xl text-primary-foreground">
+              <LogIn className="size-6" aria-hidden="true" />
             </span>
-            <h2 className="text-base font-semibold">Sign in to see your rooms</h2>
+            <h3 className="text-base">Sign in to see your rooms</h3>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Watch, listen, study and chat together in private rooms with the people you know.
+              Real-time rooms for videos, music and more with your friends. Private and invite-only.
             </p>
-            <div className="mt-1 flex flex-wrap justify-center gap-2">
-              <Button onClick={() => requireSignIn("/rooms")}>Sign in</Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  rememberPendingDestination("/rooms");
-                  void navigate({ to: "/auth/signup" });
-                }}
-              >
-                Create account
+            <div className="mt-1 flex w-full max-w-xs flex-col gap-2">
+              <Button size="lg" onClick={() => requireSignIn("/rooms")}>
+                Get Started <ArrowRight className="size-4" aria-hidden="true" />
               </Button>
+              <p className="text-sm text-muted-foreground">
+                New here?{" "}
+                <button
+                  type="button"
+                  className="font-semibold text-lavender underline-offset-4 hover:underline"
+                  onClick={() => {
+                    rememberPendingDestination("/rooms");
+                    void navigate({ to: "/auth/signup" });
+                  }}
+                >
+                  Create account
+                </button>
+              </p>
             </div>
           </div>
-        </div>
+        </section>
       </main>
 
       <SiteFooter />
 
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
+        className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 sm:hidden"
       >
-        <ul className="mx-auto grid max-w-5xl grid-cols-4">
+        <ul className="glass-strong mx-auto grid max-w-md grid-cols-4 gap-1 rounded-[1.75rem] p-1.5">
           {GUEST_TABS.map(({ to, label, icon: Icon }) => (
             <li key={to}>
               <button
                 type="button"
                 onClick={() => requireSignIn(to)}
-                className={`flex min-h-14 w-full flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-semibold transition-colors ${
-                  to === "/rooms" ? "text-primary" : "text-muted-foreground"
+                className={`flex min-h-14 w-full flex-col items-center justify-center gap-0.5 rounded-[1.35rem] px-1 py-1.5 text-[11px] font-semibold transition-colors active:scale-95 ${
+                  to === "/rooms"
+                    ? "bg-primary/25 text-foreground ring-1 ring-primary/45"
+                    : "text-muted-foreground"
                 }`}
               >
-                <Icon className="size-5 shrink-0" aria-hidden="true" />
+                <Icon className={`size-5 shrink-0 ${to === "/rooms" ? "text-lavender" : ""}`} aria-hidden="true" />
                 <span className="truncate">{label}</span>
               </button>
             </li>

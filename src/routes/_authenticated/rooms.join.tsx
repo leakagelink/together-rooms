@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { UserPlus } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -68,19 +69,22 @@ function JoinRoomPage() {
 
   return (
     <AppShell>
-      <h1 className="text-2xl font-semibold">Join a room</h1>
+      <h1 className="text-2xl sm:text-[1.75rem]">Join Room</h1>
       <p className="mt-1 text-sm text-muted-foreground">Enter the code the host shared with you.</p>
       <p className="mt-1 text-xs text-muted-foreground">
         Repeated failed attempts are rate limited.
       </p>
-      <form onSubmit={onSubmit} className="surface-panel mt-8 max-w-md space-y-5 p-6" noValidate>
+      <form onSubmit={onSubmit} className="surface-panel mt-6 max-w-md space-y-5 rounded-3xl p-5 sm:p-6" noValidate>
+        <span className="bg-liquid mx-auto flex size-14 items-center justify-center rounded-2xl text-primary-foreground">
+          <UserPlus className="size-7" aria-hidden="true" />
+        </span>
         <div className="space-y-2">
           <Label htmlFor="code">Join code</Label>
           <Input
             id="code"
             required
             autoCapitalize="characters"
-            className="font-mono tracking-widest uppercase"
+            className="h-14 text-center font-mono text-xl tracking-[0.35em] uppercase"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
           />
@@ -90,8 +94,8 @@ function JoinRoomPage() {
             {error}
           </p>
         ) : null}
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Checking…" : "Join room"}
+        <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+          {submitting ? "Checking…" : "Join Room"}
         </Button>
       </form>
     </AppShell>

@@ -11,6 +11,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { BackButton } from "@/components/back-button";
 import { BrandLogo } from "@/components/brand";
@@ -27,6 +28,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useStaffContext } from "@/hooks/useStaffContext";
+import { UserAvatar } from "@/components/user-avatar";
+import { myProfileQueryOptions } from "@/lib/profile-query";
 
 export function AppShell({
   children,
@@ -42,6 +45,8 @@ export function AppShell({
   const online = useOnlineStatus();
   // Affordance only — the moderation RPCs re-check staff role in the database.
   const { isStaff } = useStaffContext();
+  const profile = useQuery({ ...myProfileQueryOptions(user?.id ?? ""), enabled: Boolean(user?.id) });
+  const profileName = profile.data?.display_name || user?.email || "Account";
 
   useEffect(() => {
     if (!online) return;
@@ -64,21 +69,21 @@ export function AppShell({
 
   return (
     <div
-      className={`flex min-h-screen flex-col bg-background ${tone === "cinema" ? "dark text-foreground" : ""}`}
+      className={`flex min-h-screen flex-col ${tone === "cinema" ? "dark text-foreground" : ""}`}
     >
       {online ? null : <OfflineBanner />}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto grid h-14 w-full max-w-5xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:px-4">
+      <header className="sticky top-0 z-30 border-b border-glass-border bg-background/55 pt-[env(safe-area-inset-top)] backdrop-blur-2xl">
+        <div className="mx-auto grid h-16 w-full max-w-5xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:px-4">
           <BackButton homePaths={["/", "/rooms"]} />
           <div className="min-w-0">
             <BrandLogo />
           </div>
-          <nav aria-label="Main" className="flex shrink-0 items-center gap-1">
+          <nav aria-label="Main" className="col-start-3 flex shrink-0 items-center gap-1 justify-self-end">
             {/* Primary destinations move to the bottom tab bar on phones. */}
-            <Button asChild variant="ghost" size="sm" className="hidden rounded-xl sm:inline-flex">
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
               <Link to="/rooms">Rooms</Link>
             </Button>
-            <Button asChild variant="ghost" size="sm" className="hidden rounded-xl sm:inline-flex">
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
               <Link to="/playlists">Playlists</Link>
             </Button>
             {isStaff ? (
@@ -86,7 +91,7 @@ export function AppShell({
                 asChild
                 variant="ghost"
                 size="sm"
-                className="hidden rounded-xl sm:inline-flex"
+                className="hidden sm:inline-flex"
               >
                 <Link to="/admin">
                   <Gavel className="size-4" aria-hidden="true" />
@@ -97,15 +102,16 @@ export function AppShell({
             <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
+                  type="button"
                   aria-label="Account menu"
-                  className="max-w-[10rem] rounded-xl sm:max-w-none"
+                  className="press flex items-center gap-2 rounded-full p-0.5 focus-visible:outline-2 focus-visible:outline-ring sm:pr-3 sm:glass"
                 >
-                  <UserIcon className="size-4 shrink-0" aria-hidden="true" />
-                  <span className="hidden truncate sm:inline">{user?.email ?? "Account"}</span>
-                </Button>
+                  <UserAvatar name={profileName} src={profile.data?.avatar_url} size="sm" />
+                  <span className="hidden max-w-[10rem] truncate text-sm font-semibold sm:inline">
+                    {profile.data?.display_name || user?.email || "Account"}
+                  </span>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem asChild>
@@ -149,7 +155,7 @@ export function AppShell({
           </nav>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-3 pt-5 pb-28 sm:px-4 sm:py-8 sm:pb-8">
+      <main className="animate-rise mx-auto w-full max-w-5xl flex-1 px-4 pt-5 pb-32 sm:px-6 sm:py-8 sm:pb-10">
         {children}
       </main>
       <MobileTabBar />
@@ -168,17 +174,20 @@ function MobileTabBar() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
+      className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 sm:hidden"
     >
-      <ul className="mx-auto grid max-w-5xl grid-cols-4">
+      <ul className="glass-strong mx-auto grid max-w-md grid-cols-4 gap-1 rounded-[1.75rem] p-1.5">
         {TABS.map(({ to, label, icon: Icon }) => (
           <li key={to}>
             <Link
               to={to}
               activeOptions={{ exact: to === "/rooms" }}
-              className="flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-semibold text-muted-foreground transition-colors [&.active]:text-primary"
+              className="group flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[1.35rem] px-1 py-1.5 text-[11px] font-semibold text-muted-foreground transition-[color,background-color,box-shadow] duration-200 active:scale-95 [&.active]:bg-primary/25 [&.active]:text-foreground [&.active]:shadow-[inset_0_1px_0_oklch(1_0_0/0.12),0_6px_20px_oklch(0.606_0.219_293/0.35)] [&.active]:ring-1 [&.active]:ring-primary/45"
             >
-              <Icon className="size-5 shrink-0" aria-hidden="true" />
+              <Icon
+                className="size-5 shrink-0 transition-transform duration-200 group-[.active]:scale-110 group-[.active]:text-lavender group-[.active]:drop-shadow-[0_0_8px_oklch(0.606_0.219_293/0.8)]"
+                aria-hidden="true"
+              />
               <span className="truncate">{label}</span>
             </Link>
           </li>
@@ -190,8 +199,8 @@ function MobileTabBar() {
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-card">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 pt-6 pb-24 sm:pb-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+    <footer className="border-t border-glass-border bg-background/40 backdrop-blur-xl">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 pt-6 pb-32 sm:pb-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p>© {new Date().getFullYear()} SyncTogether</p>
         <nav aria-label="Legal" className="flex flex-wrap gap-x-4 gap-y-2">
           <Link to="/privacy" className="hover:text-foreground">

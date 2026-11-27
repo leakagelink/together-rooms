@@ -58,6 +58,8 @@ import {
 } from "@/lib/rooms.functions";
 import { rpcMessage } from "@/lib/rpc-types";
 import { RoomChat } from "@/components/room/room-chat";
+import { FloatingChat } from "@/components/room/floating-chat";
+import { useRoomChat } from "@/hooks/useRoomChat";
 import { RoomPresenceRail } from "@/components/room/room-presence-rail";
 import { WatchTogether } from "@/components/room/watch-together";
 import { MusicRoom } from "@/components/room/music-room";
@@ -153,6 +155,26 @@ function RoomPage() {
     });
     return () => window.cancelAnimationFrame(id);
   }, [stageSearchOpen]);
+
+  // One chat subscription shared by the full chat tab and the floating chat box.
+  const chat = useRoomChat(roomId, user?.id);
+  const [chatPanelEl, setChatPanelEl] = useState<HTMLDivElement | null>(null);
+  const [chatOnScreen, setChatOnScreen] = useState(false);
+  useEffect(() => {
+    if (!chatPanelEl || typeof IntersectionObserver === "undefined") return undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => setChatOnScreen(Boolean(entry?.isIntersecting)),
+      { threshold: 0.25 },
+    );
+    observer.observe(chatPanelEl);
+    return () => observer.disconnect();
+  }, [chatPanelEl]);
+  const openFullChat = useCallback(() => {
+    setTab("chat");
+    window.requestAnimationFrame(() =>
+      chatPanelEl?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }, [chatPanelEl]);
 
   const fetchMembers = useServerFn(listRoomMembers);
   const leave = useServerFn(leaveRoom);
@@ -618,7 +640,7 @@ function RoomPage() {
 
       {/* Every panel stays mounted so realtime subscriptions and playback
           survive tab switches; only visibility changes. */}
-      <div className={tab === "chat" ? "pb-8" : "hidden"}>
+      <div ref={setChatPanelEl} className={tab === "chat" ? "scroll-mt-20 pb-8" : "hidden"}>
         <RoomChat
           roomId={room.id}
           userId={user?.id}
@@ -626,8 +648,21 @@ function RoomPage() {
           canModerate={canModerate}
           canInteract={canChat}
           disabledReason={chatDisabledReason}
+          chat={chat}
         />
       </div>
+
+      <FloatingChat
+        roomId={room.id}
+        userId={user?.id}
+        members={membersQuery.data ?? []}
+        canModerate={canModerate}
+        canInteract={canChat}
+        disabledReason={chatDisabledReason}
+        chat={chat}
+        fullChatVisible={tab === "chat" && chatOnScreen}
+        onOpenFullChat={openFullChat}
+      />
 
       <div className={tab === "people" ? "pb-8" : "hidden"}>
         <section className="mt-6" aria-labelledby="members-heading">

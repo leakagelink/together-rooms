@@ -46,6 +46,9 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(AdsPlugin.class);
         super.onCreate(savedInstanceState);
         if (bridge != null && bridge.getWebView() != null) {
+            // Keep the normal Supabase WebView session available after process
+            // death as well; the native recovery copy is handled by the web app.
+            bridge.getWebView().getSettings().setDomStorageEnabled(true);
             bridge.getWebView().setWebChromeClient(
                 new FullscreenWebChromeClient(bridge));
         }

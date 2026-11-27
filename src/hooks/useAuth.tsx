@@ -13,6 +13,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { clearAnalyticsConsent, setAnalyticsConsent } from "@/lib/analytics";
 import { clearPersistedQueryCache } from "@/lib/query-persist";
 import { clearLastRoute } from "@/lib/android/last-route";
+import {
+  clearNativeAuthSession,
+  getPersistentSession,
+  syncNativeAuthSession,
+} from "@/lib/android/auth-session";
 
 interface AuthContextValue {
   user: User | null;
@@ -33,23 +38,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     // Register the listener BEFORE the initial read so no event is missed.
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setLoading(false);
-      if (!nextSession) {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // On Android cold start, INITIAL_SESSION can briefly be null while the
+      // durable native copy is being restored. That is not a sign-out.
+      if (event === "INITIAL_SESSION" && !nextSession) {
+        void syncNativeAuthSession(event, nextSession).catch(() => {});
+        return;
+      }
+      if (active) {
+        setSession(nextSession);
+        setLoading(false);
+      }
+      void syncNativeAuthSession(event, nextSession).catch(() => {});
+      if (event === "SIGNED_OUT") {
         clearAnalyticsConsent();
         clearPersistedQueryCache();
         clearLastRoute();
       }
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
+    getPersistentSession()
+      .then(({ session: restoredSession }) => {
+        if (!active) return;
+        setSession(restoredSession);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (active) setLoading(false);
+      });
 
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const userId = session?.user?.id;
@@ -76,6 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearAnalyticsConsent();
     clearPersistedQueryCache();
     clearLastRoute();
+    // Remove the recovery copy even if the network sign-out request fails, so
+    // an explicitly logged-out session can never reappear on the next launch.
+    await clearNativeAuthSession().catch(() => {});
     await supabase.auth.signOut();
   }, []);
 

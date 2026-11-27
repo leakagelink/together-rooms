@@ -1,16 +1,15 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
-import { supabase } from "@/integrations/supabase/client";
+import { getPersistentSession } from "@/lib/android/auth-session";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    // getSession() reads (and silently refreshes) the locally stored session,
-    // so navigating between screens no longer waits on a network round trip.
-    // Every data read still goes through RLS with that same token, so this is
-    // a latency change only, not a weaker gate.
-    const { data, error } = await supabase.auth.getSession();
-    const user = data.session?.user;
+    // Normal WebView/localStorage sessions are read first. Android cold starts
+    // can additionally restore the app-private native copy before redirecting.
+    // Every data read still goes through RLS with that same validated token.
+    const { session, error } = await getPersistentSession();
+    const user = session?.user;
     if (error || !user) throw redirect({ to: "/auth/login" });
     return { user };
   },

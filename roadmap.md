@@ -16,3 +16,4 @@
   - [x] Visual check at phone + desktop widths
 - [x] Profile photo upload/change/remove
 - [x] Voice notes in room chat (up to 5 minutes)
+- [x] Floating chat shortcut in rooms (mini chat box, red new-message badge, open full chat)

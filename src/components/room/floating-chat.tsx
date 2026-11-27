@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { MessageCircle } from "lucide-react";
 
 import { RoomChat } from "@/components/room/room-chat";
@@ -46,7 +47,13 @@ export function FloatingChat({ chat, userId, fullChatVisible, onOpenFullChat, ..
   const unread = seeing ? { count: 0, hasReplyToMe: false } : summarizeUnread(chat.messages, userId, seenAt);
   const hasUnread = unread.count > 0;
 
-  return (
+  // Portal to <body>: animated page wrappers use transforms, which would pin a
+  // fixed element to the page instead of the screen.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       {!open ? (
         <div className="fixed left-2 top-1/2 z-40 flex -translate-y-1/2 items-center gap-2">
@@ -89,7 +96,7 @@ export function FloatingChat({ chat, userId, fullChatVisible, onOpenFullChat, ..
         <div
           role="dialog"
           aria-label="Chat box"
-          className="glass-strong fixed left-2 top-1/2 z-40 flex h-[min(30rem,70dvh)] w-[min(22rem,calc(100vw-1rem))] -translate-y-1/2 flex-col overflow-hidden rounded-3xl shadow-[var(--shadow-glow)]"
+          className="fixed left-2 top-1/2 z-40 flex h-[min(30rem,70dvh)] border border-glass-border bg-popover/95 backdrop-blur-2xl w-[min(22rem,calc(100vw-1rem))] -translate-y-1/2 flex-col overflow-hidden rounded-3xl shadow-[var(--shadow-glow)]"
         >
           <RoomChat
             {...chatProps}
@@ -104,6 +111,7 @@ export function FloatingChat({ chat, userId, fullChatVisible, onOpenFullChat, ..
           />
         </div>
       )}
-    </>
+    </>,
+    document.body,
   );
 }

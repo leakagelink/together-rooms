@@ -149,7 +149,7 @@ $env:ANDROID_KEYSTORE_PATH="C:\keys\synctogether.jks"
 $env:ANDROID_KEYSTORE_PASSWORD="..."
 $env:ANDROID_KEY_ALIAS="..."
 $env:ANDROID_KEY_PASSWORD="..."
-$env:VERSION_CODE="1"
+$env:VERSION_CODE="16"   # must be higher than the last Play upload (15)
 ./gradlew bundleRelease          # -> app/build/outputs/bundle/release/app-release.aab
 ```
 

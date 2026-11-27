@@ -42,3 +42,12 @@
 }
 # 3. The Capacitor annotation must survive so the plugin name resolves at runtime.
 -keepattributes *Annotation*
+
+# 4. Keep line numbers (with an anonymous source name) so Play Console crash
+#    reports can be de-obfuscated with the mapping file R8 writes into the AAB.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+#
+# Never add -dontoptimize, -dontshrink, -dontobfuscate or app-wide wildcard
+# keeps (-keep class ** { *; }): Play Console flags builds without real R8
+# optimisation ("Improve your app's memory and performance with R8").

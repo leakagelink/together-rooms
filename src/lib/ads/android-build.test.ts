@@ -208,7 +208,15 @@ describe("phase 14.1 android build blockers", () => {
 
   it("ANDROID-BUILD-T11: release shrinking preserves the plugin without blanket keeps", () => {
     expect(appGradle).toMatch(/minifyEnabled true/);
+    expect(appGradle).toMatch(/release\s*\{[\s\S]*?shrinkResources true/);
+    expect(appGradle).toContain("getDefaultProguardFile('proguard-android-optimize.txt')");
     expect(appGradle).toContain("'proguard-rules.pro'");
+    // Play Console's "R8 optimisation" recommendation fires when any of these
+    // switch optimisation off or keep the whole app.
+    for (const off of ["-dontoptimize", "-dontshrink", "-dontobfuscate", "-keep class ** { *; }"]) {
+      expect(proguard.split("\n").some((l) => l.trim().startsWith(off))).toBe(false);
+    }
+    expect(proguard).toContain("-keepattributes SourceFile,LineNumberTable");
     // The reflective entry points are kept…
     expect(proguard).toContain(
       "-keep @com.getcapacitor.annotation.CapacitorPlugin class com.synctogether.com.ads.** { *; }",

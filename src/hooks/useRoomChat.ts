@@ -13,7 +13,7 @@ import { queryKeys } from "@/lib/query-keys";
  * realtime payloads can leak it.
  */
 const MESSAGE_COLUMNS =
-  "id, room_id, sender_id, parent_message_id, content, content_type, status, system_code, edited_at, deleted_at, created_at";
+  "id, room_id, sender_id, parent_message_id, content, content_type, status, system_code, voice_path, voice_duration_ms, edited_at, deleted_at, created_at";
 
 /** How many rows a reconnect catch-up may pull. Bounded on purpose. */
 const CATCHUP_LIMIT = 200;

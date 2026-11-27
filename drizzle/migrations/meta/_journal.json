@@ -15,6 +15,20 @@
       "when": 1795780237957,
       "tag": "0001_avatar_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795780557701,
+      "tag": "0002_voice_note_message_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795780619590,
+      "tag": "0003_voice_notes_in_room_chat",
+      "breakpoints": true
     }
   ]
 }

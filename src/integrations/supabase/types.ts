@@ -1315,6 +1315,8 @@ export type Database = {
           status: Database["public"]["Enums"]["message_status"]
           system_code: string | null
           updated_at: string
+          voice_duration_ms: number | null
+          voice_path: string | null
         }
         Insert: {
           content?: string
@@ -1331,6 +1333,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["message_status"]
           system_code?: string | null
           updated_at?: string
+          voice_duration_ms?: number | null
+          voice_path?: string | null
         }
         Update: {
           content?: string
@@ -1347,6 +1351,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["message_status"]
           system_code?: string | null
           updated_at?: string
+          voice_duration_ms?: number | null
+          voice_path?: string | null
         }
         Relationships: [
           {
@@ -2257,6 +2263,7 @@ export type Database = {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
+      can_listen_voice_note: { Args: { _name: string }; Returns: boolean }
       can_manage_queue: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
@@ -2265,6 +2272,7 @@ export type Database = {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
+      can_upload_voice_note: { Args: { _name: string }; Returns: boolean }
       claim_billing_ack_work: {
         Args: { _lease_seconds?: number; _limit?: number; _owner: string }
         Returns: {
@@ -2371,6 +2379,7 @@ export type Database = {
       delete_room_message: { Args: { _message_id: string }; Returns: Json }
       delete_room_note: { Args: { _note_id: string }; Returns: Json }
       delete_room_task: { Args: { _task_id: string }; Returns: Json }
+      dispatch_voice_note_cleanup: { Args: never; Returns: undefined }
       edit_room_message: {
         Args: { _content: string; _message_id: string }
         Returns: Json
@@ -2543,6 +2552,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      orphan_voice_note_paths: { Args: { _limit?: number }; Returns: string[] }
       pause_room_media: {
         Args: { _expected_version?: number; _room_id: string }
         Returns: Json
@@ -2613,6 +2623,7 @@ export type Database = {
       purge_expired_ack_recovery: { Args: never; Returns: number }
       purge_expired_chat: { Args: never; Returns: number }
       purge_user_data: { Args: { _user_id: string }; Returns: Json }
+      purge_user_voice_notes: { Args: { _user_id: string }; Returns: string[] }
       queue_precheck: {
         Args: {
           _action: string
@@ -2697,6 +2708,15 @@ export type Database = {
           _content: string
           _parent_message_id?: string
           _room_id: string
+        }
+        Returns: Json
+      }
+      send_room_voice_note: {
+        Args: {
+          _duration_ms: number
+          _parent_message_id?: string
+          _room_id: string
+          _voice_path: string
         }
         Returns: Json
       }
@@ -2911,7 +2931,7 @@ export type Database = {
       local_media_kind: "image" | "video" | "audio"
       local_media_session_status: "active" | "ended" | "expired"
       local_media_transport_state: "direct" | "relay" | "unavailable"
-      message_content_type: "text" | "system"
+      message_content_type: "text" | "system" | "voice"
       message_reaction: "thumbs_up" | "heart" | "joy" | "wow" | "sad" | "fire"
       message_status: "active" | "deleted" | "moderated"
       moderation_action_type:
@@ -3140,7 +3160,7 @@ export const Constants = {
       local_media_kind: ["image", "video", "audio"],
       local_media_session_status: ["active", "ended", "expired"],
       local_media_transport_state: ["direct", "relay", "unavailable"],
-      message_content_type: ["text", "system"],
+      message_content_type: ["text", "system", "voice"],
       message_reaction: ["thumbs_up", "heart", "joy", "wow", "sad", "fire"],
       message_status: ["active", "deleted", "moderated"],
       moderation_action_type: [

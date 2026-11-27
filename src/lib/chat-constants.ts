@@ -33,7 +33,7 @@ export const REACTION_LABEL: Record<ReactionKey, string> = {
 };
 
 export type MessageStatus = "active" | "deleted" | "moderated";
-export type MessageContentType = "text" | "system";
+export type MessageContentType = "text" | "system" | "voice";
 
 export interface ChatMessage {
   id: string;
@@ -44,6 +44,9 @@ export interface ChatMessage {
   content_type: MessageContentType;
   status: MessageStatus;
   system_code: string | null;
+  /** Storage object path for voice notes; null otherwise or once deleted. */
+  voice_path?: string | null;
+  voice_duration_ms?: number | null;
   edited_at: string | null;
   deleted_at: string | null;
   created_at: string;

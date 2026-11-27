@@ -33,6 +33,28 @@ export const sendRoomMessage = createServerFn({ method: "POST" })
     return normalizeRpc<{ message_id: string }>("send_room_message", result, error);
   });
 
+export const sendRoomVoiceNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        room_id: uuid,
+        voice_path: z.string().min(10).max(200),
+        duration_ms: z.number().int().min(1).max(300_000),
+        parent_message_id: uuid.nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc("send_room_voice_note", {
+      _room_id: data.room_id,
+      _voice_path: data.voice_path,
+      _duration_ms: data.duration_ms,
+      ...(data.parent_message_id ? { _parent_message_id: data.parent_message_id } : {}),
+    });
+    return normalizeRpc<{ message_id: string }>("send_room_voice_note", result, error);
+  });
+
 export const editRoomMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>

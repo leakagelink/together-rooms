@@ -2273,6 +2273,7 @@ export type Database = {
         Returns: boolean
       }
       can_upload_voice_note: { Args: { _name: string }; Returns: boolean }
+      can_view_profile_avatar: { Args: { _name: string }; Returns: boolean }
       claim_billing_ack_work: {
         Args: { _lease_seconds?: number; _limit?: number; _owner: string }
         Returns: {

@@ -17,6 +17,7 @@
 
 ## Profile photos and avatars
 - Uploaded photos live in the private `avatars` bucket under `<userId>/`; `profiles.avatar_url` stores a `storage:avatars/...` reference resolved to signed URLs via `useAvatarSrc` in `src/components/user-avatar.tsx` — workspace blocks public buckets and photos must stay signed-in-only.
+- Avatar reads allow the owner's folder or the current photo of a profile visible through profile RLS; never grant bucket-wide authenticated reads, so blocking and privacy also protect photo files.
 - Built-in avatars use a validated `preset:<id>` value in the same `avatar_url` column and render locally through `PresetAvatar`; they require no storage object or external image URL.
 
 ## Voice notes

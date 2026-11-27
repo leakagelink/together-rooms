@@ -29,6 +29,20 @@
       "when": 1795780619590,
       "tag": "0003_voice_notes_in_room_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795786364973,
+      "tag": "0004_restrict_avatar_photo_reads",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795786437510,
+      "tag": "0005_bind_avatar_visibility_to_caller",
+      "breakpoints": true
     }
   ]
 }

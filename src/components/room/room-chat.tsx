@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Mic, Radio, Send, X } from "lucide-react";
+import { Loader2, Maximize2, Mic, Radio, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { ChatMessageRow } from "@/components/room/chat-message";
@@ -15,7 +15,7 @@ import { buildVoiceNotePath, VOICE_NOTE_BUCKET, voiceNoteFileFormat } from "@/li
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useRoomChat } from "@/hooks/useRoomChat";
+import type { RoomChatState } from "@/hooks/useRoomChat";
 import { track } from "@/lib/analytics";
 import {
   MAX_MESSAGE_LENGTH,
@@ -43,6 +43,12 @@ interface Props {
   /** False when the room ended/expired or the viewer is muted. */
   canInteract: boolean;
   disabledReason: string | null;
+  /** Shared chat state (one realtime subscription per room page). */
+  chat: RoomChatState;
+  /** "mini" is the compact floating chat box. */
+  variant?: "full" | "mini";
+  onExpand?: () => void;
+  onClose?: () => void;
 }
 
 export function RoomChat({
@@ -52,13 +58,18 @@ export function RoomChat({
   canModerate,
   canInteract,
   disabledReason,
+  chat,
+  variant = "full",
+  onExpand,
+  onClose,
 }: Props) {
+  const mini = variant === "mini";
+  const headingId = useId();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const chat = useRoomChat(roomId, userId);
 
   const send = useServerFn(sendRoomMessage);
   const edit = useServerFn(editRoomMessage);
@@ -179,13 +190,18 @@ export function RoomChat({
 
   return (
     <section
-      className="surface-panel mt-4 flex flex-col overflow-hidden bg-card/70 p-0 backdrop-blur-xl"
-      aria-labelledby="chat-heading"
+      className={
+        mini
+          ? "flex h-full min-h-0 flex-col overflow-hidden"
+          : "surface-panel mt-4 flex flex-col overflow-hidden bg-card/70 p-0 backdrop-blur-xl"
+      }
+      aria-labelledby={headingId}
     >
       <header className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2.5">
-        <h2 id="chat-heading" className="text-sm font-black tracking-tight">
+        <h2 id={headingId} className="text-sm font-black tracking-tight">
           Chat
         </h2>
+        <div className="flex items-center gap-1">
         <p
           className="flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
           role="status"
@@ -197,9 +213,39 @@ export function RoomChat({
               ? "Live"
               : "Reconnecting…"}
         </p>
+        {onExpand ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9 rounded-full"
+            aria-label="Open full chat"
+            title="Open full chat"
+            onClick={onExpand}
+          >
+            <Maximize2 className="size-4" aria-hidden="true" />
+          </Button>
+        ) : null}
+        {onClose ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9 rounded-full"
+            aria-label="Close chat box"
+            onClick={onClose}
+          >
+            <X className="size-4" aria-hidden="true" />
+          </Button>
+        ) : null}
+        </div>
       </header>
 
-      <div className="flex max-h-[58dvh] min-h-64 flex-col-reverse overflow-y-auto px-3 py-4 sm:px-4">
+      <div
+        className={
+          mini
+            ? "flex min-h-0 flex-1 flex-col-reverse overflow-y-auto px-3 py-3"
+            : "flex max-h-[58dvh] min-h-64 flex-col-reverse overflow-y-auto px-3 py-4 sm:px-4"
+        }
+      >
         {chat.isPending ? (
           <LoadingState label="Loading messages" rows={3} />
         ) : chat.isError ? (
@@ -247,7 +293,13 @@ export function RoomChat({
         )}
       </div>
 
-      <div className="border-t border-glass-border bg-background/30 p-3 backdrop-blur-xl sm:p-4">
+      <div
+        className={
+          mini
+            ? "border-t border-glass-border bg-background/30 p-2.5"
+            : "border-t border-glass-border bg-background/30 p-3 backdrop-blur-xl sm:p-4"
+        }
+      >
         {replyTo ? (
           <p className="mb-2 flex items-center justify-between gap-2 rounded-2xl border border-border/60 bg-muted/60 py-1.5 pl-3 pr-1 text-xs">
             <span className="truncate">
@@ -319,7 +371,7 @@ export function RoomChat({
               )}
             </div>
             )}
-            <p className="mt-1.5 px-2 text-[11px] text-muted-foreground">
+            <p className={mini ? "sr-only" : "mt-1.5 px-2 text-[11px] text-muted-foreground"}>
               {recordingVoice
                 ? "Voice notes can be up to 5 minutes."
                 : `${draft.length}/${MAX_MESSAGE_LENGTH} · Enter sends · tap the mic for a voice note.`}

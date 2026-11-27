@@ -18,7 +18,7 @@ Definitions used: **Collected** = transmitted off the device. **Shared** = trans
 | **In-app messages** (room chat, reactions, notes, tasks, resource links, playlist names) | Yes | No | Optional | App functionality | No | `room_messages`, `room_notes`, `room_tasks`, `room_resources` |
 | **Photos** | **No** | No | — | — | — | Device-to-device WebRTC data channel only; **never uploaded to our servers**. No storage bucket exists |
 | **Videos** | **No** | No | — | — | — | same as above (`useLocalMediaTransfer.ts`) |
-| **Audio files / voice** | **No** | No | — | — | — | same as above; no microphone permission, no recording |
+| **Audio files / voice** | **Yes** (voice notes) | No | App functionality | Optional | Deleted with the message, chat retention, or account deletion | Recorded only when the user taps the mic in room chat (RECORD_AUDIO, runtime). Private storage, playable by room members and safety staff only. |
 | **Files & docs** | No | No | — | — | — | only local file names/sizes stay on device or move P2P |
 | **App interactions** (screens opened, room actions) | Yes | No | Optional (consent-gated) | Analytics, App functionality | No | `analytics_events`, gated by `privacy_settings` |
 | **Crash logs** | **No** | No | — | — | — | no crash SDK integrated |

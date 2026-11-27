@@ -39,6 +39,7 @@ import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_auth
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as AuthenticatedAdminReportsReportIdRouteImport } from './routes/_authenticated/admin.reports.$reportId'
 import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push/dispatch'
+import { Route as ApiPublicVoiceNotesCleanupRouteImport } from './routes/api/public/voice-notes/cleanup'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -195,6 +196,12 @@ const ApiPublicPushDispatchRoute = ApiPublicPushDispatchRouteImport.update({
   path: '/api/public/push/dispatch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicVoiceNotesCleanupRoute =
+  ApiPublicVoiceNotesCleanupRouteImport.update({
+    id: '/api/public/voice-notes/cleanup',
+    path: '/api/public/voice-notes/cleanup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
+  '/api/public/voice-notes/cleanup': typeof ApiPublicVoiceNotesCleanupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -257,6 +265,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
+  '/api/public/voice-notes/cleanup': typeof ApiPublicVoiceNotesCleanupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -290,6 +299,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/admin/reports/$reportId': typeof AuthenticatedAdminReportsReportIdRoute
   '/api/public/push/dispatch': typeof ApiPublicPushDispatchRoute
+  '/api/public/voice-notes/cleanup': typeof ApiPublicVoiceNotesCleanupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/admin/reports/$reportId'
     | '/api/public/push/dispatch'
+    | '/api/public/voice-notes/cleanup'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/reports/$reportId'
     | '/api/public/push/dispatch'
+    | '/api/public/voice-notes/cleanup'
   id:
     | '__root__'
     | '/'
@@ -386,6 +398,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/admin/reports/$reportId'
     | '/api/public/push/dispatch'
+    | '/api/public/voice-notes/cleanup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -404,6 +417,7 @@ export interface RootRouteChildren {
   InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
+  ApiPublicVoiceNotesCleanupRoute: typeof ApiPublicVoiceNotesCleanupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -618,6 +632,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPushDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/voice-notes/cleanup': {
+      id: '/api/public/voice-notes/cleanup'
+      path: '/api/public/voice-notes/cleanup'
+      fullPath: '/api/public/voice-notes/cleanup'
+      preLoaderRoute: typeof ApiPublicVoiceNotesCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -678,6 +699,7 @@ const rootRouteChildren: RootRouteChildren = {
   InviteTokenRoute: InviteTokenRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
+  ApiPublicVoiceNotesCleanupRoute: ApiPublicVoiceNotesCleanupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

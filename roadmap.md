@@ -14,3 +14,5 @@
   - [x] Room chat bubbles + glass composer (room screen inherits glass tokens)
   - [ ] Room screen restructure: Chat / People / My Media tabs, compact playback controls in an overflow panel, Shorts bottom sheet
   - [x] Visual check at phone + desktop widths
+- [x] Profile photo upload/change/remove
+- [x] Voice notes in room chat (up to 5 minutes)

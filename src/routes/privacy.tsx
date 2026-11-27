@@ -68,8 +68,18 @@ function PrivacyPage() {
         over an encrypted peer-to-peer connection. That media is never uploaded to our servers, is
         not stored by us, and disappears when the sharing session ends. We store only the fact that
         a session happened, so hosts can manage and report it. We do not scan or index your media
-        library, and we do not request microphone or camera access — voice and video calling is not
-        part of this release.
+        library. We do not request camera access, and voice and video calling is not part of this
+        release.
+      </p>
+      <h2>Voice notes in room chat</h2>
+      <p>
+        If you tap the microphone button in a room chat, the app asks for microphone permission
+        and records only while you are recording a voice note (up to 5 minutes). Nothing is
+        recorded in the background. When you send it, the recording is stored privately and can
+        be played only by members of that room and, for reported content, by our safety team. You
+        can delete your own voice notes at any time. Voice notes are removed when the message is
+        deleted, when the room's chat retention period ends, or when you delete your account. We
+        do not use voice notes for advertising, and they are not shared with third parties.
       </p>
       <h2>Research browsing and search</h2>
       <p>

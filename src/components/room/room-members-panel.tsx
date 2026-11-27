@@ -60,7 +60,7 @@ export function RoomMembersPanel({
             className="surface-panel flex flex-wrap items-center justify-between gap-3 p-4"
           >
             <div className="min-w-0">
-              <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+              <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
                 <span className="truncate">{isSelf ? "You" : member.display_name}</span>
                 {member.username ? (
                   <span className="text-xs font-normal text-muted-foreground">
@@ -71,7 +71,7 @@ export function RoomMembersPanel({
                   {PRESENCE_LABEL[status]}
                 </Badge>
                 {muted ? <Badge variant="outline">Muted</Badge> : null}
-              </p>
+              </div>
               <p className="text-xs text-muted-foreground">
                 {member.role} · {member.status}
               </p>

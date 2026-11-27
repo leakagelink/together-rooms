@@ -86,6 +86,19 @@ export const deleteAccount = createServerFn({ method: "POST" })
       console.error("[delete_account:avatars]", err instanceof Error ? err.message : "failed");
     }
 
+    // Remove the user's voice notes (messages are marked deleted, files removed).
+    try {
+      const { data: voicePaths } = await supabaseAdmin.rpc("purge_user_voice_notes", {
+        _user_id: userId,
+      });
+      const paths = (voicePaths ?? []) as string[];
+      for (let i = 0; i < paths.length; i += 100) {
+        await supabaseAdmin.storage.from("voice-notes").remove(paths.slice(i, i + 100));
+      }
+    } catch (err) {
+      console.error("[delete_account:voice_notes]", err instanceof Error ? err.message : "failed");
+    }
+
     const { error: purgeError } = await supabaseAdmin.rpc("purge_user_data", {
       _user_id: userId,
     });

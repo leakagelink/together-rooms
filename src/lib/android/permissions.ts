@@ -17,7 +17,7 @@ export interface PermissionTrigger {
   permission: AndroidPermission;
   /** The explicit user action that may request it. */
   trigger:
-    "enable_camera" | "join_call_with_microphone" | "pick_local_media" | "enable_notifications";
+    "enable_camera" | "record_voice_note" | "pick_local_media" | "enable_notifications";
   /** Runtime (dangerous) permission on modern Android? */
   runtime: boolean;
   requiredAtStartup: false;
@@ -28,7 +28,7 @@ export const PERMISSION_TRIGGERS: readonly PermissionTrigger[] = [
   { permission: "camera", trigger: "enable_camera", runtime: true, requiredAtStartup: false },
   {
     permission: "microphone",
-    trigger: "join_call_with_microphone",
+    trigger: "record_voice_note",
     runtime: true,
     requiredAtStartup: false,
   },

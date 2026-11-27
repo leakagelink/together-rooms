@@ -72,9 +72,14 @@
          No storage/media permissions are declared: local media sharing uses the
          system file picker (SAF), which grants per-file access without any
          permission. POST_NOTIFICATIONS is runtime-requested (Android 13+) and
-         only used for activity notifications the user can disable in settings. -->
+         only used for activity notifications the user can disable in settings.
+         RECORD_AUDIO is runtime-requested only when the user taps the mic in a
+         room chat to record a voice note; nothing records in the background. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
 </manifest>

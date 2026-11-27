@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, MoreHorizontal, Pencil, Reply, Trash2, X } from "lucide-react";
 
 import { ReportDialog } from "@/components/report-dialog";
+import { VoiceNotePlayer } from "@/components/room/voice-note-player";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -93,7 +94,11 @@ export function ChatMessageRow({
         {parent && !removed ? (
           <p className="mb-1 truncate rounded-md border-l-2 border-current/40 px-2 py-1 text-xs opacity-80">
             Replying to {nameFor(parent.sender_id)}:{" "}
-            {parent.status === "active" ? parent.content : "message removed"}
+            {parent.status !== "active"
+              ? "message removed"
+              : parent.content_type === "voice"
+                ? "🎤 Voice note"
+                : parent.content}
           </p>
         ) : null}
 
@@ -135,6 +140,12 @@ export function ChatMessageRow({
               </Button>
             </div>
           </div>
+        ) : message.content_type === "voice" && message.voice_path ? (
+          <VoiceNotePlayer
+            path={message.voice_path}
+            durationMs={message.voice_duration_ms ?? 0}
+            mine={mine}
+          />
         ) : (
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         )}

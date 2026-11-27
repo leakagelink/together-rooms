@@ -17,3 +17,6 @@
 
 ## Profile photos
 - Photos live in the private `avatars` bucket under `<userId>/`; `profiles.avatar_url` stores a `storage:avatars/...` reference resolved to signed URLs via `useAvatarSrc` in `src/components/user-avatar.tsx` — workspace blocks public buckets and photos must stay signed-in-only.
+
+## Voice notes
+- Room voice notes live in the private `voice-notes` bucket at `<roomId>/<senderId>/<uuid>.<ext>` and are sent only via `send_room_voice_note`; storage rules and the hourly orphan cleanup (`/api/public/voice-notes/cleanup`) depend on that layout and on the message row being the only reference.

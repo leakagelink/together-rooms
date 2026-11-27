@@ -76,11 +76,11 @@ export const DATA_SAFETY_INVENTORY: readonly DataSafetyEntry[] = [
     processed: true,
     sharedWith: [],
     retention:
-      "Optional profile photo: kept until the user changes or removes it, or deletes the account. Local media shared in a room is not stored; it is streamed peer to peer for the sharing session only.",
+      "Optional profile photo: kept until changed/removed or the account is deleted. Voice notes: kept with their chat message; removed when the message is deleted, chat retention ends, or the account is deleted. Local media shared in a room is not stored; it is streamed peer to peer for the sharing session only.",
     purpose:
-      "Optional profile photo shown to other signed-in members, and temporary local media sharing inside a room.",
+      "Optional profile photo shown to other signed-in members, voice notes in room chat, and temporary local media sharing inside a room.",
     protection:
-      "Private storage bucket; uploads limited to the user's own folder; signed, expiring view links; encrypted WebRTC transport for local media.",
+      "Private storage buckets; uploads limited to the user's own folder (voice notes: joined, unmuted room members only); signed, expiring links; voice notes playable only by room members and safety staff; encrypted WebRTC transport for local media.",
     requiresOwnerReview: false,
   },
   {

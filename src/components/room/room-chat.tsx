@@ -1,10 +1,17 @@
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Radio, Send, X } from "lucide-react";
+import { Loader2, Mic, Radio, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { ChatMessageRow } from "@/components/room/chat-message";
+import {
+  useVoiceNoteRecorder,
+  VoiceNoteRecordingBar,
+  type RecordedVoiceNote,
+} from "@/components/room/voice-note-recorder";
+import { supabase } from "@/integrations/supabase/client";
+import { buildVoiceNotePath, VOICE_NOTE_BUCKET, voiceNoteFileFormat } from "@/lib/voice-notes";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-views";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +27,7 @@ import {
   deleteRoomMessage,
   editRoomMessage,
   sendRoomMessage,
+  sendRoomVoiceNote,
   toggleMessageReaction,
 } from "@/lib/chat.functions";
 import { errorMessage } from "@/lib/errors";
@@ -56,6 +64,7 @@ export function RoomChat({
   const edit = useServerFn(editRoomMessage);
   const remove = useServerFn(deleteRoomMessage);
   const react = useServerFn(toggleMessageReaction);
+  const sendVoice = useServerFn(sendRoomVoiceNote);
 
   const nameMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -102,8 +111,11 @@ export function RoomChat({
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const voicePath = byId.get(id)?.sender_id === userId ? byId.get(id)?.voice_path : null;
       const result = await remove({ data: { message_id: id } });
       if (!result.ok) throw new Error(rpcMessage(result.reason));
+      // Own voice note: drop the recording right away (an hourly job also cleans up).
+      if (voicePath) await supabase.storage.from(VOICE_NOTE_BUCKET).remove([voicePath]);
     },
     onSuccess: invalidate,
     onError: (error: Error) => toast.error(error.message),
@@ -117,6 +129,41 @@ export function RoomChat({
     onSuccess: () => chat.refreshReactions(),
     onError: (error: Error) => toast.error(error.message),
   });
+
+  async function uploadVoiceNote(note: RecordedVoiceNote) {
+    const format = voiceNoteFileFormat(note.mime);
+    if (!userId || !format) {
+      toast.error("Voice notes aren't supported on this device.");
+      return;
+    }
+    const path = buildVoiceNotePath(roomId, userId, crypto.randomUUID(), format.ext);
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from(VOICE_NOTE_BUCKET)
+        .upload(path, note.blob, { contentType: format.contentType, upsert: false });
+      if (uploadError) throw uploadError;
+      const result = await sendVoice({
+        data: {
+          room_id: roomId,
+          voice_path: path,
+          duration_ms: note.durationMs,
+          parent_message_id: replyTo?.id ?? null,
+        },
+      });
+      if (!result.ok) {
+        await supabase.storage.from(VOICE_NOTE_BUCKET).remove([path]);
+        throw new Error(rpcMessage(result.reason));
+      }
+      void track("chat_message_sent");
+      setReplyTo(null);
+      await invalidate();
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
+
+  const voice = useVoiceNoteRecorder(uploadVoiceNote);
+  const recordingVoice = voice.phase === "recording" || voice.phase === "sending";
 
   function submit() {
     const parsed = validateMessageContent(draft);
@@ -222,6 +269,14 @@ export function RoomChat({
           <>
             {/* One pill holds the field and the send affordance so the composer
                 reads as a single target on small screens. */}
+            {recordingVoice ? (
+              <VoiceNoteRecordingBar
+                phase={voice.phase}
+                elapsedMs={voice.elapsedMs}
+                onSend={voice.send}
+                onCancel={voice.cancel}
+              />
+            ) : (
             <div className="glass flex items-end gap-2 rounded-[1.75rem] p-1.5 focus-within:border-primary/60">
               <Textarea
                 ref={inputRef}
@@ -239,17 +294,35 @@ export function RoomChat({
                   }
                 }}
               />
-              <Button
-                onClick={submit}
-                disabled={sendMutation.isPending || draft.trim().length === 0}
-                aria-label="Send message"
-                className="size-10 shrink-0 rounded-full p-0"
-              >
-                <Send className="size-4" aria-hidden="true" />
-              </Button>
+              {draft.trim().length === 0 ? (
+                <Button
+                  onClick={() => void voice.start()}
+                  disabled={voice.phase === "starting"}
+                  aria-label="Record voice note"
+                  className="size-10 shrink-0 rounded-full p-0"
+                >
+                  {voice.phase === "starting" ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Mic className="size-4" aria-hidden="true" />
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={submit}
+                  disabled={sendMutation.isPending}
+                  aria-label="Send message"
+                  className="size-10 shrink-0 rounded-full p-0"
+                >
+                  <Send className="size-4" aria-hidden="true" />
+                </Button>
+              )}
             </div>
+            )}
             <p className="mt-1.5 px-2 text-[11px] text-muted-foreground">
-              {draft.length}/{MAX_MESSAGE_LENGTH} · Enter sends, Shift+Enter adds a line.
+              {recordingVoice
+                ? "Voice notes can be up to 5 minutes."
+                : `${draft.length}/${MAX_MESSAGE_LENGTH} · Enter sends · tap the mic for a voice note.`}
             </p>
           </>
         ) : (
